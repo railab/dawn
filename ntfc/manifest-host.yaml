@@ -1,0 +1,66 @@
+options:
+  fail_fast: false
+  parallel: false
+
+sessions:
+  - name: "sim-dawntest"
+    confpath: ntfc/configs/sim/tests/config.yaml
+    testpath: ntfc/tests/tests
+    resources: [vcan0, pty-bridge]
+
+  - name: "sim-shell"
+    confpath: ntfc/configs/sim/shell/config.yaml
+    testpath: ntfc/tests/shell
+
+  - name: "sim-blinky-shell"
+    confpath: ntfc/configs/sim/blinky_shell/config.yaml
+    testpath: ntfc/tests/blinky_shell
+
+  - name: "sim-dynamic-desc"
+    confpath: ntfc/configs/sim/dynamic_desc/config.yaml
+    testpath: ntfc/tests/dynamic_desc
+
+  - name: "sim-can"
+    confpath: ntfc/configs/sim/can/config.yaml
+    testpath: ntfc/tests/can
+    resources: [vcan0]
+
+  - name: "sim-programs-can"
+    confpath: ntfc/configs/sim/programs_can/config.yaml
+    testpath: ntfc/tests/programs_can
+    resources: [vcan0]
+
+  - name: "sim-gateway"
+    confpath: ntfc/configs/sim/gateway/config.yaml
+    testpath: ntfc/tests/gateway
+    resources: [vcan0]
+
+  - name: "sim-serial"
+    confpath: ntfc/configs/sim/serial/config.yaml
+    testpath: ntfc/tests/serial
+    resources: [pty-bridge]
+
+  - name: "sim-modbus-rtu"
+    confpath: ntfc/configs/sim/modbus_rtu/config.yaml
+    testpath: ntfc/tests/modbus
+    resources: [pty-bridge]
+
+  - name: "sim-nxscope"
+    confpath: ntfc/configs/sim/nxscope/config.yaml
+    testpath: ntfc/tests/nxscope
+    resources: [pty-bridge]
+
+  - name: "qemu-intel64-udp"
+    confpath: ntfc/configs/qemu-intel64/udp/config.yaml
+    testpath: ntfc/tests/udp
+    resources: [tap0]
+
+  - name: "qemu-intel64-nxscope-udp"
+    confpath: ntfc/configs/qemu-intel64/nxscope_udp/config.yaml
+    testpath: ntfc/tests/nxscope_udp
+    resources: [tap0]
+
+  - name: "qemu-intel64-modbus-tcp"
+    confpath: ntfc/configs/qemu-intel64/modbus_tcp/config.yaml
+    testpath: ntfc/tests/modbus
+    resources: [tap0]

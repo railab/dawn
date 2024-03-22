@@ -1,0 +1,113 @@
+metadata:
+  title: NimBLE Environmental Sensor Demo
+  version: '1.0'
+  description: >
+    Exposes environmental sensor values and one ADC input over NimBLE standard
+    services, with dummy values used for additional demo data.
+  os_required:
+  - /dev/adc0
+  - /dev/uorb/sensor_humi0
+  - /dev/uorb/sensor_temp0
+  - /dev/uorb/sensor_baro0
+  - /dev/uorb/sensor_gas0
+  - ble
+ios:
+- &id001
+  id: dummyio1
+  type: dummy_notify
+  dtype: uint8
+  config:
+    init_value: 42
+    interval_us: 20000
+- &id002
+  id: dummyio2
+  type: dummy
+  dtype: float
+  config:
+    init_value: 100.0
+- id: dummyio3
+  type: dummy
+  dtype: float
+  config:
+    init_value: 50.0
+- id: dummyio4
+  type: dummy
+  dtype: int32
+- id: dummyio5
+  type: dummy
+  dtype: int32
+- id: adc1
+  type: adc_fetch
+  dtype: uint32
+  config:
+    device: 0
+- &id003
+  id: humidity1
+  type: sensor
+  dtype: float
+  config:
+    device: 0
+  subtype: hum
+- &id004
+  id: temp1
+  type: sensor
+  dtype: float
+  config:
+    device: 0
+  subtype: temp
+- &id005
+  id: barometer1
+  type: sensor
+  dtype: float
+  config:
+    device: 0
+  subtype: baro
+- &id006
+  id: gas1
+  type: sensor
+  dtype: float
+  config:
+    device: 0
+  subtype: gas
+- id: uptime1
+  type: sysinfo
+  dtype: float
+  variant: uptime
+- id: cpuload1
+  type: sysinfo
+  dtype: float
+  variant: cpuload
+protocols:
+- id: nimble1
+  type: nimble
+  config:
+    gap_name: thingy53
+    services:
+      dis:
+        enabled: true
+      bas:
+        battery_level: *id001
+      aios:
+        groups:
+        - analog_inputs:
+          - *id002
+      ess:
+        characteristics:
+        - type: humidity
+          data: *id003
+        - type: temperature
+          data: *id004
+          metadata:
+            user_description: "temperature"
+            valid_range:
+              min: 4294963296
+              max: 8500
+        - type: pressure
+          data: *id005
+        - type: gas_resistance
+          data: *id006
+      imds:
+        humidity: *id003
+        temperature: *id004
+        pressure: *id005
+        gas_resistance: *id006

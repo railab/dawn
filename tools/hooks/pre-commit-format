@@ -1,0 +1,65 @@
+#!/bin/bash
+#
+# Pre-commit hook to enforce clang-format code style
+#
+# This hook prevents commits with formatting violations.
+# To install: ln -s ../../tools/hooks/pre-commit-format .git/hooks/pre-commit
+#
+
+set -e
+
+CLANG_FORMAT=${CLANG_FORMAT:-clang-format}
+
+# Check if clang-format is available
+if ! command -v $CLANG_FORMAT &> /dev/null; then
+  echo "ERROR: clang-format not found. Install with: apt-get install clang-format"
+  exit 1
+fi
+
+# Get list of staged C++ files
+STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(cpp|cxx|cc|h|hxx|hpp)$' || true)
+
+if [ -z "$STAGED_FILES" ]; then
+  exit 0
+fi
+
+echo "Checking code style with clang-format..."
+
+FAILED=0
+for file in $STAGED_FILES; do
+  if [ ! -f "$file" ]; then
+    continue
+  fi
+
+  # Run clang-format and compare
+  FORMATTED=$($CLANG_FORMAT "$file")
+  ORIGINAL=$(cat "$file")
+
+  if [ "$FORMATTED" != "$ORIGINAL" ]; then
+    echo ""
+    echo "=========================================="
+    echo "ERROR: $file has formatting violations"
+    echo "=========================================="
+    echo ""
+    echo "Diff (- original, + formatted):"
+    echo "---"
+    diff -u <(echo "$ORIGINAL") <(echo "$FORMATTED") | head -50 || true
+    echo "---"
+    echo ""
+    FAILED=1
+  fi
+done
+
+if [ $FAILED -eq 1 ]; then
+  echo ""
+  echo "To fix formatting issues, run:"
+  echo "  clang-format -i <file>"
+  echo ""
+  echo "Example to fix all staged files:"
+  echo "  for f in \$(git diff --cached --name-only | grep -E '\.(cpp|cxx|h|hxx)$'); do"
+  echo "    clang-format -i \$f && git add \$f"
+  echo "  done"
+  exit 1
+fi
+
+exit 0

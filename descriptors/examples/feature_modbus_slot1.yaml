@@ -1,0 +1,149 @@
+metadata:
+  title: Feature Demo - Modbus RTU Full Map (slot 1)
+  version: '0.1'
+  user_string: feature_modbus_slot1
+  description: >
+    Board-agnostic feature demo over Modbus RTU. Exercises ADC (multi
+    channel via /dev/adc0), PWM (/dev/pwm0), one onboard LED (/dev/userleds)
+    and one button (/dev/buttons0), a sequencer-driven blinky program,
+    runtime config / control / trigger bridges, descriptor swap (descselector
+    plus descriptor slots 0/1), capabilities and uname/sysinfo introspection.
+    Same shape will be reused for serial / CAN / nimble feature demos. Uses
+    the canonical /dev/ttyS1 modbus path - sim aliases via DAWN_SIM_TTY_ALIAS.
+  os_required:
+  - /dev/ttyS1
+  - /dev/userleds
+  - /dev/buttons0
+
+ios:
+- &descriptor0
+  id: descriptor0
+  type: descriptor
+  dtype: uint32
+  config:
+    device: 0
+
+- &descriptor1
+  id: descriptor1
+  type: descriptor
+  dtype: uint32
+  config:
+    device: 1
+
+- &descselector0
+  id: descselector0
+  type: descselector
+  dtype: uint32
+
+- &capabilities0
+  id: capabilities0
+  type: capabilities
+  dtype: block
+
+- &uname0
+  id: uname0
+  type: uname
+  dtype: char
+  variant: release
+
+- &uptime0
+  id: uptime0
+  type: sysinfo
+  dtype: uint32
+  variant: uptime
+
+- &leds0
+  id: leds0
+  type: leds
+  dtype: bool
+  config:
+    device: 0
+
+- &buttons0
+  id: buttons0
+  type: buttons
+  dtype: bool
+  config:
+    device: 0
+
+- &cfg_seq_start
+  id: cfg_seq_start
+  type: config
+  dtype: uint32
+  rw: true
+  config:
+    objid_ref: blinky_seq0
+    objcfg_ref: start_index
+
+programs:
+- id: blinky_seq0
+  type: sequencer
+  config:
+    targets:
+    - *leds0
+    states:
+    - value: 0
+      dwell_us: 500000
+    - value: 1
+      dwell_us: 500000
+    start_index: 0
+
+protocols:
+- id: modbus0
+  type: modbus_rtu
+  bindings:
+  - *descriptor0
+  - *descriptor1
+  - *descselector0
+  - *capabilities0
+  - *uname0
+  - *uptime0
+  - *leds0
+  - *buttons0
+  - *cfg_seq_start
+  config:
+    path: /dev/ttyS1
+    baudrate: 115200
+    registers:
+    # Discrete inputs (RO bits)
+    - type: discrete
+      config: 0
+      start: 0x0000
+      bindings:
+      - *buttons0
+    # Coils (RW bits)
+    - type: coil
+      config: 0
+      start: 0x0100
+      bindings:
+      - *leds0
+    # Input registers (RO 16-bit)
+    - type: input
+      config: 0
+      start: 0x0200
+      bindings:
+      - *uptime0
+      - *uname0
+    # Holding registers (RW 16-bit) - framework bridges
+    - type: holding
+      config: 0
+      start: 0x0300
+      bindings:
+      - *cfg_seq_start
+      - *descselector0
+    # Seekable windows - block IO surfaces
+    - type: seekable
+      config: 256
+      start: 0x1000
+      bindings:
+      - *descriptor0
+    - type: seekable
+      config: 256
+      start: 0x1100
+      bindings:
+      - *descriptor1
+    - type: seekable
+      config: 64
+      start: 0x1200
+      bindings:
+      - *capabilities0

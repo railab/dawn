@@ -1,0 +1,22 @@
+#
+# examples/out-of-tree-demo/external/apps/hello_oot/Kconfig
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config DAWN_OOT_DEMO_APP_HELLO
+	bool "OOT demo: hello_oot NSH builtin"
+	default n
+	---help---
+	  Build a tiny NuttX application that prints a banner. Demonstrates
+	  the OOT custom-app extension point: the app is defined entirely in
+	  the out-of-tree project and registered via nuttx_add_application
+	  without any upstream Dawn changes.
+
+if DAWN_OOT_DEMO_APP_HELLO
+
+config DAWN_OOT_DEMO_APP_HELLO_STACKSIZE
+	int "hello_oot stack size"
+	default DEFAULT_TASK_STACKSIZE
+
+endif

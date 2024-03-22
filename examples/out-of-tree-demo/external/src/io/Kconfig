@@ -1,0 +1,13 @@
+#
+# examples/out-of-tree-demo/external/src/io/Kconfig
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config DAWN_OOT_DEMO_IO
+	bool "OOT demo: custom IO classes"
+	default n
+	depends on DAWN
+	---help---
+	  Enable the demo's custom user-defined IO classes (CIOMyDummy)
+	  and the user IO factory hook.

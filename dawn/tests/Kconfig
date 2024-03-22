@@ -1,0 +1,26 @@
+#
+# For a description of the syntax of this configuration file,
+# see the file kconfig-language.txt in the NuttX tools repository.
+#
+
+config DAWN_TESTS
+	bool "Enable DAWN unit tests"
+	default n
+	---help---
+		Build and enable the Dawn unit test application.
+
+if DAWN_TESTS
+
+config DAWN_TESTS_STACKSIZE
+	int "Dawn test app stack size"
+	default DEFAULT_TASK_STACKSIZE
+	---help---
+		Set the worker stack size for the test application.
+
+config DAWN_TEST_EXIT_ON_FAIL
+	bool "Stop test on the first failure"
+	default n
+	---help---
+		Stop the test run immediately after the first failing check.
+
+endif # DAWN_TESTS

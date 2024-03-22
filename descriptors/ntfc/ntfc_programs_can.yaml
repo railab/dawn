@@ -1,0 +1,1047 @@
+metadata:
+  title: Programs Over CAN Demo
+  version: '1.0'
+  description: >
+    Provides CAN access to edge-processing programs, including sampled data,
+    control endpoints, push notifications, and segmented transfers.
+  os_required:
+  - /dev/can0
+  - /dev/urandom
+
+ios:
+- &ts_io
+  id: programs_timestamp_io1
+  type: timestamp
+  dtype: uint64
+  timestamp: false
+  tags:
+  - heartbeat
+  config:
+    interval_us: 100000
+
+# Notify-capable sources used by edge programs
+- &src_ts_u32
+  id: src_ts_u32
+  type: timestamp
+  dtype: uint32
+  timestamp: false
+  config:
+    interval_us: 5000
+
+- &src_rand_u32
+  id: src_rand_u32
+  type: rand
+  dtype: uint32
+  timestamp: false
+  config:
+    interval_us: 25000
+
+- &src_drive_f32
+  id: src_drive_f32
+  type: dummy
+  dtype: float
+  config:
+    init_value: 1.0
+
+- &src_adjust_u32
+  id: src_adjust_u32
+  type: dummy_notify
+  dtype: uint32
+  config:
+    init_value: 1
+    interval_us: 20000
+
+- &bitpack_src0_bool
+  id: bitpack_src0_bool
+  type: dummy_notify
+  dtype: bool
+  config:
+    init_value: false
+    interval_us: 20000
+
+- &bitpack_src1_bool
+  id: bitpack_src1_bool
+  type: dummy_notify
+  dtype: bool
+  config:
+    init_value: false
+    interval_us: 20000
+
+- &bitsplit_src_u32
+  id: bitsplit_src_u32
+  type: dummy_notify
+  dtype: uint32
+  config:
+    init_value: 0
+    interval_us: 20000
+
+- &counter_src_bool
+  id: counter_src_bool
+  type: dummy_notify
+  dtype: bool
+  config:
+    init_value: false
+    interval_us: 5000
+    notify_on_write: true
+
+- &expression_src_u32
+  id: expression_src_u32
+  type: dummy_notify
+  dtype: uint32
+  config:
+    init_value: 0
+    interval_us: 20000
+
+- &selector_ctrl_u32
+  id: selector_ctrl_u32
+  type: dummy_notify
+  dtype: uint32
+  config:
+    init_value: 0
+    interval_us: 20000
+
+- &selector_data0_u32
+  id: selector_data0_u32
+  type: dummy_notify
+  dtype: uint32
+  config:
+    init_value: 43690
+    interval_us: 20000
+
+- &selector_data1_u32
+  id: selector_data1_u32
+  type: dummy_notify
+  dtype: uint32
+  config:
+    init_value: 48059
+    interval_us: 20000
+
+- &switch_src0_u32
+  id: switch_src0_u32
+  type: dummy_notify
+  dtype: uint32
+  config:
+    init_value: 0
+    interval_us: 20000
+
+- &switch_src1_u32
+  id: switch_src1_u32
+  type: dummy_notify
+  dtype: uint32
+  config:
+    init_value: 0
+    interval_us: 20000
+
+- &toggle_src_bool
+  id: toggle_src_bool
+  type: dummy_notify
+  dtype: bool
+  config:
+    init_value: false
+    interval_us: 5000
+    notify_on_write: true
+
+# CAN-writable source for segmented sampling (fetch-thread program)
+- &src_sample_u64
+  id: src_sample_u64
+  type: dummy
+  dtype: uint64
+
+# Derived outputs produced on-edge by programs
+- &latest_u32
+  id: latest_u32
+  type: virt
+  dtype: uint32
+
+- &count_u32
+  id: count_u32
+  type: virt
+  dtype: uint32
+
+- &min_u32
+  id: min_u32
+  type: virt
+  dtype: uint32
+
+- &max_u32
+  id: max_u32
+  type: virt
+  dtype: uint32
+
+- &sum_u32
+  id: sum_u32
+  type: virt
+  dtype: uint32
+
+- &avg_u32
+  id: avg_u32
+  type: virt
+  dtype: uint32
+
+- &rms_u32
+  id: rms_u32
+  type: virt
+  dtype: uint32
+
+- &rms_f32
+  id: rms_f32
+  type: virt
+  dtype: float
+
+- &movavg_f32
+  id: movavg_f32
+  type: virt
+  dtype: float
+
+- &iir_f32
+  id: iir_f32
+  type: virt
+  dtype: float
+
+- &thresh_bool
+  id: thresh_bool
+  type: virt
+  dtype: bool
+
+- &thresh_value_f32
+  id: thresh_value_f32
+  type: virt
+  dtype: float
+
+- &buffer_out_u32
+  id: buffer_out_u32
+  type: virt
+  dtype: uint32
+
+- &buffer_sel_u32
+  id: buffer_sel_u32
+  type: virt
+  dtype: uint32
+
+- &buffer_stat_u32
+  id: buffer_stat_u32
+  type: virt
+  dtype: uint32
+
+- &adjust_out_u32
+  id: adjust_out_u32
+  type: virt
+  dtype: uint32
+
+- &bitpack_vsrc0_bool
+  id: bitpack_vsrc0_bool
+  type: virt
+  dtype: bool
+
+- &bitpack_vsrc1_bool
+  id: bitpack_vsrc1_bool
+  type: virt
+  dtype: bool
+
+- &bitpack_out_u32
+  id: bitpack_out_u32
+  type: virt
+  dtype: uint32
+
+- &bitsplit_bit0_bool
+  id: bitsplit_bit0_bool
+  type: virt
+  dtype: bool
+
+- &bitsplit_bit1_bool
+  id: bitsplit_bit1_bool
+  type: virt
+  dtype: bool
+
+- &counter_out_u32
+  id: counter_out_u32
+  type: virt
+  dtype: uint32
+
+- &expression_out_u32
+  id: expression_out_u32
+  type: virt
+  dtype: uint32
+
+- &expression_vsrc_u32
+  id: expression_vsrc_u32
+  type: virt
+  dtype: uint32
+
+- &selector_vctrl_u32
+  id: selector_vctrl_u32
+  type: virt
+  dtype: uint32
+
+- &selector_vdata0_u32
+  id: selector_vdata0_u32
+  type: virt
+  dtype: uint32
+
+- &selector_vdata1_u32
+  id: selector_vdata1_u32
+  type: virt
+  dtype: uint32
+
+- &selector_out_u32
+  id: selector_out_u32
+  type: virt
+  dtype: uint32
+
+- &switch_vsrc0_u32
+  id: switch_vsrc0_u32
+  type: virt
+  dtype: uint32
+
+- &switch_vsrc1_u32
+  id: switch_vsrc1_u32
+  type: virt
+  dtype: uint32
+
+- &switch_out_u32
+  id: switch_out_u32
+  type: virt
+  dtype: uint32
+
+- &toggle_out_u32
+  id: toggle_out_u32
+  type: virt
+  dtype: uint32
+
+- &sampled_rand_u32
+  id: sampled_rand_u32
+  type: virt
+  dtype: uint32
+
+- &sampled_drive_f32
+  id: sampled_drive_f32
+  type: virt
+  dtype: float
+
+- &sampled_u64
+  id: sampled_u64
+  type: virt
+  dtype: uint64
+
+- &redirect_dummy_u32
+  id: redirect_dummy_u32
+  type: dummy
+  dtype: uint32
+
+- &rms_reset_trig
+  id: rms_reset_trig
+  type: trigger
+  config:
+    targets:
+    - statscount1
+    - statsmin1
+    - statsmax1
+    - statssum1
+    - statsavg1
+    - statsrms_u32_1
+    - statsrms_f32_1
+    - movingavg_f32_1
+    - iir_f32_1
+    - threshold_bool_f32_1
+    - threshold_value_f32_1
+    - buffer1
+    allowed:
+    - reset
+
+- &ctrl_sampling2
+  id: ctrl_sampling2
+  type: control
+  config:
+    targets:
+    - sampling2
+    allowed:
+    - start
+    - stop
+
+- &ctrl_statscount1
+  id: ctrl_statscount1
+  type: control
+  config:
+    targets:
+    - statscount1
+    allowed:
+    - start
+    - stop
+
+- &ctrl_sampling1
+  id: ctrl_sampling1
+  type: control
+  config:
+    targets:
+    - sampling1
+    allowed:
+    - start
+    - stop
+
+- &ctrl_latest1
+  id: ctrl_latest1
+  type: control
+  config:
+    targets:
+    - latest1
+    allowed:
+    - start
+    - stop
+
+- &ctrl_redirect1
+  id: ctrl_redirect1
+  type: control
+  config:
+    targets:
+    - redirect1
+    allowed:
+    - start
+    - stop
+
+- &ctrl_statsmin1
+  id: ctrl_statsmin1
+  type: control
+  config:
+    targets:
+    - statsmin1
+    allowed:
+    - start
+    - stop
+
+- &ctrl_statsmax1
+  id: ctrl_statsmax1
+  type: control
+  config:
+    targets:
+    - statsmax1
+    allowed:
+    - start
+    - stop
+
+- &ctrl_statssum1
+  id: ctrl_statssum1
+  type: control
+  config:
+    targets:
+    - statssum1
+    allowed:
+    - start
+    - stop
+
+- &ctrl_statsavg1
+  id: ctrl_statsavg1
+  type: control
+  config:
+    targets:
+    - statsavg1
+    allowed:
+    - start
+    - stop
+
+- &ctrl_statsrms_u32_1
+  id: ctrl_statsrms_u32_1
+  type: control
+  config:
+    targets:
+    - statsrms_u32_1
+    allowed:
+    - start
+    - stop
+
+- &ctrl_statsrms_f32_1
+  id: ctrl_statsrms_f32_1
+  type: control
+  config:
+    targets:
+    - statsrms_f32_1
+    allowed:
+    - start
+    - stop
+
+- &ctrl_movingavg_f32_1
+  id: ctrl_movingavg_f32_1
+  type: control
+  config:
+    targets:
+    - movingavg_f32_1
+    allowed:
+    - start
+    - stop
+
+- &ctrl_iir_f32_1
+  id: ctrl_iir_f32_1
+  type: control
+  config:
+    targets:
+    - iir_f32_1
+    allowed:
+    - start
+    - stop
+
+- &ctrl_threshold_bool_f32_1
+  id: ctrl_threshold_bool_f32_1
+  type: control
+  config:
+    targets:
+    - threshold_bool_f32_1
+    allowed:
+    - start
+    - stop
+
+- &ctrl_threshold_value_f32_1
+  id: ctrl_threshold_value_f32_1
+  type: control
+  config:
+    targets:
+    - threshold_value_f32_1
+    allowed:
+    - start
+    - stop
+
+- &ctrl_buffer1
+  id: ctrl_buffer1
+  type: control
+  config:
+    targets:
+    - buffer1
+    allowed:
+    - start
+    - stop
+
+- &ctrl_adjust1
+  id: ctrl_adjust1
+  type: control
+  config:
+    targets:
+    - adjust1
+    allowed:
+    - start
+    - stop
+
+programs:
+- id: latest1
+  type: latest
+  config:
+    sources:
+    - *src_ts_u32
+    outputs:
+    - *latest_u32
+
+- id: statscount1
+  type: statscount
+  config:
+    sources:
+    - *src_ts_u32
+    outputs:
+    - *count_u32
+
+- id: statsmin1
+  type: statsmin
+  config:
+    sources:
+    - *src_ts_u32
+    outputs:
+    - *min_u32
+
+- id: statsmax1
+  type: statsmax
+  config:
+    sources:
+    - *src_ts_u32
+    outputs:
+    - *max_u32
+
+- id: statssum1
+  type: statssum
+  config:
+    sources:
+    - *src_ts_u32
+    outputs:
+    - *sum_u32
+
+- id: statsavg1
+  type: statsavg
+  config:
+    sources:
+    - *src_ts_u32
+    outputs:
+    - *avg_u32
+
+- id: redirect1
+  type: redirect
+  config:
+    sources:
+    - *src_ts_u32
+    outputs:
+    - *redirect_dummy_u32
+
+- id: sampling1
+  type: sampling
+  config:
+    sources:
+    - *src_rand_u32
+    - *src_drive_f32
+    outputs:
+    - *sampled_rand_u32
+    - *sampled_drive_f32
+    interval: 50000
+
+- id: sampling2
+  type: sampling
+  config:
+    sources:
+    - *src_sample_u64
+    outputs:
+    - *sampled_u64
+    interval: 50000
+
+- id: statsrms_u32_1
+  type: statsrms
+  config:
+    sources:
+    - *sampled_rand_u32
+    outputs:
+    - *rms_u32
+
+- id: statsrms_f32_1
+  type: statsrms
+  config:
+    sources:
+    - *sampled_drive_f32
+    outputs:
+    - *rms_f32
+
+- id: movingavg_f32_1
+  type: movingavg
+  config:
+    sources:
+    - *sampled_drive_f32
+    outputs:
+    - *movavg_f32
+    window: 4
+
+- id: iir_f32_1
+  type: iirfilter
+  config:
+    sources:
+    - *sampled_drive_f32
+    outputs:
+    - *iir_f32
+    alpha_num: 1
+    alpha_den: 4
+
+- id: threshold_bool_f32_1
+  type: threshold
+  config:
+    sources:
+    - *sampled_drive_f32
+    outputs:
+    - *thresh_bool
+    mode: 2
+    low: 1073741824
+    high: 1082130432
+
+- id: threshold_value_f32_1
+  type: thresholdvalue
+  config:
+    sources:
+    - *sampled_drive_f32
+    outputs:
+    - *thresh_value_f32
+    mode: 2
+    low: 1073741824
+    high: 1082130432
+
+- id: buffer1
+  type: buffer
+  config:
+    iobind:
+    - src: *src_ts_u32
+      out: *buffer_out_u32
+      sel: *buffer_sel_u32
+      stat: *buffer_stat_u32
+    depth: 8
+    flags: 1
+
+- id: adjust1
+  type: adjust
+  config:
+    inputs:
+    - *src_adjust_u32
+    outputs:
+    - *adjust_out_u32
+    params:
+      offset: 3
+      scale: 2
+
+- id: latest_program_logic_inputs
+  type: latest
+  config:
+    inputs:
+    - *bitpack_src0_bool
+    - *bitpack_src1_bool
+    - *expression_src_u32
+    - *selector_ctrl_u32
+    - *selector_data0_u32
+    - *selector_data1_u32
+    - *switch_src0_u32
+    - *switch_src1_u32
+    outputs:
+    - *bitpack_vsrc0_bool
+    - *bitpack_vsrc1_bool
+    - *expression_vsrc_u32
+    - *selector_vctrl_u32
+    - *selector_vdata0_u32
+    - *selector_vdata1_u32
+    - *switch_vsrc0_u32
+    - *switch_vsrc1_u32
+
+- id: bitpack1
+  type: bitpack
+  config:
+    inputs:
+    - io: *bitpack_vsrc0_bool
+      bit: 0
+    - io: *bitpack_vsrc1_bool
+      bit: 1
+    output: *bitpack_out_u32
+
+- id: bitsplit1
+  type: bitsplit
+  config:
+    sources:
+    - *bitsplit_src_u32
+    - *bitsplit_src_u32
+    outputs:
+    - *bitsplit_bit0_bool
+    - *bitsplit_bit1_bool
+    bits:
+    - 0
+    - 1
+
+- id: counter1
+  type: counter
+  config:
+    sources:
+    - *counter_src_bool
+    outputs:
+    - *counter_out_u32
+    params:
+    - 0
+    - 3
+    - 1
+    - 0
+
+- id: expression1
+  type: expression
+  config:
+    sources:
+    - *expression_vsrc_u32
+    outputs:
+    - *expression_out_u32
+    op:
+    - 3
+    - 10
+
+- id: selector1
+  type: selector
+  config:
+    control: selector_vctrl_u32
+    data:
+    - *selector_vdata0_u32
+    - *selector_vdata1_u32
+    target: selector_out_u32
+
+- id: switch1
+  type: switch
+  config:
+    inputs:
+    - io: *switch_vsrc0_u32
+      match: 1
+    - io: *switch_vsrc1_u32
+      match: 1
+    target:
+    - *switch_out_u32
+    - 66
+    - 0
+
+- id: toggle1
+  type: toggle
+  config:
+    sources:
+    - *toggle_src_bool
+    outputs:
+    - *toggle_out_u32
+    values:
+    - 0
+    - 1
+
+protocols:
+- id: can1
+  type: can
+  config:
+    node_id: 0x0
+    objects:
+    - type: push
+      flags: 0
+      can_id_start: 0x000
+      bindings:
+      - *ts_io
+      - *thresh_bool
+      - *thresh_value_f32
+
+    - type: read
+      flags: 0
+      can_id_start: 0x100
+      bindings:
+      - *latest_u32
+      - *count_u32
+      - *min_u32
+      - *max_u32
+      - *sum_u32
+      - *avg_u32
+      - *rms_u32
+      - *rms_f32
+      - *redirect_dummy_u32
+      - *movavg_f32
+      - *iir_f32
+      - *thresh_bool
+      - *thresh_value_f32
+      - *buffer_out_u32
+      - *buffer_sel_u32
+      - *adjust_out_u32
+      - *bitpack_out_u32
+      - *bitsplit_bit0_bool
+      - *bitsplit_bit1_bool
+      - *counter_out_u32
+      - *expression_out_u32
+      - *selector_out_u32
+      - *switch_out_u32
+      - *toggle_out_u32
+
+    - type: read
+      flags: 0
+      can_id_start: 0x1B0
+      bindings:
+      - *ctrl_sampling2
+      - *ctrl_statscount1
+      - *ctrl_sampling1
+      - *ctrl_latest1
+      - *ctrl_redirect1
+      - *ctrl_statsmin1
+      - *ctrl_statsmax1
+      - *ctrl_statssum1
+      - *ctrl_statsavg1
+      - *ctrl_statsrms_u32_1
+      - *ctrl_statsrms_f32_1
+      - *ctrl_movingavg_f32_1
+      - *ctrl_iir_f32_1
+      - *ctrl_threshold_bool_f32_1
+      - *ctrl_threshold_value_f32_1
+      - *ctrl_buffer1
+      - *ctrl_adjust1
+
+    - type: write
+      flags: 0
+      can_id_start: 0x150
+      bindings:
+      - *src_drive_f32
+
+    - type: write
+      flags: 0
+      can_id_start: 0x151
+      bindings:
+      - *rms_reset_trig
+
+    - type: write
+      flags: 0
+      can_id_start: 0x152
+      bindings:
+      - *ctrl_sampling2
+
+    - type: write
+      flags: 0
+      can_id_start: 0x153
+      bindings:
+      - *ctrl_statscount1
+
+    - type: write
+      flags: 0
+      can_id_start: 0x154
+      bindings:
+      - *ctrl_sampling1
+
+    - type: write
+      flags: 0
+      can_id_start: 0x155
+      bindings:
+      - *ctrl_latest1
+
+    - type: write
+      flags: 0
+      can_id_start: 0x156
+      bindings:
+      - *ctrl_redirect1
+
+    - type: write
+      flags: 0
+      can_id_start: 0x157
+      bindings:
+      - *ctrl_statsmin1
+
+    - type: write
+      flags: 0
+      can_id_start: 0x158
+      bindings:
+      - *ctrl_statsmax1
+
+    - type: write
+      flags: 0
+      can_id_start: 0x159
+      bindings:
+      - *ctrl_statsrms_u32_1
+
+    - type: write
+      flags: 0
+      can_id_start: 0x15A
+      bindings:
+      - *ctrl_statsrms_f32_1
+
+    - type: write
+      flags: 0
+      can_id_start: 0x15B
+      bindings:
+      - *ctrl_movingavg_f32_1
+
+    - type: write
+      flags: 0
+      can_id_start: 0x15C
+      bindings:
+      - *ctrl_iir_f32_1
+
+    - type: write
+      flags: 0
+      can_id_start: 0x15D
+      bindings:
+      - *ctrl_threshold_bool_f32_1
+
+    - type: write
+      flags: 0
+      can_id_start: 0x15E
+      bindings:
+      - *ctrl_threshold_value_f32_1
+
+    - type: write
+      flags: 0
+      can_id_start: 0x15F
+      bindings:
+      - *ctrl_buffer1
+
+    - type: write
+      flags: 0
+      can_id_start: 0x162
+      bindings:
+      - *buffer_sel_u32
+
+    - type: write
+      flags: 0
+      can_id_start: 0x163
+      bindings:
+      - *src_adjust_u32
+
+    - type: write
+      flags: 0
+      can_id_start: 0x164
+      bindings:
+      - *ctrl_statssum1
+
+    - type: write
+      flags: 0
+      can_id_start: 0x165
+      bindings:
+      - *ctrl_statsavg1
+
+    - type: write
+      flags: 0
+      can_id_start: 0x166
+      bindings:
+      - *ctrl_adjust1
+
+    - type: write
+      flags: 0
+      can_id_start: 0x167
+      bindings:
+      - *bitpack_src0_bool
+
+    - type: write
+      flags: 0
+      can_id_start: 0x168
+      bindings:
+      - *bitpack_src1_bool
+
+    - type: write
+      flags: 0
+      can_id_start: 0x169
+      bindings:
+      - *bitsplit_src_u32
+
+    - type: write
+      flags: 0
+      can_id_start: 0x16A
+      bindings:
+      - *counter_src_bool
+
+    - type: write
+      flags: 0
+      can_id_start: 0x16B
+      bindings:
+      - *expression_src_u32
+
+    - type: write
+      flags: 0
+      can_id_start: 0x16C
+      bindings:
+      - *selector_ctrl_u32
+
+    - type: write
+      flags: 0
+      can_id_start: 0x16D
+      bindings:
+      - *selector_data0_u32
+
+    - type: write
+      flags: 0
+      can_id_start: 0x16E
+      bindings:
+      - *selector_data1_u32
+
+    - type: write
+      flags: 0
+      can_id_start: 0x16F
+      bindings:
+      - *switch_src0_u32
+
+    - type: write
+      flags: 0
+      can_id_start: 0x172
+      bindings:
+      - *switch_src1_u32
+
+    - type: write
+      flags: 0
+      can_id_start: 0x173
+      bindings:
+      - *toggle_src_bool
+
+    - type: read_seg
+      flags: 0
+      can_id_start: 0x160
+      bindings:
+      - *sampled_u64
+      - *buffer_stat_u32
+
+    - type: write_seg
+      flags: 0
+      can_id_start: 0x170
+      bindings:
+      - *src_sample_u64

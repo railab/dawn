@@ -1,0 +1,49 @@
+#
+# For a description of the syntax of this configuration file,
+# see the file kconfig-language.txt in the NuttX tools repository.
+#
+
+config DAWN_APPS_DAWN
+	bool "Dawn main application"
+	default n
+	---help---
+		Build the main Dawn application entry point.
+
+if DAWN_APPS_DAWN
+
+config DAWN_APPS_DAWN_STACKSIZE
+	int "Dawn app stack size"
+	default DEFAULT_TASK_STACKSIZE
+	---help---
+		Set the worker stack size for the Dawn application task.
+
+choice
+	prompt "Dawn descriptor source format"
+	default DAWN_APPS_EXAMPLE_DESC_FORMAT_CXX
+
+config DAWN_APPS_EXAMPLE_DESC_FORMAT_CXX
+	bool "C++ descriptor path (CONFIG_DAWN_APPS_EXAMPLE_DESC_PATH)"
+	---help---
+		Use pre-generated C++ descriptor file from
+		CONFIG_DAWN_APPS_EXAMPLE_DESC_PATH.
+
+config DAWN_APPS_EXAMPLE_DESC_FORMAT_YAML
+	bool "YAML descriptor path (generated at build time)"
+	---help---
+		Generate descriptor.cxx from YAML using dawnpy during build.
+
+endchoice
+
+config DAWN_APPS_EXAMPLE_DESC_PATH
+	string "DAWN_APPS_EXAMPLE_DESC_PATH"
+	depends on DAWN_APPS_EXAMPLE_DESC_FORMAT_CXX
+	---help---
+		Path to descriptor.cxx descriptor file.
+
+config DAWN_APPS_EXAMPLE_DESC_YAML_PATH
+	string "DAWN_APPS_EXAMPLE_DESC_YAML_PATH"
+	depends on DAWN_APPS_EXAMPLE_DESC_FORMAT_YAML
+	---help---
+		Path to descriptor YAML file used for build-time generation.
+
+endif

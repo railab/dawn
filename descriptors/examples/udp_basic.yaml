@@ -1,0 +1,50 @@
+metadata:
+  title: Basic UDP Demo
+  version: '1.0'
+  description: >
+    Provides basic UDP access to two dummy IO values plus one notify-capable IO
+    for simple network protocol demonstrations.
+  os_required:
+  - eth
+  - /tmp
+ios:
+- &id001
+  id: dummyio1
+  type: dummy
+  dtype: uint16
+- &id002
+  id: dummyio2
+  type: dummy
+  dtype: float
+- &id003
+  id: notifyio1
+  type: dummy_notify
+  dtype: uint32
+  config:
+    init_value: 7
+    interval_us: 20000
+- &id004
+  id: udp_fileio1
+  type: fileio
+  dtype: block
+  config:
+    path: "/tmp/dawn_udp_fileio.bin"
+    perm: 2
+- &id005
+  id: udp_fileonce1
+  type: fileio
+  dtype: block
+  config:
+    path: "/tmp/dawn_udp_fileonce.bin"
+    perm: 3
+protocols:
+- id: udp_main
+  type: udp
+  bindings:
+  - *id001
+  - *id002
+  - *id003
+  - *id004
+  - *id005
+  config:
+    port: 50000

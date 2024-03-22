@@ -1,0 +1,102 @@
+#
+# For a description of the syntax of this configuration file,
+# see the file kconfig-language.txt in the NuttX tools repository.
+#
+
+config DAWN_PROTO_NXSCOPE
+	bool "Dawn nxscope proto support"
+	default n
+	---help---
+		Enable NxScope protocol support in Dawn.
+
+if DAWN_PROTO_NXSCOPE
+
+config DAWN_PROTO_NXSCOPE_DUMMY
+	bool "Dawn nxscope dummy support"
+	default n
+	---help---
+		Enable the dummy NxScope transport for testing.
+
+config DAWN_PROTO_NXSCOPE_SERIAL
+	bool "Dawn nxscope serial support"
+	default n
+	---help---
+		Enable the serial NxScope transport.
+
+config DAWN_PROTO_NXSCOPE_UDP
+	bool "Dawn nxscope UDP support"
+	depends on LOGGING_NXSCOPE_INTF_UDP
+	default n
+	---help---
+		Enable the UDP NxScope transport.
+
+config DAWN_PROTO_NXSCOPE_STREAMBUF_LEN
+	int "nxscope stream buffer length"
+	default 512
+	---help---
+		Set the stream buffer size used for outgoing NxScope frames.
+
+config DAWN_PROTO_NXSCOPE_RXBUF_LEN
+	int "nxscope RX buffer length"
+	default 32
+	---help---
+		Set the receive buffer size for NxScope input.
+
+config DAWN_PROTO_NXSCOPE_RX_PADDING
+	int "nxscope RX padding"
+	default 0
+	---help---
+		Reserve extra padding bytes in the NxScope RX buffer.
+
+config DAWN_PROTO_NXSCOPE_CRIBUF_LEN
+	int "nxscope critucal buffer length"
+	default 0
+	---help---
+		Set the size of the critical-section helper buffer.
+
+choice
+	prompt "nxscope sampling method"
+	default DAWN_PROTO_NXSCOPE_SAMPLE_THREAD if !DAWN_IO_NOTIFY
+	default DAWN_PROTO_NXSCOPE_NOTIFY if DAWN_IO_NOTIFY
+
+config DAWN_PROTO_NXSCOPE_SAMPLE_THREAD
+	bool "nxscope sample thread"
+	---help---
+		Use a polling thread to sample and send NxScope data.
+
+config DAWN_PROTO_NXSCOPE_NOTIFY
+	bool "nxscope notify"
+	depends on DAWN_IO_NOTIFY
+	---help---
+		Use IO notifications to stream NxScope data asynchronously.
+
+endchoice # "nxscope sampling method"
+
+if DAWN_PROTO_NXSCOPE_SERIAL
+
+config DAWN_PROTO_NXSCOPE_SERIAL_PATH
+	string "nxscope serial path"
+	default "/dev/ttyUSB0"
+	---help---
+		Set the default serial device path for NxScope.
+
+config DAWN_PROTO_NXSCOPE_SERIAL_BAUD
+	int "nxscope serial baud"
+	default 115200
+	---help---
+		Ignored if set to 0 (for example for RTT interface)
+
+endif # DAWN_PROTO_NXSCOPE_SERIAL
+
+if DAWN_PROTO_NXSCOPE_UDP
+
+config DAWN_PROTO_NXSCOPE_UDP_PORT
+	int "nxscope UDP local port"
+	default 50000
+	range 1 65535
+	---help---
+		Set the default local UDP port for NxScope.
+
+endif # DAWN_PROTO_NXSCOPE_UDP
+
+endif # DAWN_PROTO_NXSCOPE

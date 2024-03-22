@@ -1,0 +1,24 @@
+[submodule "tools/dawnpy"]
+	path = tools/dawnpy
+	url = https://github.com/railab/dawnpy.git
+[submodule "tools/dawnpy-ble"]
+	path = tools/dawnpy-ble
+	url = https://github.com/railab/dawnpy-ble.git
+[submodule "tools/dawnpy-can"]
+	path = tools/dawnpy-can
+	url = https://github.com/railab/dawnpy-can.git
+[submodule "tools/dawnpy-modbus"]
+	path = tools/dawnpy-modbus
+	url = https://github.com/railab/dawnpy-modbus.git
+[submodule "tools/dawnpy-serial"]
+	path = tools/dawnpy-serial
+	url = https://github.com/railab/dawnpy-serial.git
+[submodule "tools/dawnpy-tests"]
+	path = tools/dawnpy-tests
+	url = https://github.com/railab/dawnpy-tests.git
+[submodule "tools/dawnpy-udp"]
+	path = tools/dawnpy-udp
+	url = https://github.com/railab/dawnpy-udp.git
+[submodule "tools/dawn-nxscope"]
+	path = tools/dawn-nxscope
+	url = https://github.com/railab/dawn-nxscope.git

@@ -1,0 +1,103 @@
+metadata:
+  title: Blinky NimBLE Demo
+  version: "1.0"
+  description: >
+    Sequencer-based blinky with BLE control. The sequencer drives an
+    LED with a two-state value/dwell table. Start/stop, full states
+    table, and individual dwell times are exposed over BLE via a
+    NimBLE custom service.
+  os_required:
+    - /dev/gpio4
+    - ble
+
+ios:
+  - &led1
+    id: led1
+    type: gpo
+    dtype: bool
+    config:
+      device: 4
+
+  - &ctrl_blinky
+    id: ctrl_blinky
+    type: control
+    config:
+      targets:
+        - blinky_seq1
+      allowed:
+        - start
+        - stop
+
+  - &cfg_seq_states
+    id: cfg_seq_states
+    type: config
+    dtype: uint32
+    rw: true
+    config:
+      objid_ref: blinky_seq1
+      objcfg_ref: states
+
+  - &cfg_dwell_off
+    id: cfg_dwell_off
+    type: config
+    dtype: uint32
+    rw: true
+    config:
+      objid_ref: blinky_seq1
+      objcfg_ref: states
+      field: dwell_off
+
+  - &cfg_dwell_on
+    id: cfg_dwell_on
+    type: config
+    dtype: uint32
+    rw: true
+    config:
+      objid_ref: blinky_seq1
+      objcfg_ref: states
+      field: dwell_on
+
+programs:
+  - id: blinky_seq1
+    type: sequencer
+    config:
+      targets:
+        - *led1
+      states:
+        - value: 0
+          dwell_us: 500000
+        - value: 1
+          dwell_us: 500000
+      start_index: 0
+
+protocols:
+  - id: nimble1
+    type: nimble
+    config:
+      gap_name: dawn-blink
+      services:
+        dis:
+          enabled: true
+        custom:
+          - uuid: 12345678-1234-5678-1234-56789abcdef0
+            characteristics:
+              - uuid: 12345678-1234-5678-1234-56789abcdef1
+                io: *ctrl_blinky
+                flags:
+                  - read
+                  - write
+              - uuid: 12345678-1234-5678-1234-56789abcdef2
+                io: *cfg_seq_states
+                flags:
+                  - read
+                  - write
+              - uuid: 12345678-1234-5678-1234-56789abcdef3
+                io: *cfg_dwell_off
+                flags:
+                  - read
+                  - write
+              - uuid: 12345678-1234-5678-1234-56789abcdef4
+                io: *cfg_dwell_on
+                flags:
+                  - read
+                  - write

@@ -1,0 +1,54 @@
+metadata:
+  title: Dynamic Descriptor Slot1 Runtime
+  version: '0.2'
+  user_string: dynslot1
+  description: >
+    Runtime descriptor for switch verification. Uses different dummy initial
+    value than slot0 to prove descriptor activation.
+  os_required:
+  - /dev/ttyS1
+
+ios:
+- &descriptor0
+  id: descriptor0
+  type: descriptor
+  dtype: uint32
+  config:
+    device: 0
+
+- &descriptor1
+  id: descriptor1
+  type: descriptor
+  dtype: uint32
+  config:
+    device: 1
+
+- &descselector0
+  id: descselector0
+  type: descselector
+  dtype: uint32
+
+- &capabilities_io
+  id: capabilities_io
+  type: capabilities
+  dtype: block
+
+- &dummy0
+  id: dummy0
+  type: dummy
+  dtype: uint32
+  config:
+    init_value: 77
+
+protocols:
+- id: serial0
+  type: serial
+  bindings:
+  - *descriptor0
+  - *descriptor1
+  - *descselector0
+  - *capabilities_io
+  - *dummy0
+  config:
+    path: /dev/ttyS1
+    baudrate: 115200

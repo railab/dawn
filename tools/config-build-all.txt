@@ -1,0 +1,40 @@
+# Dawn Build Configurations
+# Lines starting with # are comments and will be ignored
+# Empty lines are also ignored
+#
+# Format: <config_path> [-e ENV_VAR=VALUE]... [-D CMAKE_DEFINE]...
+#
+# You can specify per-configuration environment variables with -e
+# and CMake defines with -D flags. These will override global flags
+# passed on the command line.
+
+boards/sim/sim/sim/configs/tests -e CXX=g++-14 -e CC=gcc-14
+boards/sim/sim/sim/configs/nsh_tests -e CXX=g++-14 -e CC=gcc-14
+boards/sim/sim/sim/configs/nsh_shell -e CXX=g++-14 -e CC=gcc-14
+boards/sim/sim/sim/configs/nsh_can -e CXX=g++-14 -e CC=gcc-14
+boards/sim/sim/sim/configs/nsh_modbus_rtu -e CXX=g++-14 -e CC=gcc-14
+boards/sim/sim/sim/configs/nsh_serial -e CXX=g++-14 -e CC=gcc-14
+boards/sim/sim/sim/configs/nsh_nxscope -e CXX=g++-14 -e CC=gcc-14
+
+boards/x86_64/qemu/qemu-intel64/configs/nsh_udp -e CXX=g++-14 -e CC=gcc-14
+boards/x86_64/qemu/qemu-intel64/configs/nsh_nxscope_udp -e CXX=g++-14 -e CC=gcc-14
+
+boards/arm/nrf52/nrf52840-dk/configs/nimble_aios
+boards/arm/nrf52/nrf52840-dk/configs/nimble_blinky
+boards/arm/nrf52/nrf52840-dk/configs/nimble_ots
+boards/arm/nrf52/nrf52840-dk/configs/shell
+boards/arm/nrf52/nrf52840-dk/configs/blinky_buttons
+
+boards/arm/nrf53/thingy53/configs/nimble -D CMAKE_POLICY_VERSION_MINIMUM=3.5
+
+boards/arm/stm32f0l0g0/nucleo-c071rb/configs/blinky_shell/
+boards/arm/stm32f0l0g0/nucleo-c071rb/configs/blinky_modbus/
+boards/arm/stm32f0l0g0/nucleo-c071rb/configs/serial
+boards/arm/stm32f0l0g0/nucleo-c071rb/configs/modbus_ntfc
+
+boards/arm/stm32f0l0g0/nucleo-c092rc/configs/can
+boards/arm/stm32f0l0g0/nucleo-c092rc/configs/can_minimal
+
+# Out-of-tree demo (C++ descriptor + YAML descriptor variants)
+examples/out-of-tree-demo/boards/sim/sim/sim/configs/nsh_user_shell -e CXX=g++-14 -e CC=gcc-14
+examples/out-of-tree-demo/boards/sim/sim/sim/configs/nsh_user_shell_yaml -e CXX=g++-14 -e CC=gcc-14

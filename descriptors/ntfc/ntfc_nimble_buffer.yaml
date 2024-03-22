@@ -1,0 +1,78 @@
+metadata:
+  title: NTFC NimBLE buffer target
+  version: '1.0'
+  description: >
+    NTFC descriptor dedicated to validating chunked captured-buffer transfer
+    over a descriptor-defined NimBLE custom service on nrf52840-dk.
+  os_required:
+  - ble
+ios:
+- &id_buf_src
+  id: buf_src_ts_u32
+  type: timestamp
+  dtype: uint32
+  timestamp: false
+  config:
+    interval_us: 1000
+- &id_buf_out
+  id: buf_out_u32
+  type: virt
+  dtype: uint32
+- &id_buf_sel
+  id: buf_sel_u32
+  type: virt
+  dtype: uint32
+- &id_buf_stat
+  id: buf_stat_u32
+  type: virt
+  dtype: uint32
+- &id_buf_trigger
+  id: buf_trigger
+  type: trigger
+  config:
+    targets:
+    - buf_buffer1
+    allowed:
+    - reset
+    - trigger1
+    - trigger2
+programs:
+- id: buf_buffer1
+  type: buffer
+  config:
+    iobind:
+    - src: *id_buf_src
+      out: *id_buf_out
+      sel: *id_buf_sel
+      stat: *id_buf_stat
+    depth: 1024
+    flags: 5
+    chunk_size: 32
+protocols:
+- id: nimble1
+  type: nimble
+  config:
+    gap_name: ntfc-nimb
+    services:
+      dis:
+        enabled: true
+      custom:
+      - uuid: 12345678-1234-5678-1234-56789abcdf00
+        characteristics:
+        - uuid: 12345678-1234-5678-1234-56789abcdf01
+          io: *id_buf_out
+          flags:
+          - read
+        - uuid: 12345678-1234-5678-1234-56789abcdf02
+          io: *id_buf_sel
+          flags:
+          - read
+          - write
+        - uuid: 12345678-1234-5678-1234-56789abcdf03
+          io: *id_buf_stat
+          flags:
+          - read
+        - uuid: 12345678-1234-5678-1234-56789abcdf04
+          io: *id_buf_trigger
+          flags:
+          - write

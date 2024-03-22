@@ -1,0 +1,212 @@
+#
+# For a description of the syntax of this configuration file,
+# see the file kconfig-language.txt in the NuttX tools repository.
+#
+
+config DAWN_PROTO_NIMBLE
+	bool "Dawn NimBLE proto support"
+	default n
+	---help---
+		Enable NimBLE-based protocol support in Dawn.
+
+if DAWN_PROTO_NIMBLE
+
+choice
+	prompt "Dawn NimBLE role"
+	default DAWN_PROTO_NIMBLE_PERIPHERAL
+
+config DAWN_PROTO_NIMBLE_PERIPHERAL
+	bool "Dawn NimBLE peripheral"
+	---help---
+		Build the NimBLE peripheral role.
+
+endchoice # "Dawn NimBLE role"
+
+if DAWN_PROTO_NIMBLE_PERIPHERAL
+
+config DAWN_PROTO_NIMBLE_GAPNAME_MAX
+	int "Dawn NimBLE maximum GAP name length"
+	default 16
+	range 1 26
+	---help---
+		Maximum advertised GAP device name length, excluding the trailing
+		NUL byte. BLE legacy advertising data is limited to 31 bytes; with
+		the flags AD structure and complete-name AD structure overhead, the
+		maximum complete name that fits in the current advertising packet is
+		26 bytes.
+
+config DAWN_PROTO_NIMBLE_TPS
+	bool "Dawn NimBLE enable Tx Power Service"
+	default n
+	---help---
+		Enable the BLE Tx Power Service.
+
+config DAWN_PROTO_NIMBLE_DIS
+	bool "Dawn NimBLE Device Information Service support"
+	default n
+	---help---
+		Enable the Device Information Service.
+
+config DAWN_PROTO_NIMBLE_BAS
+	bool "Dawn NimBLE Battery Service support"
+	default n
+	depends on DAWN_IO_NOTIFY
+	---help---
+		Enable the Battery Service. The Dawn BAS binding requires a
+		notify-capable IO object for the battery level source.
+
+config DAWN_PROTO_NIMBLE_AIOS
+	bool "Dawn NimBLE Automation IO Service support"
+	default n
+	---help---
+		Enable the Automation IO Service.
+
+config DAWN_PROTO_NIMBLE_AIOS_AGGREGATE
+	bool "Dawn NimBLE AIOS Aggregate characteristic"
+	default n
+	depends on DAWN_PROTO_NIMBLE_AIOS
+	---help---
+		Enable the optional AIOS Aggregate characteristic (0x2A5A),
+		which returns the current values of readable AIOS Digital and
+		Analog characteristics in one read.
+
+config DAWN_PROTO_NIMBLE_EXTENDED_METADATA
+	bool "Dawn NimBLE extended metadata descriptors"
+	default y
+	---help---
+		Enable optional BLE descriptors attached to standard-service
+		characteristics, such as Characteristic User Description, Valid
+		Range, and Environmental Sensing Measurement. Disable this to
+		reduce code size and runtime allocations when only the mandatory
+		data characteristics are needed.
+
+config DAWN_PROTO_NIMBLE_AIOS_DESC_USER_DESCRIPTION
+	bool "Dawn NimBLE AIOS Characteristic User Description descriptor"
+	default y
+	depends on DAWN_PROTO_NIMBLE_AIOS && DAWN_PROTO_NIMBLE_EXTENDED_METADATA
+	---help---
+		Enable AIOS Characteristic User Description descriptors (0x2901)
+		from per-binding metadata.
+
+config DAWN_PROTO_NIMBLE_AIOS_DESC_NUMBER_OF_DIGITALS
+	bool "Dawn NimBLE AIOS Number of Digitals descriptor"
+	default y
+	depends on DAWN_PROTO_NIMBLE_AIOS && DAWN_PROTO_NIMBLE_EXTENDED_METADATA
+	---help---
+		Enable AIOS Number of Digitals descriptors (0x2909) from
+		per-binding metadata.
+
+config DAWN_PROTO_NIMBLE_AIOS_DESC_VALUE_TRIGGER_SETTING
+	bool "Dawn NimBLE AIOS Value Trigger Setting descriptor"
+	default y
+	depends on DAWN_PROTO_NIMBLE_AIOS && DAWN_PROTO_NIMBLE_EXTENDED_METADATA
+	---help---
+		Enable AIOS Value Trigger Setting descriptors (0x290A) backed by
+		a referenced IO object that supplies the descriptor bytes.
+
+config DAWN_PROTO_NIMBLE_AIOS_DESC_TIME_TRIGGER_SETTING
+	bool "Dawn NimBLE AIOS Time Trigger Setting descriptor"
+	default y
+	depends on DAWN_PROTO_NIMBLE_AIOS && DAWN_PROTO_NIMBLE_EXTENDED_METADATA
+	---help---
+		Enable AIOS Time Trigger Setting descriptors (0x290E) backed by
+		a referenced IO object that supplies the descriptor bytes.
+
+config DAWN_PROTO_NIMBLE_AIOS_DESC_PRESENTATION_FORMAT
+	bool "Dawn NimBLE AIOS Characteristic Presentation Format descriptor"
+	default y
+	depends on DAWN_PROTO_NIMBLE_AIOS && DAWN_PROTO_NIMBLE_EXTENDED_METADATA
+	---help---
+		Enable AIOS Characteristic Presentation Format descriptors
+		(0x2904) from static per-binding metadata.
+
+config DAWN_PROTO_NIMBLE_AIOS_DESC_EXTENDED_PROPERTIES
+	bool "Dawn NimBLE AIOS Characteristic Extended Properties descriptor"
+	default y
+	depends on DAWN_PROTO_NIMBLE_AIOS && DAWN_PROTO_NIMBLE_EXTENDED_METADATA
+	---help---
+		Enable AIOS Characteristic Extended Properties descriptors
+		(0x2900) from static per-binding metadata.
+
+config DAWN_PROTO_NIMBLE_ESS
+	bool "Dawn NimBLE Environmental Sensing Service support"
+	default n
+	---help---
+		Enable the Environmental Sensing Service.
+
+config DAWN_PROTO_NIMBLE_ESS_DESC_USER_DESCRIPTION
+	bool "Dawn NimBLE ESS Characteristic User Description descriptor"
+	default y
+	depends on DAWN_PROTO_NIMBLE_ESS && DAWN_PROTO_NIMBLE_EXTENDED_METADATA
+	---help---
+		Enable ESS Characteristic User Description descriptors (0x2901)
+		from per-characteristic metadata.
+
+config DAWN_PROTO_NIMBLE_ESS_DESC_VALID_RANGE
+	bool "Dawn NimBLE ESS Valid Range descriptor"
+	default y
+	depends on DAWN_PROTO_NIMBLE_ESS && DAWN_PROTO_NIMBLE_EXTENDED_METADATA
+	---help---
+		Enable ESS Valid Range descriptors (0x2906) from
+		per-characteristic metadata.
+
+config DAWN_PROTO_NIMBLE_ESS_DESC_MEASUREMENT
+	bool "Dawn NimBLE ESS Measurement descriptor"
+	default y
+	depends on DAWN_PROTO_NIMBLE_ESS && DAWN_PROTO_NIMBLE_EXTENDED_METADATA
+	---help---
+		Enable ESS Measurement descriptors (0x290C) backed by referenced
+		IO objects for configurable descriptor fields.
+
+config DAWN_PROTO_NIMBLE_ESS_DESC_CONFIGURATION
+	bool "Dawn NimBLE ESS Configuration descriptor"
+	default y
+	depends on DAWN_PROTO_NIMBLE_ESS && DAWN_PROTO_NIMBLE_EXTENDED_METADATA
+	---help---
+		Enable ESS Configuration descriptors (0x290B) backed by a
+		referenced IO object that supplies descriptor bytes.
+
+config DAWN_PROTO_NIMBLE_ESS_DESC_TRIGGER_SETTING
+	bool "Dawn NimBLE ESS Trigger Setting descriptor"
+	default y
+	depends on DAWN_PROTO_NIMBLE_ESS && DAWN_PROTO_NIMBLE_EXTENDED_METADATA
+	---help---
+		Enable ESS Trigger Setting descriptors (0x290D) backed by a
+		referenced IO object that supplies descriptor bytes.
+
+config DAWN_PROTO_NIMBLE_IMDS
+	bool "Dawn NimBLE Industrial Measurement Device Service support"
+	default n
+	---help---
+		Enable the Industrial Measurement Device Service.
+
+config DAWN_PROTO_NIMBLE_IMDS_DESC_USER_DESCRIPTION
+	bool "Dawn NimBLE IMDS Characteristic User Description descriptor"
+	default y
+	depends on DAWN_PROTO_NIMBLE_IMDS && DAWN_PROTO_NIMBLE_EXTENDED_METADATA
+	---help---
+		Enable IMDS Characteristic User Description descriptors (0x2901)
+		from per-measurement metadata.
+
+config DAWN_PROTO_NIMBLE_OTS
+	bool "Dawn NimBLE Object Transfer Service support"
+	default n
+	depends on DAWN_IO_SEEKABLE
+	---help---
+		Enable the Bluetooth SIG Object Transfer Service (0x1825) for
+		bulk read/write of seekable IO objects (files, descriptor slots,
+		capability blobs). Uses GATT for control points (OACP, OLCP)
+		and an L2CAP CoC channel (PSM 0x0025) for the data path.
+
+		The service exposes one or more seekable IOs as OTS Objects.
+		IOs that are not seekable are rejected at descriptor parse time.
+
+endif # DAWN_PROTO_NIMBLE_PERIPHERAL
+
+config DAWN_PROTO_NIMBLE_DUMMY
+	bool "Dawn NimBLE dummy implementation"
+	default DAWN_TESTS
+	---help---
+		Use the dummy NimBLE backend for tests and non-BLE builds.
+
+endif # DAWN_PROTO_NIMBLE

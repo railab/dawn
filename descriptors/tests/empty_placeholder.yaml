@@ -1,0 +1,11 @@
+metadata:
+  title: Empty Placeholder Descriptor
+  version: '1.0'
+  description: >
+    Provides an empty descriptor used as a placeholder for builds that do not
+    require any configured IO, programs, or protocols.
+  os_required: []
+
+ios: []
+programs: []
+protocols: []

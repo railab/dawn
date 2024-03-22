@@ -1,0 +1,15 @@
+#
+# For a description of the syntax of this configuration file,
+# see the file kconfig-language.txt in the NuttX tools repository.
+#
+
+config DAWN_NUCLEOC092RC_OVERLAY
+	bool
+	default y
+	select ARCH_HAVE_LEDS
+	select ARCH_HAVE_BUTTONS
+	select ARCH_HAVE_IRQBUTTONS
+	select ARCH_BUTTONS
+	select ARCH_IRQBUTTONS
+	---help---
+		Enable the Dawn board overlay defaults for the Nucleo-C092RC.

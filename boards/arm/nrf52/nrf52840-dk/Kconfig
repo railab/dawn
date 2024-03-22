@@ -1,0 +1,24 @@
+#
+# For a description of the syntax of this configuration file,
+# see the file kconfig-language.txt in the NuttX tools repository.
+#
+
+config DAWN_NRF52840DK_OVERLAY
+	bool
+	default y
+	select ARCH_HAVE_LEDS
+	select ARCH_HAVE_BUTTONS
+	select ARCH_HAVE_IRQBUTTONS
+	---help---
+		Enable the Dawn nrf52840dk board overlay defaults.
+
+config NRF52840DK_BTNLEDS_GPIO
+	bool "Export board LEDS and BUTTONS as GPIO"
+	default n
+	depends on !ARCH_LEDS && !ARCH_BUTTONS && GPIO_LOWER_HALF && DEV_GPIO
+	---help---
+		Export board LEDS and buttons as GPIOs.
+
+# Include common fake drivers Kconfig
+# DAWN_BOARDS_COMMON is set by dawn/CMakeLists.txt (processed before Kconfig)
+source "$(DAWN_BOARDS_COMMON)/Kconfig"

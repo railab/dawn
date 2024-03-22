@@ -1,0 +1,39 @@
+metadata:
+  title: Minimal CAN Buttons and LEDs Demo
+  version: '1.0'
+  description: >
+    Provides a minimal CAN mapping with one writable LED output and one pushed
+    button state input.
+  os_required:
+  - /dev/can0
+  - /dev/leds0
+  - /dev/buttons0
+ios:
+- &id001
+  id: leds1
+  type: leds
+  dtype: bool
+  config:
+    device: 0
+- &id002
+  id: buttons1
+  type: buttons
+  dtype: bool
+  config:
+    device: 0
+protocols:
+- id: can_main
+  type: can
+  config:
+    node_id: 0
+    objects:
+    - type: write
+      can_id_start: 1536
+      count: 1
+      bindings:
+      - *id001
+    - type: push
+      can_id_start: 1792
+      count: 1
+      bindings:
+      - *id002

@@ -1,0 +1,27 @@
+# dawn/src/proto/serial/Kconfig
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config DAWN_PROTO_SERIAL
+	bool "Dawn Serial-simple proto support"
+	default n
+	---help---
+		Enable the binary serial protocol implementation.
+
+if DAWN_PROTO_SERIAL
+
+config DAWN_PROTO_SERIAL_PATH
+	string "Dawn Serial-simple serial port default path"
+	default "/dev/ttyS1"
+	---help---
+		Set the default serial device path.
+
+config DAWN_PROTO_SERIAL_BAUD
+	int "Dawn Serial-simple serial port default baud"
+	default 115200
+	range 1200 921600
+	---help---
+		Set the default serial baudrate.
+
+endif # DAWN_PROTO_SERIAL

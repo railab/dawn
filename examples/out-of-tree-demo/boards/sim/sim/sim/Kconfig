@@ -1,0 +1,21 @@
+#
+# examples/out-of-tree-demo/boards/sim/sim/sim/Kconfig
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config DAWN_OOT_DEMO_OVERLAY
+	bool
+	default y
+	select ARCH_HAVE_RESET
+	select BOARDCTL_UNIQUEID
+	---help---
+	  Enable the Dawn out-of-tree demo board overlay defaults.
+
+# Common fake-driver Kconfig (shared with the upstream sim board).
+source "$(DAWN_BOARDS_COMMON)/Kconfig"
+
+# User-extension Kconfig owned by the OOT project.
+source "$(DAWN_OOT_ROOT)/external/src/io/Kconfig"
+source "$(DAWN_OOT_ROOT)/external/src/prog/Kconfig"
+source "$(DAWN_OOT_ROOT)/external/src/proto/Kconfig"

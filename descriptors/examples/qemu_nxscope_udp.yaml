@@ -1,0 +1,42 @@
+metadata:
+  title: QEMU Intel64 NxScope UDP Demo
+  version: '1.0'
+  description: >
+    Streams a dummy-notify signal over NXScope UDP and exposes writable
+    channels for NXScope user extension set requests (simple and seekable).
+  os_required:
+  - eth
+  - /tmp
+ios:
+- &nx_dummy_notify1
+  id: nx_dummy_notify1
+  type: dummy_notify
+  dtype: uint32
+  config:
+    init_value: 7
+    interval_us: 50000
+- &nx_dummy_set1
+  id: nx_dummy_set1
+  type: dummy
+  dtype: int32
+  config:
+    init_value: 0
+- &nx_file_set1
+  id: nx_file_set1
+  type: fileio
+  dtype: block
+  config:
+    path: "/tmp/dawn_nxscope_udp.bin"
+    perm: 2
+protocols:
+- id: nxscope1
+  type: nxscope_udp
+  config:
+    iobind2:
+    - id: nx_dummy_notify1
+      name: a
+    - id: nx_dummy_set1
+      name: b
+    - id: nx_file_set1
+      name: f
+    port: 50000

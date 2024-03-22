@@ -1,0 +1,31 @@
+metadata:
+  title: NTFC NimBLE custom service target
+  version: '1.0'
+  description: >
+    NTFC descriptor dedicated to validating descriptor-declared generic
+    NimBLE custom services on nrf52840-dk.
+  os_required:
+  - ble
+ios:
+- &id_dummy
+  id: dummyio1
+  type: dummy
+  dtype: uint32
+  config:
+    init_value: 1234
+protocols:
+- id: nimble1
+  type: nimble
+  config:
+    gap_name: ntfc-nimx
+    services:
+      dis:
+        enabled: true
+      custom:
+      - uuid: 12345678-1234-5678-1234-56789abcdef0
+        characteristics:
+        - uuid: 12345678-1234-5678-1234-56789abcdef1
+          io: *id_dummy
+          flags:
+          - read
+          - write

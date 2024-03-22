@@ -1,0 +1,156 @@
+metadata:
+  title: NimBLE GPIO and Analog Demo
+  version: '1.0'
+  description: >
+    Exposes digital inputs, digital outputs, and simple analog values over
+    NimBLE services using a mixed GPIO and dummy IO layout.
+  os_required:
+  - /dev/gpio0
+  - /dev/gpio1
+  - /dev/gpio2
+  - /dev/gpio3
+  - /dev/gpio4
+  - /dev/gpio5
+  - /dev/gpio6
+  - /dev/gpio7
+  - ble
+
+ios:
+- &battery_level_io
+  id: dummyio1
+  type: dummy_notify
+  dtype: uint8
+  config:
+    init_value: 42
+    interval_us: 20000
+- &analog_input_io
+  id: dummyio2
+  type: dummy
+  dtype: float
+  config:
+    init_value: -1.1
+- &ess_temperature_io
+  id: dummyio3
+  type: dummy
+  dtype: float
+  config:
+    init_value: -1.1
+- &ess_humidity_io
+  id: dummyio4
+  type: dummy
+  dtype: float
+  config:
+    init_value: 2.2
+- &ess_pressure_io
+  type: dummy
+  id: dummyio5
+  dtype: float
+  config:
+    init_value: 3.3
+- &imds_temperature_io
+  id: dummyio6
+  type: dummy
+  dtype: float
+  config:
+    init_value: 4.4
+- &imds_humidity_io
+  id: dummyio7
+  type: dummy
+  dtype: float
+  config:
+    init_value: 5.5
+- &imds_pressure_io
+  id: dummyio8
+  type: dummy
+  dtype: float
+  config:
+    init_value: 6.6
+- &aios_gpi1
+  id: gpi1
+  type: gpi
+  dtype: bool
+  config:
+    device: 0
+- &aios_gpi2
+  id: gpi2
+  type: gpi
+  dtype: bool
+  config:
+    device: 1
+- &aios_gpi3
+  id: gpi3
+  type: gpi
+  dtype: bool
+  config:
+    device: 2
+- &aios_gpi4
+  id: gpi4
+  type: gpi
+  dtype: bool
+  config:
+    device: 3
+- &aios_gpo1
+  id: gpo1
+  type: gpo
+  dtype: bool
+  config:
+    device: 4
+- &aios_gpo2
+  id: gpo2
+  type: gpo
+  dtype: bool
+  config:
+    device: 5
+- &aios_gpo3
+  id: gpo3
+  type: gpo
+  dtype: bool
+  config:
+    device: 6
+- &aios_gpo4
+  id: gpo4
+  type: gpo
+  dtype: bool
+  config:
+    device: 7
+protocols:
+- id: nimble1
+  type: nimble
+  config:
+    gap_name: bcddfgh
+    services:
+      dis:
+        enabled: true
+      bas:
+        battery_level: *battery_level_io
+      aios:
+        groups:
+        - digital_inputs:
+          - *aios_gpi1
+          - *aios_gpi2
+          - *aios_gpi3
+          - *aios_gpi4
+          digital_outputs:
+          - *aios_gpo1
+          - *aios_gpo2
+          - *aios_gpo3
+          - *aios_gpo4
+        - analog_inputs:
+          - *analog_input_io
+      ess:
+        characteristics:
+        - type: temperature
+          data: *ess_temperature_io
+          metadata:
+            user_description: "temperature"
+            valid_range:
+              min: 4294963296
+              max: 8500
+        - type: humidity
+          data: *ess_humidity_io
+        - type: pressure
+          data: *ess_pressure_io
+      imds:
+        temperature: *imds_temperature_io
+        humidity: *imds_humidity_io
+        pressure: *imds_pressure_io

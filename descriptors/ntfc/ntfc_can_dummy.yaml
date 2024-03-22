@@ -1,0 +1,138 @@
+metadata:
+  title: CAN Dummy IO Demo
+  version: '1.0'
+  description: >
+    Provides CAN read, write, indexed, and segmented access to demo IO objects,
+    with shell inspection available on the same device.
+  os_required:
+  - /dev/can0
+  - /dev/urandom
+vars:
+  can_id:
+    kconfig: CONFIG_DAWN_PROTO_CAN_NODEID
+ios:
+- &id001
+  id: can_dummyio1
+  type: dummy
+  dtype: bool
+- &id002
+  id: can_dummyio2
+  type: dummy
+  dtype: bool
+- &id003
+  id: can_dummyio3
+  type: dummy
+  dtype: bool
+- &id004
+  id: can_dummyio4
+  type: dummy
+  dtype: uint16
+- &id005
+  id: can_dummyio5
+  type: dummy
+  dtype: uint16
+- &id006
+  id: can_dummyio6
+  type: dummy
+  dtype: uint16
+- &id007
+  id: can_dummyio7
+  type: dummy
+  dtype: uint32
+- &id008
+  id: can_dummyio8
+  type: dummy
+  dtype: uint64
+- &id009
+  id: can_timestamp_io1
+  type: timestamp
+  dtype: uint64
+  timestamp: false
+  tags:
+  - heartbeat
+  config:
+    interval_us: 1000000
+- &id010
+  id: can_rand_io1
+  type: rand
+  dtype: uint64
+  timestamp: false
+- &id011
+  id: descriptor1
+  type: descriptor
+  dtype: uint32
+- &id012
+  id: can_fileio1
+  type: fileio
+  dtype: block
+  config:
+    path: "/data/dawn_can_fileio.bin"
+    perm: 2
+programs: []
+protocols:
+- id: shell_debug
+  type: shell
+  bindings:
+  - *id001
+  - *id002
+  - *id003
+  - *id004
+  - *id005
+  - *id006
+  - *id007
+  - *id008
+  - *id009
+  - *id010
+  - *id011
+- id: can_main
+  type: can
+  config:
+    node_id: ${can_id}
+    objects:
+    - type: push
+      can_id_start: 0
+      bindings:
+      - *id009
+    - type: read
+      can_id_start: 0x50
+      bindings:
+      - *id010
+    - type: read
+      can_id_start: 0x100
+      bindings:
+      - *id005
+      - *id006
+      - *id007
+    - type: write
+      can_id_start: 0x150
+      bindings:
+      - *id001
+      - *id002
+      - *id003
+      - *id004
+      - *id005
+      - *id006
+      - *id007
+    - type: read_seg
+      can_id_start: 0x160
+      bindings:
+      - *id008
+      - *id011
+      - *id012
+    - type: write_seg
+      can_id_start: 0x170
+      bindings:
+      - *id008
+      - *id012
+    - type: read_indexed
+      can_id_start: 0x180
+      bindings:
+      - *id001
+      - *id002
+      - *id003
+    - type: write_indexed
+      can_id_start: 0x190
+      bindings:
+      - *id001
+      - *id002
+      - *id003

@@ -1,0 +1,58 @@
+name: Docker QA
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Nightly at 02:00 UTC.
+    - cron: "0 2 * * *"
+
+permissions:
+  contents: read
+  packages: read
+
+concurrency:
+  group: docker-qa-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  IMAGE_NAME: ghcr.io/${{ github.repository }}/dawn-container
+
+jobs:
+  dawnpy-tests:
+    name: dawnpy-tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pull Dawn container
+        run: |
+          docker pull "${IMAGE_NAME}:latest"
+          docker tag "${IMAGE_NAME}:latest" dawn-container:latest
+
+      - name: Load host kernel modules
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y \
+            "linux-modules-extra-$(uname -r)"
+          sudo modprobe can
+          sudo modprobe vcan
+          sudo modprobe can_raw
+          sudo modprobe tun
+          lsmod | grep -E '^(can|vcan|can_raw|tun)\b'
+
+      - name: Run dawnpy-tests in Docker
+        env:
+          DAWN_DOCKER_QA_JOBS: "2"
+        run: tools/docker/run-qa.sh --local

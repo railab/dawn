@@ -1,0 +1,408 @@
+metadata:
+  title: Blinky Buttons Demo - Extended (4 modes, 4 buttons)
+  version: "2.0"
+  no_idle_quit: true
+  description: >
+    Extended blinky demo: 4 buttons control 4 LED modes on 4 LEDs.
+    No protocols - all logic managed by interconnected programs.
+    Button 1 start/stop, Button 2 cycle mode, Buttons 3/4 adjust params.
+
+    Expected behavior on nrf52840-dk (4 buttons, 4 LEDs):
+
+    Power-on: All LEDs OFF. Mode 0 (blink-all) selected, not running.
+
+    Button 1 (start/stop): Press to start blinking in current mode.
+    Press again to stop (all LEDs off). State toggles each press.
+
+    Button 2 (cycle mode): Each press advances:
+      Mode 0 -> all 4 LEDs blink together, 500ms on/off.
+      Mode 1 -> LEDs light one-at-a-time cycling left-to-right, 300ms each.
+      Mode 2 -> one selected LED blinks, 200ms on/off by default.
+      Mode 3 -> one selected LED stays constantly ON. Press Button 2 again
+                to return to Mode 0.
+
+    Button 3 (param1): Selects the active LED for Mode 2 and Mode 3.
+    Mode 2 and Mode 3 keep separate selections, so changing one does not
+    change the other. Selection cycles LED0->LED1->LED2->LED3->LED0.
+
+    Button 4 (frequency): Adjusts blink speed in visible steps.
+    Each press changes dwell time for blinking modes 0, 1, and 2:
+    750ms -> 1000ms -> 250ms -> 500ms.
+  os_required:
+    - /dev/buttons0
+    - /dev/leds0
+
+# Data-flow overview:
+#
+#   /dev/buttons0
+#       |
+#       v
+#   bitsplit --> virt_btn0 --> toggle_run -----> virt_running
+#            \-> virt_btn1 --> counter_mode ---> virt_mode
+#            \-> virt_btn2 --> counter_p1_mode2 --(1 << n)--> cfg_mode2_led_on
+#            |                  enabled only when virt_mode == 2
+#            \-> virt_btn2 --> counter_p1 ------(1 << n)--> virt_seq3
+#                               enabled only when virt_mode == 3
+#            \-> virt_btn3 --> counter_p2 ------> dwell configs for modes 0..2
+#
+#   selector_modes chooses one mode value:
+#     virt_mode 0 -> virt_seq0  (all LEDs blink)
+#     virt_mode 1 -> virt_seq1  (one-by-one chase)
+#     virt_mode 2 -> virt_seq2  (selected LED blinks)
+#     virt_mode 3 -> virt_seq3  (selected LED constant on)
+#
+#   selector_leds gates that mode value with virt_running:
+#     stopped -> virt_led_off
+#     running -> virt_mode_value -> /dev/leds0
+
+ios:
+  - &btns
+    id: buttons0
+    type: buttons
+    dtype: uint32
+    config: {device: 0}
+  - &leds
+    id: leds0
+    type: leds
+    dtype: uint32
+    config: {device: 0, init_val: 0}
+
+  - id: virt_btn0
+    type: virt
+    dtype: bool
+  - id: virt_btn1
+    type: virt
+    dtype: bool
+  - id: virt_btn2
+    type: virt
+    dtype: bool
+  - id: virt_btn3
+    type: virt
+    dtype: bool
+  - id: virt_running
+    type: virt
+    dtype: uint32
+  - id: virt_mode
+    type: virt
+    dtype: uint32
+  - id: virt_p1
+    type: virt
+    dtype: uint32
+
+  # Separate Mode 2 and Mode 3 LED selectors are intentional. They avoid
+  # Button 3 changing a hidden future mode while the user is in the other mode.
+  - id: virt_p1_mode2
+    type: virt
+    dtype: uint32
+  - id: virt_p2
+    type: virt
+    dtype: uint32
+  - id: virt_mode2_led
+    type: virt
+    dtype: uint32
+  - id: virt_led_off
+    type: virt
+    dtype: uint32
+  - id: virt_mode_value
+    type: virt
+    dtype: uint32
+  - id: virt_seq0
+    type: virt
+    dtype: uint32
+  - id: virt_seq1
+    type: virt
+    dtype: uint32
+  - id: virt_seq2
+    type: virt
+    dtype: uint32
+  - id: virt_seq3
+    type: virt
+    dtype: uint32
+
+  - id: ctrl_counter_p1
+    type: control
+    config:
+      targets: [counter_p1]
+      allowed: [start, stop]
+  - id: ctrl_counter_p1_mode2
+    type: control
+    config:
+      targets: [counter_p1_mode2]
+      allowed: [start, stop]
+
+  - id: cfg_dwell_on
+    type: config
+    dtype: uint32
+    rw: true
+    config:
+      objid_ref: sequencer_mode0
+      objcfg_ref: states
+      offset: 1
+      size: 1
+
+  - id: cfg_dwell_off
+    type: config
+    dtype: uint32
+    rw: true
+    config:
+      objid_ref: sequencer_mode0
+      objcfg_ref: states
+      offset: 3
+      size: 1
+
+  - id: cfg_dwell_m1a
+    type: config
+    dtype: uint32
+    rw: true
+    config:
+      objid_ref: sequencer_mode1
+      objcfg_ref: states
+      offset: 1
+      size: 1
+
+  - id: cfg_dwell_m1b
+    type: config
+    dtype: uint32
+    rw: true
+    config:
+      objid_ref: sequencer_mode1
+      objcfg_ref: states
+      offset: 3
+      size: 1
+
+  - id: cfg_dwell_m1c
+    type: config
+    dtype: uint32
+    rw: true
+    config:
+      objid_ref: sequencer_mode1
+      objcfg_ref: states
+      offset: 5
+      size: 1
+
+  - id: cfg_dwell_m1d
+    type: config
+    dtype: uint32
+    rw: true
+    config:
+      objid_ref: sequencer_mode1
+      objcfg_ref: states
+      offset: 7
+      size: 1
+
+  - id: cfg_dwell_m2a
+    type: config
+    dtype: uint32
+    rw: true
+    config:
+      objid_ref: sequencer_mode2
+      objcfg_ref: states
+      offset: 1
+      size: 1
+
+  - id: cfg_dwell_m2b
+    type: config
+    dtype: uint32
+    rw: true
+    config:
+      objid_ref: sequencer_mode2
+      objcfg_ref: states
+      offset: 3
+      size: 1
+
+  - id: cfg_mode2_led_on
+    type: config
+    dtype: uint32
+    rw: true
+    config:
+      objid_ref: sequencer_mode2
+      objcfg_ref: states
+      # Update only the ON value of the [selected-led, off] blink sequence.
+      offset: 0
+      size: 1
+
+programs:
+  - id: bitsplit
+    type: bitsplit
+    config:
+      inputs:
+        - buttons0
+        - buttons0
+        - buttons0
+        - buttons0
+      outputs:
+        - virt_btn0
+        - virt_btn1
+        - virt_btn2
+        - virt_btn3
+      bits: [0, 1, 2, 3]
+
+  - id: toggle_run
+    type: toggle
+    config:
+      inputs: [virt_btn0]
+      outputs: [virt_running]
+      values: [0, 1]
+
+  - id: counter_mode
+    type: counter
+    config:
+      inputs: [virt_btn1]
+      outputs: [virt_mode]
+      params: [0, 3, 1, 0]
+
+  - id: counter_p1
+    type: counter
+    config:
+      inputs: [virt_btn2]
+      outputs: [virt_p1]
+      params: [0, 3, 1, 0]
+
+  # Button 3 controls Mode 2 and Mode 3, but those modes keep independent
+  # selected LED state. Both counters consume the same physical button and are
+  # started/stopped by mode-specific switches below.
+  - id: counter_p1_mode2
+    type: counter
+    config:
+      inputs: [virt_btn2]
+      outputs: [virt_p1_mode2]
+      params: [0, 3, 1, 0]
+
+  # Enable the Mode 2 selected-LED counter only while Mode 2 is selected.
+  - id: switch_counter_p1_mode2
+    type: switch
+    config:
+      inputs:
+        - io: virt_mode
+          match: 2
+      target: [ctrl_counter_p1_mode2, 1, 0]
+
+  # Enable the Mode 3 selected-LED counter only while Mode 3 is selected.
+  - id: switch_counter_p1_mode3
+    type: switch
+    config:
+      inputs:
+        - io: virt_mode
+          match: 3
+      target: [ctrl_counter_p1, 1, 0]
+
+  # Mode 3 is constant-on, so the selected LED can be written directly to
+  # virt_seq3. The selector below forwards it only when virt_mode == 3.
+  - id: expression_mode3_led
+    type: expression
+    config:
+      sources: [virt_p1]
+      outputs: [virt_seq3]
+      op: [2, 1]
+
+  # Mode 2 blinks [selected LED, off]. This computes the selected LED mask,
+  # then redirect_mode2_led_on writes it into sequencer_mode2's first state.
+  - id: expression_mode2_led
+    type: expression
+    config:
+      sources: [virt_p1_mode2]
+      outputs: [virt_mode2_led]
+      op: [2, 1]
+
+  - id: counter_p2
+    type: counter
+    config:
+      inputs: [virt_btn3]
+      outputs: [virt_p2]
+      params: [250000, 1000000, 250000, 500000]
+
+  # Fan out runtime parameters to ConfigIO targets. This must be after
+  # counter_p2, because redirect sources must already be initialized with
+  # notification support when this program is initialized.
+  #
+  #   virt_mode2_led -> sequencer_mode2 state[0] selected LED mask
+  #   virt_p2        -> dwell fields for blinking modes 0, 1, and 2
+  - id: redirect_params
+    type: redirect
+    config:
+      sources:
+        - virt_mode2_led
+        - virt_p2
+        - virt_p2
+        - virt_p2
+        - virt_p2
+        - virt_p2
+        - virt_p2
+        - virt_p2
+        - virt_p2
+      outputs:
+        - cfg_mode2_led_on
+        - cfg_dwell_on
+        - cfg_dwell_off
+        - cfg_dwell_m1a
+        - cfg_dwell_m1b
+        - cfg_dwell_m1c
+        - cfg_dwell_m1d
+        - cfg_dwell_m2a
+        - cfg_dwell_m2b
+
+  - id: sequencer_off
+    type: sequencer
+    config:
+      targets: [virt_led_off]
+      states:
+        - value: 0
+          dwell_us: 1000000
+      start_index: 0
+
+  - id: sequencer_mode0
+    type: sequencer
+    config:
+      targets: [virt_seq0]
+      states:
+        - value: 0
+          dwell_us: 500000
+        - value: 15
+          dwell_us: 500000
+      start_index: 0
+
+  - id: sequencer_mode1
+    type: sequencer
+    config:
+      targets: [virt_seq1]
+      states:
+        - value: 1
+          dwell_us: 300000
+        - value: 2
+          dwell_us: 300000
+        - value: 4
+          dwell_us: 300000
+        - value: 8
+          dwell_us: 300000
+      start_index: 0
+
+  - id: sequencer_mode2
+    type: sequencer
+    config:
+      targets: [virt_seq2]
+      states:
+        - value: 1
+          dwell_us: 200000
+        - value: 0
+          dwell_us: 200000
+      start_index: 0
+
+  # Route the currently selected mode to a common mode-value virt.
+  - id: selector_modes
+    type: selector
+    config:
+      control: [virt_mode]
+      data: [virt_seq0, virt_seq1, virt_seq2, virt_seq3]
+      target: [virt_mode_value]
+
+  # Button 1 start/stop gate. Stopped forces LEDs off; running forwards the
+  # currently selected mode value.
+  - id: selector_leds
+    type: selector
+    config:
+      control: [virt_running]
+      data: [virt_led_off, virt_mode_value]
+      target: [leds0]
+
+
+protocols: []

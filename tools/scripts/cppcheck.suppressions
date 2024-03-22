@@ -1,0 +1,17 @@
+# Third-party NuttX headers are parsed without the full NuttX compiler context.
+syntaxError:external/nuttx/include/nuttx/lib/math32.h
+syntaxError:external/nuttx/include/string.h
+dangerousTypeCast:external/nuttx/include/sys/socket.h
+
+# Dawn intentionally uses stack storage here to avoid runtime heap allocation.
+allocaCalled:dawn/src/io/config.cxx
+
+# io_ddata_t is a typed view over an aligned byte buffer by design.
+invalidPointerCast:dawn/include/dawn/io/ddata.hxx
+
+# Dawn objects call their own deinit() from destructors as part of the
+# framework lifecycle. Dynamic dispatch during destruction is not required.
+virtualCallInConstructor:dawn/include/dawn/io/*.hxx
+virtualCallInConstructor:dawn/include/dawn/prog/*.hxx
+virtualCallInConstructor:dawn/include/dawn/proto/*.hxx
+virtualCallInConstructor:dawn/include/dawn/proto/*/*.hxx

@@ -1,0 +1,21 @@
+# dawn/src/proto/udp/Kconfig
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config DAWN_PROTO_UDP
+	bool "Dawn UDP-simple proto support"
+	default n
+	---help---
+		Enable the UDP transport for the binary Dawn protocol.
+
+if DAWN_PROTO_UDP
+
+config DAWN_PROTO_UDP_PORT
+	int "Dawn UDP-simple local port"
+	default 50000
+	range 1 65535
+	---help---
+		Set the default local UDP port.
+
+endif # DAWN_PROTO_UDP

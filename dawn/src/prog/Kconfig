@@ -1,0 +1,317 @@
+#
+# For a description of the syntax of this configuration file,
+# see the file kconfig-language.txt in the NuttX tools repository.
+#
+
+config DAWN_PROG
+	bool "Dawn program support"
+	depends on DAWN_IO
+	default n
+	---help---
+		Enable support for Dawn Programs.
+
+config DAWN_PROG_PROCESS
+	bool
+	default n
+	---help---
+		Internal helper selected by notify-driven processing programs.
+
+config DAWN_PROG_THRESHOLD_ANY
+	bool
+	default n
+	---help---
+		Internal helper selected by threshold-family programs.
+
+if DAWN_PROG
+
+config DAWN_PROG_ADJUST
+	bool "Dawn program adjust support"
+	default n
+	depends on DAWN_IO_VIRT
+	depends on DAWN_DTYPE_INT32
+	depends on DAWN_DTYPE_UINT32
+	---help---
+		Enable the Adjust program for linear value scaling.
+
+config DAWN_PROG_DUMMY
+	bool "Dawn program dummy support"
+	depends on DAWN_IO_VIRT
+	default n
+	---help---
+		Enable a no-op Dummy Program used for testing factory creation and
+		as a descriptor binding placeholder.
+
+config DAWN_PROG_GATEWAY
+	bool "Dawn program gateway support"
+	depends on DAWN_IO_VIRT
+	default n
+	---help---
+		Enable support for the Gateway program, which bridges two Virtual
+		I/O objects so that different protocols can share the same IO state.
+		Supports both write-propagation (notify) and on-demand fetch access.
+
+config DAWN_PROG_LATEST
+	bool "Dawn program latest cache support"
+	default n
+	select DAWN_PROG_PROCESS
+	depends on DAWN_IO_NOTIFY && DAWN_IO_VIRT
+	---help---
+		Enable support for the Latest program, which caches the latest
+		notified sample into a Virtual I/O for fetch-based readers.
+
+config DAWN_PROG_REDIRECT
+	bool "Dawn program redirect support"
+	depends on DAWN_IO_VIRT && DAWN_IO_NOTIFY
+	default n
+	---help---
+		Enable support for the Redirect program, which routes data from
+		notify-capable input IOs to output IOs. Use the Sampling program
+		when fetch-based polling is needed.
+
+config DAWN_PROG_MOVING_AVG
+	bool "Dawn program moving average filter support"
+	default n
+	select DAWN_PROG_PROCESS
+	depends on DAWN_IO_VIRT && DAWN_IO_NOTIFY
+	depends on DAWN_DTYPE_NUMERIC
+	---help---
+		Enable support for a notify-driven moving average filter program.
+
+config DAWN_PROG_IIR_FILTER
+	bool "Dawn program IIR filter support"
+	default n
+	select DAWN_PROG_PROCESS
+	depends on DAWN_IO_VIRT && DAWN_IO_NOTIFY
+	depends on DAWN_DTYPE_NUMERIC
+	---help---
+		Enable support for a notify-driven first-order IIR filter program.
+
+config DAWN_PROG_THRESHOLD
+	bool "Dawn program threshold comparator support"
+	default n
+	select DAWN_PROG_PROCESS
+	select DAWN_PROG_THRESHOLD_ANY
+	depends on DAWN_IO_VIRT && DAWN_IO_NOTIFY
+	depends on DAWN_DTYPE_NUMERIC
+	depends on DAWN_DTYPE_BOOL
+	---help---
+		Enable support for a notify-driven threshold comparator program.
+
+config DAWN_PROG_THRESHOLD_VALUE
+	bool "Dawn program threshold value comparator support"
+	default n
+	select DAWN_PROG_PROCESS
+	select DAWN_PROG_THRESHOLD_ANY
+	depends on DAWN_IO_VIRT && DAWN_IO_NOTIFY
+	depends on DAWN_DTYPE_NUMERIC
+	depends on DAWN_DTYPE_BOOL
+	---help---
+		Enable support for a notify-driven threshold comparator that
+		emits source values only when the alert condition is active.
+
+config DAWN_PROG_BUFFER
+	bool "Dawn program history buffer support"
+	default n
+	depends on DAWN_IO_VIRT && DAWN_IO_NOTIFY
+	---help---
+		Enable support for a notify-driven history buffer with selector
+		and status channels exposed via virtual IOs.
+
+config DAWN_PROG_STATS_MIN
+	bool "Dawn program stats min support"
+	default n
+	select DAWN_PROG_PROCESS
+	depends on DAWN_IO_VIRT && DAWN_IO_NOTIFY
+	depends on DAWN_DTYPE_NUMERIC
+	---help---
+		Enable the stats-min program.
+
+config DAWN_PROG_STATS_MAX
+	bool "Dawn program stats max support"
+	default n
+	select DAWN_PROG_PROCESS
+	depends on DAWN_IO_VIRT && DAWN_IO_NOTIFY
+	depends on DAWN_DTYPE_NUMERIC
+	---help---
+		Enable the stats-max program.
+
+config DAWN_PROG_STATS_AVG
+	bool "Dawn program stats avg support"
+	default n
+	select DAWN_PROG_PROCESS
+	depends on DAWN_IO_VIRT && DAWN_IO_NOTIFY
+	depends on DAWN_DTYPE_NUMERIC
+	---help---
+		Enable the stats-average program.
+
+config DAWN_PROG_STATS_SUM
+	bool "Dawn program stats sum support"
+	default n
+	select DAWN_PROG_PROCESS
+	depends on DAWN_IO_VIRT && DAWN_IO_NOTIFY
+	depends on DAWN_DTYPE_NUMERIC
+	---help---
+		Enable the stats-sum program.
+
+config DAWN_PROG_STATS_COUNT
+	bool "Dawn program stats count support"
+	default n
+	select DAWN_PROG_PROCESS
+	depends on DAWN_IO_VIRT && DAWN_IO_NOTIFY
+	depends on DAWN_DTYPE_NUMERIC
+	---help---
+		Enable the stats-count program.
+
+config DAWN_PROG_STATS_RMS
+	bool "Dawn program stats rms support"
+	default n
+	select DAWN_PROG_PROCESS
+	depends on DAWN_IO_VIRT && DAWN_IO_NOTIFY
+	depends on DAWN_DTYPE_NUMERIC
+	---help---
+		Enable the stats-RMS program.
+
+config DAWN_PROG_SAMPLING
+	bool "Dawn program sampling"
+	depends on DAWN_IO_VIRT
+	default n
+	---help---
+		Enable the Sampling program for periodic fetch-based processing.
+
+if DAWN_PROG_SAMPLING
+
+config DAWN_PROG_SAMPLING_INTERVAL
+	int "Dawn sampling default interval (microseconds)"
+	default 1000
+	---help---
+		Default sampling interval in microseconds used when no interval
+		is specified in the descriptor.
+
+endif # DAWN_PROG_SAMPLING
+
+config DAWN_PROG_SEQUENCER
+	bool "Dawn program sequencer"
+	default n
+	---help---
+		Enable a generic state sequencer program that periodically applies
+		configured values to writable output IOs.
+
+config DAWN_PROG_BITSPLIT
+	bool "Dawn program bit splitter"
+	default n
+	select DAWN_PROG_PROCESS
+	depends on DAWN_IO_VIRT && DAWN_IO_NOTIFY
+	depends on DAWN_DTYPE_UINT32
+	---help---
+		Enable the BitSplit program, which demultiplexes individual bits
+		from a uint32 input into separate virtual IO outputs.
+
+config DAWN_PROG_TOGGLE
+	bool "Dawn program toggle"
+	default n
+	select DAWN_PROG_PROCESS
+	depends on DAWN_IO_VIRT && DAWN_IO_NOTIFY
+	depends on DAWN_DTYPE_UINT32
+	---help---
+		Enable the Toggle program, which flips output between two values
+		on each rising edge of the input.
+
+config DAWN_PROG_COUNTER
+	bool "Dawn program counter"
+	default n
+	select DAWN_PROG_PROCESS
+	depends on DAWN_IO_VIRT && DAWN_IO_NOTIFY
+	depends on DAWN_DTYPE_UINT32
+	---help---
+		Enable the Counter program, which increments a wrapped counter
+		on each rising edge of the input.
+
+config DAWN_PROG_SWITCH
+	bool "Dawn program switch"
+	default n
+	depends on DAWN_IO_VIRT && DAWN_IO_NOTIFY
+	depends on DAWN_DTYPE_UINT32
+	---help---
+		Enable the Switch program, a multi-input AND-gate that writes
+		on/off commands to a target IO when all control inputs match.
+
+config DAWN_PROG_EXPRESSION
+	bool "Dawn program expression"
+	default n
+	select DAWN_PROG_PROCESS
+	depends on DAWN_IO_VIRT && DAWN_IO_NOTIFY
+	depends on DAWN_DTYPE_UINT32
+	---help---
+		Enable the Expression program, which applies arithmetic
+		operations (shift, add, sub) to input values with a constant.
+
+config DAWN_PROG_SELECTOR
+	bool "Dawn program selector"
+	default n
+	depends on DAWN_IO_VIRT && DAWN_IO_NOTIFY
+	depends on DAWN_DTYPE_UINT32
+	---help---
+		Enable the Selector program, which routes one of N data virtIO
+		inputs to a target IO based on a control value.
+
+config DAWN_PROG_BITPACK
+	bool "Dawn program bit packer"
+	default n
+	depends on DAWN_IO_VIRT && DAWN_IO_NOTIFY
+	depends on DAWN_DTYPE_UINT32
+	---help---
+		Enable the BitPack program, which combines multiple boolean
+		virtIO inputs into a single uint32 bitmask output (inverse of
+		BitSplit).
+
+config DAWN_PROG_VECPACK
+	bool "Dawn program vector packer"
+	default n
+	depends on DAWN_IO_VIRT && DAWN_IO_NOTIFY
+	---help---
+		Enable the VecPack program, which combines multiple IO values
+		into one multidimensional output IO.
+
+config DAWN_PROG_VECSPLIT
+	bool "Dawn program vector splitter"
+	default n
+	depends on DAWN_IO_VIRT && DAWN_IO_NOTIFY
+	---help---
+		Enable the VecSplit program, which splits one multidimensional
+		input IO into multiple output IO values.
+
+config DAWN_PROG_MANYTOONE
+	bool "Dawn program many-to-one bridge"
+	default n
+	depends on DAWN_IO_VIRT && DAWN_IO_NOTIFY
+	---help---
+		Enable a bridge that forwards the last changed input IO to one
+		output IO.
+
+config DAWN_PROG_ONETOMANY
+	bool "Dawn program one-to-many bridge"
+	default n
+	depends on DAWN_IO_VIRT && DAWN_IO_NOTIFY
+	---help---
+		Enable a bridge that forwards one input IO to many output IOs.
+
+config DAWN_PROG_IOMUX
+	bool "Dawn program IO multiplexer"
+	default n
+	depends on DAWN_IO_VIRT && DAWN_IO_NOTIFY
+	depends on DAWN_DTYPE_UINT32
+	---help---
+		Enable a scalar-control IO multiplexer that routes one selected
+		input IO to one output IO.
+
+config DAWN_PROG_IODEMUX
+	bool "Dawn program IO demultiplexer"
+	default n
+	depends on DAWN_IO_VIRT && DAWN_IO_NOTIFY
+	depends on DAWN_DTYPE_UINT32
+	---help---
+		Enable a scalar-control IO demultiplexer that routes one input IO
+		to one selected output IO.
+
+
+endif # DAWN_PROG

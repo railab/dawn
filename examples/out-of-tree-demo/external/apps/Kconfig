@@ -1,0 +1,7 @@
+#
+# examples/out-of-tree-demo/external/apps/Kconfig
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+source "$(DAWN_OOT_ROOT)/external/apps/hello_oot/Kconfig"

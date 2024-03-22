@@ -1,0 +1,28 @@
+# dawn/src/proto/ipc/Kconfig
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config DAWN_PROTO_IPC
+	bool "Dawn IPC-simple proto support"
+	default n
+	depends on PIPES
+	---help---
+		Enable the FIFO-based local IPC transport for the binary Dawn
+		protocol.
+
+if DAWN_PROTO_IPC
+
+config DAWN_PROTO_IPC_RX_PATH
+	string "Dawn IPC receive FIFO default path"
+	default "/var/pipe/dawn_rx"
+	---help---
+		Set the default FIFO path used by Dawn to receive commands.
+
+config DAWN_PROTO_IPC_TX_PATH
+	string "Dawn IPC transmit FIFO default path"
+	default "/var/pipe/dawn_tx"
+	---help---
+		Set the default FIFO path used by Dawn to send responses.
+
+endif # DAWN_PROTO_IPC

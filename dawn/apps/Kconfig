@@ -1,0 +1,10 @@
+#
+# For a description of the syntax of this configuration file,
+# see the file kconfig-language.txt in the NuttX tools repository.
+#
+
+source "$APPSDIR/external/apps/dawn/Kconfig"
+
+# Optional Dawn app-extension Kconfig. dawnpy may export this to point at
+# a project-provided app registry before the first Kconfig pass runs.
+orsource "$(DAWN_EXTENSION_APPS_KCONFIG)"

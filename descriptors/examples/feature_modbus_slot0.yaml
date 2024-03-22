@@ -1,0 +1,98 @@
+metadata:
+  title: Feature Demo - Modbus RTU Bootstrap (slot 0)
+  version: '0.1'
+  user_string: feature_modbus_slot0
+  description: >
+    Board-agnostic Modbus RTU bootstrap descriptor. Exposes ADC and PWM
+    plus the descriptor slots and selector so a host can upload and
+    activate the full feature descriptor (slot 1) at runtime. Uses the
+    canonical NuttX serial path /dev/ttyS1 - real boards register USART1
+    there directly; the sim board aliases /dev/ttyS1 to its host PTY via
+    DAWN_SIM_TTY_ALIAS.
+  os_required:
+  - /dev/ttyS1
+  - /dev/adc0
+  - /dev/pwm0
+
+ios:
+- &descriptor0
+  id: descriptor0
+  type: descriptor
+  dtype: uint32
+  config:
+    device: 0
+
+- &descriptor1
+  id: descriptor1
+  type: descriptor
+  dtype: uint32
+  config:
+    device: 1
+
+- &descselector0
+  id: descselector0
+  type: descselector
+  dtype: uint32
+
+- &capabilities0
+  id: capabilities0
+  type: capabilities
+  dtype: block
+
+- &adc0
+  id: adc0
+  type: adc_fetch
+  dtype: uint32
+  config:
+    device: 0
+
+- &pwm0
+  id: pwm0
+  type: pwm
+  dtype: uint32
+  config:
+    device: 0
+
+protocols:
+- id: modbus0
+  type: modbus_rtu
+  bindings:
+  - *descriptor0
+  - *descriptor1
+  - *descselector0
+  - *capabilities0
+  - *adc0
+  - *pwm0
+  config:
+    path: /dev/ttyS1
+    baudrate: 115200
+    registers:
+    # Input registers (RO 16-bit)
+    - type: input
+      config: 0
+      start: 0x0200
+      bindings:
+      - *adc0
+    # Holding registers (RW 16-bit)
+    - type: holding
+      config: 0
+      start: 0x0300
+      bindings:
+      - *pwm0
+      - *descselector0
+    # Seekable windows - block IO surfaces
+    - type: seekable
+      config: 256
+      start: 0x1000
+      bindings:
+      - *descriptor0
+    - type: seekable
+      config: 256
+      start: 0x1100
+      bindings:
+      - *descriptor1
+    - type: seekable
+      config: 64
+      start: 0x1200
+      bindings:
+      - *capabilities0

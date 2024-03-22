@@ -1,0 +1,13 @@
+/build*
+/result*
+/external
+*~
+.gdb_history
+cppcheck-build-dir
+cppcheck.txt
+GPATH
+GRTAGS
+GTAGS
+pytest.debug.log
+*__pycache__*
+tools/dawnpy-gui

@@ -1,0 +1,143 @@
+#
+# For a description of the syntax of this configuration file,
+# see the file kconfig-language.txt in the NuttX tools repository.
+#
+# NOTE: This file serves as the canonical source for fake driver Kconfig
+# options. Any board (internal or external) can include these drivers by
+# adding to their board Kconfig:
+#
+#   source "$(DAWN_BOARDS_COMMON)/Kconfig"
+#
+# The DAWN_BOARDS_COMMON environment variable is set by dawn/CMakeLists.txt
+# during the apps processing phase (before Kconfig runs), making it available
+# to all boards regardless of their location.
+#
+
+menu "Dawn Fake Drivers (for testing and simulation)"
+
+config DAWN_FAKE_DRIVERS
+	bool "Enable fake drivers for testing and simulation"
+	default n
+	---help---
+		Enable fake/mock drivers for testing and simulation purposes.
+		These drivers provide simulated hardware behavior without requiring
+		real peripherals, useful for development, testing, and CI/CD.
+
+if DAWN_FAKE_DRIVERS
+
+config DAWN_FAKE_ADC
+	bool "Fake ADC driver"
+	default n
+	depends on ADC
+	---help---
+		Enable the fake ADC driver for tests and simulation.
+
+config DAWN_FAKE_DAC
+	bool "Fake DAC driver"
+	default n
+	depends on DAC
+	---help---
+		Enable the fake DAC driver for tests and simulation.
+
+config DAWN_FAKE_PWM
+	bool "Fake PWM driver"
+	default n
+	depends on PWM
+	---help---
+		Enable the fake PWM driver for tests and simulation.
+
+config DAWN_FAKE_ENCODER
+	bool "Fake encoder driver"
+	default n
+	depends on SENSORS_QENCODER
+	---help---
+		Enable the fake quadrature encoder driver for tests and simulation.
+
+config DAWN_FAKE_IOEXPANDER
+	bool "Fake GPIO I/O Expander driver"
+	default n
+	depends on GPIO_LOWER_HALF && IOEXPANDER
+	select IOEXPANDER_DUMMY
+	---help---
+		Enable the fake GPIO expander driver for tests and simulation.
+
+config DAWN_FAKE_SENSORS
+	bool "Fake sensor driver"
+	default n
+	depends on SENSORS
+	---help---
+		Enable fake sensor devices for tests and simulation.
+
+config DAWN_FAKE_USERLEDS
+	bool "Fake user LED driver"
+	default n
+	depends on USERLED
+	---help---
+		Enable the fake user LED driver for tests and simulation.
+
+config DAWN_FAKE_BUTTONS
+	bool "Fake button driver"
+	default n
+	depends on INPUT_BUTTONS
+	---help---
+		Enable the fake button driver for tests and simulation.
+
+config DAWN_FAKE_UID
+	bool "Fake unique ID support"
+	default n
+	depends on BOARDCTL_UNIQUEID
+	---help---
+		Provide a fake board unique ID for tests and simulation.
+
+config DAWN_FAKE_RESET
+	bool "Fake reset support"
+	default n
+	depends on ARCH_HAVE_RESET
+	---help---
+		Provide a fake reset handler for tests and simulation.
+
+config DAWN_FAKE_POWEROFF
+	bool "Fake poweroff support"
+	default n
+	depends on ARCH_HAVE_POWEROFF
+	---help---
+		Provide a fake poweroff handler for tests and simulation.
+
+config DAWN_FAKE_FILES
+	bool "Fake files in tmpfs"
+	default n
+	depends on FS_TMPFS
+	---help---
+		Pre-populate a small set of canned files in tmpfs at board
+		bringup, so that file-IO bindings (CIOFile) and transports such
+		as the NimBLE Object Transfer Service have content to transfer
+		without requiring any real persistent storage on the board.
+
+if DAWN_FAKE_FILES
+
+config DAWN_FAKE_FILES_MOUNTPOINT
+	string "Fake files mount point"
+	default "/tmp"
+	---help---
+		Directory in which the fake files are created. Must already be
+		mounted (typically tmpfs) before dawn_fake_files_init() runs.
+
+config DAWN_FAKE_FILE_RO
+	bool "Read-only fake file"
+	default n
+	---help---
+		Create a read-only fake file at <mountpoint>/some_file_ro.txt
+		populated with the string "initial data".
+
+config DAWN_FAKE_FILE_RW
+	bool "Read-write fake file"
+	default n
+	---help---
+		Create a read-write fake file at <mountpoint>/some_file_rw.txt
+		populated with the string "initial data".
+
+endif # DAWN_FAKE_FILES
+
+endif # DAWN_FAKE_DRIVERS
+
+endmenu

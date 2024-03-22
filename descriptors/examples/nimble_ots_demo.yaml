@@ -1,0 +1,45 @@
+metadata:
+  title: NimBLE Object Transfer Service Demo
+  version: '1.0'
+  description: >
+    Exposes two pre-populated tmpfs files (one read-only, one read/write) over
+    BLE using the standard Bluetooth SIG Object Transfer Service (UUID 0x1825).
+    Bulk data is carried over an L2CAP CoC channel on PSM 0x0025; metadata and
+    OACP/OLCP control points are over GATT. Pair with nRF Connect (or any
+    standards-compliant OTS client) to exercise the read/write/list paths.
+  os_required:
+  - ble
+  - /tmp
+ios:
+- &id_file_ro
+  id: ots_file_ro
+  type: fileio
+  dtype: block
+  config:
+    path: "/tmp/some_file_ro.txt"
+    perm: 0
+- &id_file_rw
+  id: ots_file_rw
+  type: fileio
+  dtype: block
+  config:
+    path: "/tmp/some_file_rw.txt"
+    perm: 2
+protocols:
+- id: nimble1
+  type: nimble
+  config:
+    gap_name: dawn-ots
+    services:
+      dis:
+        enabled: true
+      ots:
+        objects:
+          - name: some_file_ro
+            type: file
+            access: read
+            io: *id_file_ro
+          - name: some_file_rw
+            type: file
+            access: rw
+            io: *id_file_rw

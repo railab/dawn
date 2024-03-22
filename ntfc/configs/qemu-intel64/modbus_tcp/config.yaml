@@ -1,0 +1,18 @@
+config:
+  cwd: './external'
+  build_dir: './build'
+  build_env:
+    CC: 'gcc-14'
+    CXX: 'g++-14'
+
+product:
+  name: "dawn-intel64-modbus-tcp"
+  cores:
+    core0:
+      name: 'main'
+      device: 'qemu'
+      exec_path: 'qemu-system-x86_64'
+      exec_args: '-m 2G -smp 4 -cpu host -enable-kvm -nographic -serial mon:stdio -device e1000,netdev=mynet0 -netdev tap,id=mynet0,ifname=tap0,script=no,downscript=no'
+      defconfig: '../../boards/x86_64/qemu/qemu-intel64/configs/nsh_modbus_tcp'
+      dcmake:
+        CMAKE_SUPPRESS_DEVELOPER_WARNINGS: "ON"

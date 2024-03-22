@@ -1,0 +1,13 @@
+#
+# examples/out-of-tree-demo/external/src/proto/Kconfig
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config DAWN_OOT_DEMO_PROTO
+	bool "OOT demo: custom PROTO classes"
+	default n
+	depends on DAWN
+	---help---
+	  Enable the demo's custom user-defined PROTO classes (CProtoMyHello)
+	  and the user PROTO factory hook.

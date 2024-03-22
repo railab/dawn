@@ -1,0 +1,20 @@
+.wy-side-nav-search a.icon-home {
+  font-size: 0;
+}
+
+.wy-side-nav-search a.icon-home img.logo {
+    padding-top: 0;
+  font-size: initial;
+}
+
+a.icon-home {
+    padding-top: 0;
+}
+
+img.logo {
+    padding-top: 0;
+}
+
+.wy-side-nav-search {
+    padding-top: 0;
+}

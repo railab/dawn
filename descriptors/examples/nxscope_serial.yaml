@@ -1,0 +1,59 @@
+metadata:
+  title: Simulator NXScope Serial Demo
+  version: '1.0'
+  description: >
+    Streams accelerometer, magnetometer, gyroscope, and a writable
+    dummy-notify signal over an NXScope serial endpoint in the simulator.
+  os_required:
+  - /dev/ttyS1
+  - /dev/uorb/sensor_accel0
+  - /dev/uorb/sensor_mag0
+  - /dev/uorb/sensor_gyro0
+ios:
+- &id001
+  id: accel1
+  type: sensor
+  dtype: float
+  config:
+    device: 0
+  subtype: accel
+- &id002
+  id: mag1
+  type: sensor
+  dtype: float
+  config:
+    device: 0
+  subtype: mag
+- &id003
+  id: gyro1
+  type: sensor
+  dtype: float
+  config:
+    device: 0
+  subtype: gyro
+- &id004
+  id: nx_dummy_notify1
+  type: dummy_notify
+  dtype: uint32
+  config:
+    init_value: 7
+    interval_us: 50000
+protocols:
+- id: nxscope1
+  type: nxscope_serial
+  config:
+    iobind2:
+    - id: nx_dummy_notify1
+      name: a
+    - id: accel1
+      name: b
+    - id: mag1
+      name: c
+    - id: gyro1
+      name: d
+    path: /dev/ttyS1
+    baudrate: 115200
+- id: shell_debug
+  type: shell
+  bindings:
+  - *id004

@@ -1,0 +1,46 @@
+#
+# Dawn-specific overrides for the out-of-tree demo nsh_user_shell_yaml
+# config. Same C++ source set as nsh_user_shell, but the descriptor is
+# generated from YAML by dawnpy at build time. The YAML file references
+# the demo's custom user types (my_io_dummy / my_prog_dummy /
+# my_proto_dummy); dawnpy picks them up via --types-from
+# $DAWN_OOT_ROOT/dawnpy_types.py, which the cmake YAML generator wires
+# up automatically when DAWN_OOT_ROOT is set.
+#
+CONFIG_DAWN=y
+CONFIG_DAWN_APPS_DAWN=y
+CONFIG_DAWN_APPS_DAWN_STACKSIZE=10240
+
+# YAML-generated descriptor.
+CONFIG_DAWN_APPS_EXAMPLE_DESC_FORMAT_YAML=y
+CONFIG_DAWN_APPS_EXAMPLE_DESC_YAML_PATH="descriptors/demo.yaml"
+
+CONFIG_DAWN_DEBUG_ERROR=y
+CONFIG_DAWN_DEBUG_INFO=y
+CONFIG_DAWN_DEBUG_WARN=y
+
+# Built-in Dawn objects required by the demo.
+CONFIG_DAWN_IO_CONFIG=y
+CONFIG_DAWN_IO_BUTTONS=y
+CONFIG_DAWN_IO_LEDS=y
+CONFIG_DAWN_IO_UUID=y
+CONFIG_DAWN_PROG=y
+CONFIG_DAWN_PROTO=y
+CONFIG_DAWN_PROTO_SHELL=y
+CONFIG_DAWN_PROTO_SHELL_PRETTY=y
+CONFIG_DAWN_PROTO_SHELL_INSPECT=y
+
+# User extensions (defined under examples/out-of-tree-demo/external/src/).
+CONFIG_DAWN_OOT_DEMO_IO=y
+CONFIG_DAWN_OOT_DEMO_PROG=y
+CONFIG_DAWN_OOT_DEMO_PROTO=y
+
+# OOT user-defined NuttX app (under examples/out-of-tree-demo/external/apps/).
+CONFIG_DAWN_OOT_DEMO_APP_HELLO=y
+
+# Fake drivers used by the demo.
+CONFIG_DAWN_FAKE_DRIVERS=y
+CONFIG_DAWN_FAKE_USERLEDS=y
+CONFIG_DAWN_FAKE_BUTTONS=y
+CONFIG_DAWN_FAKE_UID=y
+CONFIG_DAWN_FAKE_RESET=y

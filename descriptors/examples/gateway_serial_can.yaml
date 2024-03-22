@@ -1,0 +1,111 @@
+metadata:
+  title: Simulator Serial to CAN Gateway Demo
+  version: '1.0'
+  description: >
+    Provides a gateway that forwards virtual IO traffic between serial and CAN,
+    including both scalar and segmented 64-bit data paths.
+  os_required:
+  - /dev/ttyS1
+  - /dev/can0
+
+ios:
+- &id001
+  id: gw_serial_virt
+  type: virt
+  dtype: uint32
+- &id002
+  id: gw_can_rx_virt
+  type: virt
+  dtype: uint32
+- &id003
+  id: gw_serial_rx_virt
+  type: virt
+  dtype: uint32
+- &id004
+  id: gw_can_tx_virt
+  type: virt
+  dtype: uint32
+- &id005
+  id: gw_serial_u64_virt
+  type: virt
+  dtype: uint64
+- &id006
+  id: gw_can_u64_rx_virt
+  type: virt
+  dtype: uint64
+- &id007
+  id: gw_serial_u64_rx_virt
+  type: virt
+  dtype: uint64
+- &id008
+  id: gw_can_u64_tx_virt
+  type: virt
+  dtype: uint64
+
+programs:
+- id: gateway1
+  type: gateway
+  config:
+    iobind:
+    # serial(virt1) write -> can(virt2), and can-side reads may fetch from serial
+    - io1: *id001
+      io2: *id002
+      flags: 6
+      dim: 1
+    # can(virt4) write -> serial(virt3), and serial-side reads may fetch from can
+    - io1: *id003
+      io2: *id004
+      flags: 9
+      dim: 1
+    # serial u64 write -> can u64 readseg
+    - io1: *id005
+      io2: *id006
+      flags: 6
+      dim: 1
+    # can u64 writeseg -> serial u64 read
+    - io1: *id007
+      io2: *id008
+      flags: 9
+      dim: 1
+
+protocols:
+- id: serial1
+  type: serial
+  bindings:
+  - *id001
+  - *id003
+  - *id005
+  - *id007
+  config:
+    path: /dev/ttyS1
+    baudrate: 115200
+
+- id: can1
+  type: can
+  config:
+    node_id: 0x0
+    objects:
+    - type: read
+      flags: 0
+      can_id_start: 0x100
+      count: 1
+      bindings:
+      - *id002
+    - type: write
+      flags: 0
+      can_id_start: 0x150
+      count: 1
+      bindings:
+      - *id004
+    - type: read_seg
+      flags: 0
+      can_id_start: 0x160
+      count: 1
+      bindings:
+      - *id006
+    - type: write_seg
+      flags: 0
+      can_id_start: 0x170
+      count: 1
+      bindings:
+      - *id008

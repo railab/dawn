@@ -1,0 +1,384 @@
+metadata:
+  title: NTFC NimBLE all-services target
+  version: '1.0'
+  description: >
+    NTFC-only descriptor that enables every supported Dawn NimBLE service
+    (DIS, BAS, TPS, AIOS, ESS, IMDS, OTS) backed entirely by fake GPIO
+    and dummy notify IOs. Used by the nrf52840-dk nimble_ntfc board configuration to
+    expose one peripheral that the host-side NTFC suites can exercise
+    end-to-end without touching real hardware. The GAP advertising name
+    is ntfc-nimble; every test discovers the device by that name. Keep
+    this at 16 bytes or less unless the firmware GAP name buffer is raised.
+  os_required:
+  - /dev/gpio0
+  - /dev/gpio1
+  - /dev/gpio2
+  - /dev/gpio3
+  - /dev/gpio4
+  - /dev/gpio5
+  - /dev/gpio6
+  - /dev/gpio7
+  - ble
+ios:
+- &id_bas_battery
+  id: bas_battery
+  type: dummy_notify
+  dtype: uint8
+  config:
+    init_value: 42
+    interval_us: 20000
+- &id_aios_analog
+  id: aios_analog
+  type: dummy_notify
+  dtype: float
+  config:
+    init_value: 1.5
+    interval_us: 20000
+- &id_aios_analog_rw
+  id: aios_analog_rw
+  type: dummy_notify
+  dtype: float
+  config:
+    init_value: 0.0
+    interval_us: 20000
+- &id_aios_gpi1
+  id: aios_gpi1
+  type: gpi
+  dtype: bool
+  config:
+    device: 0
+- &id_aios_gpi2
+  id: aios_gpi2
+  type: gpi
+  dtype: bool
+  config:
+    device: 1
+- &id_aios_gpi3
+  id: aios_gpi3
+  type: gpi
+  dtype: bool
+  config:
+    device: 2
+- &id_aios_gpi4
+  id: aios_gpi4
+  type: gpi
+  dtype: bool
+  config:
+    device: 3
+- &id_aios_gpo1
+  id: aios_gpo1
+  type: gpo
+  dtype: bool
+  config:
+    device: 4
+- &id_aios_gpo2
+  id: aios_gpo2
+  type: gpo
+  dtype: bool
+  config:
+    device: 5
+- &id_aios_gpo3
+  id: aios_gpo3
+  type: gpo
+  dtype: bool
+  config:
+    device: 6
+- &id_aios_gpo4
+  id: aios_gpo4
+  type: gpo
+  dtype: bool
+  config:
+    device: 7
+- &id_aios_digital_rw
+  id: aios_digital_rw
+  type: dummy_notify
+  dtype: bool
+  config:
+    init_value: false
+    interval_us: 20000
+- &id_aios_value_trigger_setting_src
+  id: aios_value_trigger_setting_src
+  type: dummy_notify
+  dtype: uint8
+  config:
+    init_value: 0
+    interval_us: 20000
+- &id_aios_value_trigger_setting_cfg
+  id: aios_value_trigger_setting_cfg
+  type: config
+  dtype: uint8
+  rw: true
+  config:
+    objid_ref: *id_aios_value_trigger_setting_src
+    objcfg_ref: init_value
+- &id_aios_time_trigger_setting_src
+  id: aios_time_trigger_setting_src
+  type: dummy_notify
+  dtype: uint8
+  config:
+    init_value: 0
+    interval_us: 20000
+- &id_aios_time_trigger_setting_cfg
+  id: aios_time_trigger_setting_cfg
+  type: config
+  dtype: uint8
+  rw: true
+  config:
+    objid_ref: *id_aios_time_trigger_setting_src
+    objcfg_ref: init_value
+- &id_ess_humidity
+  id: ess_humidity
+  type: dummy_notify
+  dtype: float
+  config:
+    init_value: 55.5
+    interval_us: 20000
+- &id_ess_temperature
+  id: ess_temperature
+  type: dummy_notify
+  dtype: float
+  config:
+    init_value: 23.25
+    interval_us: 20000
+- &id_ess_pressure
+  id: ess_pressure
+  type: dummy_notify
+  dtype: float
+  config:
+    init_value: 101325.0
+    interval_us: 20000
+- &id_ess_gas
+  id: ess_gas
+  type: dummy_notify
+  dtype: float
+  config:
+    init_value: 12345.0
+    interval_us: 20000
+- &id_ess_temp_sampling_function_src
+  id: ess_temp_sampling_function_src
+  type: dummy_notify
+  dtype: uint32
+  config:
+    init_value: 1
+    interval_us: 20000
+- &id_ess_temp_measurement_period_src
+  id: ess_temp_measurement_period_src
+  type: dummy_notify
+  dtype: uint32
+  config:
+    init_value: 60
+    interval_us: 20000
+- &id_ess_temp_update_interval_src
+  id: ess_temp_update_interval_src
+  type: dummy_notify
+  dtype: uint32
+  config:
+    init_value: 10
+    interval_us: 20000
+- &id_ess_temp_uncertainty_src
+  id: ess_temp_uncertainty_src
+  type: dummy_notify
+  dtype: uint32
+  config:
+    init_value: 2
+    interval_us: 20000
+- &id_ess_temp_configuration_src
+  id: ess_temp_configuration_src
+  type: dummy_notify
+  dtype: uint8
+  config:
+    init_value: 1
+    interval_us: 20000
+- &id_ess_temp_trigger_setting_src
+  id: ess_temp_trigger_setting_src
+  type: dummy_notify
+  dtype: uint8
+  config:
+    init_value: 0
+    interval_us: 20000
+- &id_ess_temp_sampling_function_cfg
+  id: ess_temp_sampling_function_cfg
+  type: config
+  dtype: uint32
+  rw: true
+  config:
+    objid_ref: *id_ess_temp_sampling_function_src
+    objcfg_ref: init_value
+- &id_ess_temp_measurement_period_cfg
+  id: ess_temp_measurement_period_cfg
+  type: config
+  dtype: uint32
+  rw: true
+  config:
+    objid_ref: *id_ess_temp_measurement_period_src
+    objcfg_ref: init_value
+- &id_ess_temp_update_interval_cfg
+  id: ess_temp_update_interval_cfg
+  type: config
+  dtype: uint32
+  rw: true
+  config:
+    objid_ref: *id_ess_temp_update_interval_src
+    objcfg_ref: init_value
+- &id_ess_temp_uncertainty_cfg
+  id: ess_temp_uncertainty_cfg
+  type: config
+  dtype: uint32
+  rw: true
+  config:
+    objid_ref: *id_ess_temp_uncertainty_src
+    objcfg_ref: init_value
+- &id_ess_temp_configuration_cfg
+  id: ess_temp_configuration_cfg
+  type: config
+  dtype: uint8
+  rw: true
+  config:
+    objid_ref: *id_ess_temp_configuration_src
+    objcfg_ref: init_value
+- &id_ess_temp_trigger_setting_cfg
+  id: ess_temp_trigger_setting_cfg
+  type: config
+  dtype: uint8
+  rw: true
+  config:
+    objid_ref: *id_ess_temp_trigger_setting_src
+    objcfg_ref: init_value
+- &id_imds_humidity
+  id: imds_humidity
+  type: dummy_notify
+  dtype: float
+  config:
+    init_value: 60.0
+    interval_us: 20000
+- &id_imds_temperature
+  id: imds_temperature
+  type: dummy_notify
+  dtype: float
+  config:
+    init_value: 25.5
+    interval_us: 20000
+- &id_imds_pressure
+  id: imds_pressure
+  type: dummy_notify
+  dtype: float
+  config:
+    init_value: 100000.0
+    interval_us: 20000
+- &id_imds_gas
+  id: imds_gas
+  type: dummy_notify
+  dtype: float
+  config:
+    init_value: 22222.0
+    interval_us: 20000
+- &id_ots_file_ro
+  id: ots_file_ro
+  type: fileio
+  dtype: block
+  config:
+    path: "/tmp/some_file_ro.txt"
+    perm: 0
+- &id_ots_file_rw
+  id: ots_file_rw
+  type: fileio
+  dtype: block
+  config:
+    path: "/tmp/some_file_rw.txt"
+    perm: 2
+protocols:
+- id: nimble1
+  type: nimble
+  config:
+    gap_name: ntfc-nimble
+    services:
+      dis:
+        enabled: true
+      bas:
+        battery_level: *id_bas_battery
+      aios:
+        aggregate: true
+        groups:
+        - digital_inputs:
+          - data: *id_aios_gpi1
+            metadata:
+              user_description: "AIOS gpi1"
+              number_of_digitals: 1
+              value_trigger_setting: *id_aios_value_trigger_setting_cfg
+              time_trigger_setting: *id_aios_time_trigger_setting_cfg
+              extended_properties: 0x0000
+              presentation_format:
+                format: 1
+                exponent: 0
+                unit: 0x2700
+                namespace: 1
+                description: 0
+          - *id_aios_gpi2
+          - *id_aios_gpi3
+          - *id_aios_gpi4
+          digital_outputs:
+          - *id_aios_gpo1
+          - *id_aios_gpo2
+          - *id_aios_gpo3
+          - *id_aios_gpo4
+          - data: *id_aios_digital_rw
+            metadata:
+              user_description: "AIOS rw digital"
+        - analog_inputs:
+          - data: *id_aios_analog
+            metadata:
+              user_description: "AIOS analog in"
+          analog_outputs:
+          - data: *id_aios_analog_rw
+            metadata:
+              user_description: "AIOS rw analog"
+      ess:
+        characteristics:
+        - type: humidity
+          data: *id_ess_humidity
+          metadata:
+            user_description: "ESS humidity"
+            valid_range:
+              min: 0
+              max: 10000
+        - type: temperature
+          data: *id_ess_temperature
+          metadata:
+            user_description: "ESS temp"
+            valid_range:
+              min: 4294963296
+              max: 8500
+            measurement:
+              sampling_function: *id_ess_temp_sampling_function_cfg
+              measurement_period: *id_ess_temp_measurement_period_cfg
+              update_interval: *id_ess_temp_update_interval_cfg
+              uncertainty: *id_ess_temp_uncertainty_cfg
+            configuration: *id_ess_temp_configuration_cfg
+            trigger_setting: *id_ess_temp_trigger_setting_cfg
+        - type: pressure
+          data: *id_ess_pressure
+          metadata:
+            user_description: "ESS pressure"
+            valid_range:
+              min: 8000000
+              max: 12000000
+        - type: gas_resistance
+          data: *id_ess_gas
+      imds:
+        humidity: *id_imds_humidity
+        temperature:
+          data: *id_imds_temperature
+          metadata:
+            user_description: "IMDS temp"
+        pressure: *id_imds_pressure
+        gas_resistance: *id_imds_gas
+      ots:
+        objects:
+          - name: some_file_ro
+            type: file
+            access: read
+            io: *id_ots_file_ro
+          - name: some_file_rw
+            type: file
+            access: rw
+            io: *id_ots_file_rw

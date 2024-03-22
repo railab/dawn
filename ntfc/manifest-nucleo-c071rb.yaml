@@ -1,0 +1,21 @@
+options:
+  fail_fast: false
+  parallel: false
+
+# Real-hardware NTFC sessions for the STM32 Nucleo-C071RB board.
+#
+# These require a connected Nucleo-C071RB over USB for ST-LINK flashing and
+# console, plus a host Modbus RTU adapter wired to the board USART1 RS485
+# pins through a compatible RS485 shield/transceiver. The Modbus client opens
+# /dev/ttyUSB0.
+#
+# Invoke explicitly with:
+#
+#   dawnpy-tests --ntfc-only --ntfc-list ntfc/manifest-nucleo-c071rb.yaml
+
+sessions:
+
+  - name: "nucleo-c071rb-modbus-ntfc"
+    confpath: ntfc/configs/nucleo-c071rb/modbus_ntfc/config.yaml
+    testpath: ntfc/tests/modbus
+    resources: [hw-nucleo-c071rb, modbus-rtu]

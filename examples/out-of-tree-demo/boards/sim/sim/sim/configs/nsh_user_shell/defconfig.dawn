@@ -1,0 +1,40 @@
+#
+# Dawn-specific overrides for the out-of-tree demo nsh_user_shell config.
+#
+CONFIG_DAWN=y
+CONFIG_DAWN_APPS_DAWN=y
+CONFIG_DAWN_APPS_DAWN_STACKSIZE=10240
+
+# Hand-written C++ descriptor (the OOT path).
+CONFIG_DAWN_APPS_EXAMPLE_DESC_FORMAT_CXX=y
+CONFIG_DAWN_APPS_EXAMPLE_DESC_PATH="descriptors/demo.cxx"
+
+CONFIG_DAWN_DEBUG_ERROR=y
+CONFIG_DAWN_DEBUG_INFO=y
+CONFIG_DAWN_DEBUG_WARN=y
+
+# Built-in Dawn objects required by the demo.
+CONFIG_DAWN_IO_CONFIG=y
+CONFIG_DAWN_IO_BUTTONS=y
+CONFIG_DAWN_IO_LEDS=y
+CONFIG_DAWN_IO_UUID=y
+CONFIG_DAWN_PROG=y
+CONFIG_DAWN_PROTO=y
+CONFIG_DAWN_PROTO_SHELL=y
+CONFIG_DAWN_PROTO_SHELL_PRETTY=y
+CONFIG_DAWN_PROTO_SHELL_INSPECT=y
+
+# User extensions (defined under examples/out-of-tree-demo/external/src/).
+CONFIG_DAWN_OOT_DEMO_IO=y
+CONFIG_DAWN_OOT_DEMO_PROG=y
+CONFIG_DAWN_OOT_DEMO_PROTO=y
+
+# OOT user-defined NuttX app (under examples/out-of-tree-demo/external/apps/).
+CONFIG_DAWN_OOT_DEMO_APP_HELLO=y
+
+# Fake drivers used by the demo.
+CONFIG_DAWN_FAKE_DRIVERS=y
+CONFIG_DAWN_FAKE_USERLEDS=y
+CONFIG_DAWN_FAKE_BUTTONS=y
+CONFIG_DAWN_FAKE_UID=y
+CONFIG_DAWN_FAKE_RESET=y

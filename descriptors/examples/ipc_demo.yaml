@@ -1,0 +1,26 @@
+metadata:
+  title: Local IPC Demo
+  version: '1.0'
+  description: >
+    Exposes two dummy IO values through the local FIFO-based IPC transport for
+    same-device control and monitoring.
+  os_required:
+  - /tmp
+ios:
+- &id001
+  id: dummyio1
+  type: dummy
+  dtype: uint32
+- &id002
+  id: dummyio2
+  type: dummy
+  dtype: float
+protocols:
+- id: ipc_main
+  type: ipc
+  bindings:
+  - *id001
+  - *id002
+  config:
+    rx_path: "/var/pipe/dawn_rx"
+    tx_path: "/var/pipe/dawn_tx"

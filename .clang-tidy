@@ -1,0 +1,16 @@
+---
+Checks: >-
+  -*,
+  clang-analyzer-*,
+  -clang-analyzer-optin.cplusplus.VirtualCall,
+  -clang-analyzer-optin.performance.Padding,
+  -clang-analyzer-unix.API,
+  bugprone-implicit-widening-of-multiplication-result,
+  bugprone-narrowing-conversions,
+  bugprone-unchecked-string-to-number-conversion,
+  performance-inefficient-vector-operation,
+  performance-unnecessary-value-param
+WarningsAsErrors: ''
+HeaderFilterRegex: '^(dawn/|external/apps/external/)'
+FormatStyle: file
+...

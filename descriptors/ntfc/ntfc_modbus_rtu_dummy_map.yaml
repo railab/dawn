@@ -1,0 +1,124 @@
+metadata:
+  title: NTFC Modbus RTU Dummy Map
+  version: '1.0'
+  description: >
+    Provides an NTFC Modbus RTU register map backed by a large dummy IO set
+    covering coil, packed coil, holding, input register, seekable, and file
+    access.
+  os_required:
+  - /dev/ttyS1
+  - /tmp
+
+ios:
+- &id001
+  id: dummyio1
+  type: dummy
+  dtype: bool
+- &id002
+  id: dummyio2
+  type: dummy
+  dtype: bool
+- &id003
+  id: dummyio3
+  type: dummy
+  dtype: bool
+- &id004
+  id: dummyio4
+  type: dummy
+  dtype: bool
+  config:
+    dim: 16
+- &id0020
+  id: dummyio20
+  type: dummy
+  dtype: uint16
+- &id0021
+  id: dummyio21
+  type: dummy
+  dtype: uint64
+- &id0022
+  id: dummyio22
+  type: dummy
+  dtype: uint16
+- &id0023
+  id: dummyio23
+  type: dummy
+  dtype: uint32
+- &id0024
+  id: dummyio24
+  type: dummy
+  dtype: uint64
+- &id0025
+  id: descriptor1
+  type: descriptor
+  dtype: uint32
+- &id0026
+  id: capabilities1
+  type: capabilities
+  dtype: block
+- &id0027
+  id: modbus_fileio1
+  type: fileio
+  dtype: block
+  config:
+    path: "/tmp/dawn_modbus_seekable_fileio.bin"
+    perm: 2
+protocols:
+- id: modbus1
+  type: modbus_rtu
+  bindings:
+  - *id001
+  - *id002
+  - *id003
+  - *id004
+  - *id0020
+  - *id0021
+  - *id0022
+  - *id0023
+  - *id0024
+  - *id0025
+  - *id0026
+  - *id0027
+  config:
+    path: /dev/ttyS1
+    registers:
+    - type: coil
+      config: 0
+      start: 0
+      bindings:
+      - *id001
+      - *id002
+      - *id003
+    - type: coil_packed
+      config: 0
+      start: 1000
+      bindings:
+      - *id004
+    - type: holding
+      config: 0
+      start: 2000
+      bindings:
+      - *id0020
+      - *id0021
+      - *id0022
+    - type: input
+      config: 0
+      start: 3000
+      bindings:
+      - *id0023
+      - *id0024
+    - type: seekable
+      config: 256
+      start: 3600
+      bindings:
+      - *id0025
+    - type: seekable
+      config: 256
+      start: 3900
+      bindings:
+      - *id0026
+    - type: seekable
+      config: 256
+      start: 4200
+      bindings:
+      - *id0027

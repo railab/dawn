@@ -1,0 +1,43 @@
+options:
+  fail_fast: false
+  parallel: false
+
+# Real-hardware NTFC sessions for the Nordic nRF52840-DK board.
+#
+# These are kept in a separate manifest from manifest-host.yaml because they
+# require a connected DK over USB (DAPLink/J-Link), the nrfutil flashing
+# tool, and a Bluetooth-capable host (BlueZ + L2CAP CoC). They are NOT run
+# automatically by `dawnpy-tests`; invoke explicitly with:
+#
+#   dawnpy-tests --ntfc-only --ntfc-list ntfc/manifest-nrf52840dk.yaml
+#
+# `dawnpy-tests` expands this manifest and flashes each session immediately
+# before its tests. Avoid running this multi-session manifest directly with
+# `python -m ntfc test --manifest`: current NTFC multi mode flashes all
+# sessions before it starts testing, so sessions sharing one board can run with
+# the wrong image. To run without dawnpy-tests, use a single session command:
+#
+#   python -m ntfc test \
+#       --flash \
+#       --confpath ntfc/configs/nrf52840-dk/nimble_ntfc/config.yaml \
+#       --testpath ntfc/tests/nimble_ntfc
+#
+# The host is expected to have Bluetooth permissions/capabilities configured
+# for AF_BLUETOOTH L2CAP sockets before this suite is run.
+
+sessions:
+
+  - name: "nrf52840dk-nimble-ntfc-custom"
+    confpath: ntfc/configs/nrf52840-dk/nimble_ntfc_custom/config.yaml
+    testpath: ntfc/tests/nimble_ntfc_custom
+    resources: [hw-nrf52840dk, bluetooth]
+
+  - name: "nrf52840dk-nimble-ntfc"
+    confpath: ntfc/configs/nrf52840-dk/nimble_ntfc/config.yaml
+    testpath: ntfc/tests/nimble_ntfc
+    resources: [hw-nrf52840dk, bluetooth]
+
+  - name: "nrf52840dk-nimble-ntfc-buffer"
+    confpath: ntfc/configs/nrf52840-dk/nimble_ntfc_buffer/config.yaml
+    testpath: ntfc/tests/nimble_ntfc_buffer
+    resources: [hw-nrf52840dk, bluetooth]

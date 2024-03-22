@@ -1,0 +1,39 @@
+#
+# For a description of the syntax of this configuration file,
+# see the file kconfig-language.txt in the NuttX tools repository.
+#
+
+config DAWN_PROTO_SHELL
+	bool "Dawn shell proto support"
+	default n
+	---help---
+		Enable the interactive Dawn shell protocol.
+
+if DAWN_PROTO_SHELL
+
+config DAWN_PROTO_SHELL_PRETTY
+	bool "Dawn shell-pretty proto support"
+	default y
+	---help---
+		Enable the human-readable shell command frontend.
+
+if DAWN_PROTO_SHELL_PRETTY
+
+config DAWN_PROTO_SHELL_INSPECT
+	bool "Enable Shell Object Inspector"
+	select DAWN_INSPECT
+	default n
+	---help---
+		Enable advanced object inspection commands in Dawn Shell:
+		- list: Show all objects with filtering
+		- inspect: Deep object introspection
+		- find: Search objects by pattern
+		- tree: Hierarchical object view
+		- stats: Runtime statistics
+
+		This adds approximately 2-4 KB to code size and enables
+		per-object runtime statistics tracking (~12 bytes/object).
+
+endif # DAWN_PROTO_SHELL_PRETTY
+
+endif # DAWN_PROTO_SHELL

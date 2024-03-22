@@ -1,0 +1,428 @@
+metadata:
+  title: Shell Core Demo
+  version: '2.1'
+  user_string: bcddfgh
+  description: >
+    Provides a broad shell-accessible demo of mixed Dawn IO, including sensors,
+    ADC, DAC, GPIO, PWM, config objects, descriptor inspection, and processing
+    outputs.
+  os_required:
+  - /dev/uorb/sensor_accel0
+  - /dev/uorb/sensor_mag0
+  - /dev/uorb/sensor_gyro0
+  - /dev/gpio0
+  - /dev/gpio1
+  - /dev/gpio2
+  - /dev/gpio3
+  - /dev/gpio8
+  - /dev/gpio9
+  - /dev/gpio10
+  - /dev/gpio4
+  - /dev/gpio5
+  - /dev/gpio6
+  - /dev/gpio7
+  - /dev/adc0
+  - /dev/adc1
+  - /dev/adc2
+  - /dev/dac0
+  - /dev/dac1
+  - /dev/dac2
+  - /dev/pwm0
+  - /dev/pwm1
+  - /dev/pwm2
+  - /dev/qe0
+  - /dev/qe1
+  - /dev/urandom
+ios:
+- &id011
+  id: dummyio1
+  type: dummy
+  dtype: uint32
+  config:
+    init_value: 1234
+- &id003
+  id: dummyio2
+  type: dummy
+  dtype: int32
+  config:
+    init_value: -20
+- &id012
+  id: dummyio3
+  type: dummy
+  dtype: float
+  config:
+    init_value: -1.1
+- &id007
+  id: dummyio4
+  type: dummy
+  dtype: int32
+  config:
+    init_value: -1
+- &id010
+  id: dummyio5
+  type: dummy
+  dtype: int32
+  config:
+    init_value: -2
+- &id_uuid
+  id: uuid1
+  type: uuid
+  dtype: uint8
+- &id001
+  id: accel1
+  type: sensor
+  dtype: float
+  timestamp: true
+  config:
+    device: 0
+  subtype: accel
+- &id005
+  id: mag1
+  type: sensor
+  dtype: float
+  config:
+    device: 0
+  subtype: mag
+- &id008
+  id: gyro1
+  type: sensor
+  dtype: float
+  config:
+    device: 0
+  subtype: gyro
+- &id013
+  id: gpi1
+  type: gpi
+  dtype: bool
+  config:
+    device: 0
+- &id014
+  id: gpi2
+  type: gpi
+  dtype: bool
+  config:
+    device: 1
+- &id015
+  id: gpi3
+  type: gpi
+  dtype: bool
+  config:
+    device: 2
+- &id016
+  id: gpi4
+  type: gpi
+  dtype: bool
+  config:
+    device: 3
+- &id017
+  id: gpo1
+  type: gpo
+  dtype: bool
+  config:
+    device: 4
+- &id018
+  id: gpo2
+  type: gpo
+  dtype: bool
+  config:
+    device: 5
+- &id019
+  id: gpo3
+  type: gpo
+  dtype: bool
+  config:
+    device: 6
+- &id020
+  id: gpo4
+  type: gpo
+  dtype: bool
+  config:
+    device: 7
+- &id035
+  id: adc1
+  type: adc_fetch
+  dtype: uint32
+  config:
+    device: 0
+- &id038
+  id: adc2
+  type: adc_fetch
+  dtype: uint32
+  config:
+    device: 1
+- &id039
+  id: adc3
+  type: adc_fetch
+  dtype: uint32
+  config:
+    device: 2
+- &id036
+  id: dac1
+  type: dac
+  dtype: int32
+  config:
+    device: 0
+- &id040
+  id: dac2
+  type: dac
+  dtype: int32
+  config:
+    device: 1
+- &id041
+  id: dac3
+  type: dac
+  dtype: int32
+  config:
+    device: 2
+- &id037
+  id: pwm1
+  type: pwm
+  dtype: uint32
+  config:
+    device: 0
+- &id042
+  id: pwm2
+  type: pwm
+  dtype: uint32
+  config:
+    device: 1
+- &id043
+  id: pwm3
+  type: pwm
+  dtype: uint32
+  config:
+    device: 2
+- id: encoder1
+  type: encoder
+  dtype: int32
+  config:
+    device: 0
+    posmax: 1024
+- id: encoder_idx1
+  type: encoder_index
+  dtype: int32
+  config:
+    device: 1
+    posmax: 2048
+- &id021
+  id: gpiint1
+  type: gpi
+  dtype: bool
+  config:
+    device: 8
+    interrupt: true
+- &id022
+  id: gpiint2
+  type: gpi
+  dtype: bool
+  config:
+    device: 9
+    interrupt: true
+- &id023
+  id: gpiint3
+  type: gpi
+  dtype: bool
+  config:
+    device: 10
+    interrupt: true
+- &id024
+  id: uptime1
+  type: sysinfo
+  dtype: float
+  variant: uptime
+- &id025
+  id: cpuload1
+  type: sysinfo
+  dtype: float
+  variant: cpuload
+- &id004
+  id: reset1
+  type: boardctl
+  dtype: bool
+  variant: reset
+- &id026
+  id: reset_cause1
+  type: boardctl
+  dtype: uint32
+  variant: reset_cause
+- &id027
+  id: poweroff1
+  type: boardctl
+  dtype: bool
+  variant: poweroff
+- &id002
+  id: virtio1
+  type: virt
+  dtype: float
+- &id006
+  id: virtio2
+  type: virt
+  dtype: float
+- &id009
+  id: virtio3
+  type: virt
+  dtype: float
+- &id045
+  id: samp_virt1
+  type: virt
+  dtype: int32
+- &id046
+  id: samp_virt2
+  type: virt
+  dtype: int32
+- &id028
+  id: cfgio1
+  type: config
+  dtype: uint32
+  rw: true
+  config:
+    objid_ref: dummyio1
+    limits:
+      min: 0
+      max: 2000
+      step: 2
+- &id029
+  id: cfgio2
+  type: config
+  dtype: int32
+  rw: true
+  config:
+    objid_ref: dummyio2
+- &id030
+  id: cfgio3
+  type: config
+  dtype: float
+  rw: true
+  config:
+    objid_ref: dummyio3
+- &id031
+  id: cfgio4
+  type: config
+  dtype: int32
+  rw: true
+  config:
+    objid_ref: dummyio4
+- &id032
+  id: hostname1
+  type: uname
+  dtype: string
+  variant: hostname
+- &id034
+  id: systime1
+  type: systime
+  dtype: uint64
+- &id033
+  id: descriptor1
+  type: descriptor
+  dtype: uint32
+- &id047
+  id: capabilities1
+  type: capabilities
+  dtype: block
+- &id044
+  id: trigstats1
+  type: trigger
+  config:
+    targets:
+      - stats_min1
+      - stats_max1
+      - stats_sum1
+    allowed:
+      - reset
+- id: trig_encoder_reset1
+  type: trigger
+  config:
+    targets:
+      - encoder1
+      - encoder_idx1
+    allowed:
+      - reset
+programs:
+- id: stats_min1
+  type: statsmin
+  config:
+    inputs:
+    - *id001
+    outputs:
+    - *id002
+
+- id: stats_max1
+  type: statsmax
+  config:
+    inputs:
+    - *id005
+    outputs:
+    - *id006
+
+- id: stats_sum1
+  type: statssum
+  config:
+    inputs:
+    - *id008
+    outputs:
+    - *id009
+
+- id: sampling1
+  type: sampling
+  config:
+    sources:
+    - *id007
+    - *id010
+    outputs:
+    - *id045
+    - *id046
+    interval: 1000000
+
+protocols:
+- id: shell1
+  type: shell
+  bindings:
+  - *id011
+  - *id003
+  - *id012
+  - *id007
+  - *id010
+  - *id001
+  - *id005
+  - *id008
+  - *id013
+  - *id014
+  - *id015
+  - *id016
+  - *id017
+  - *id018
+  - *id019
+  - *id020
+  - *id035
+  - *id038
+  - *id039
+  - *id036
+  - *id040
+  - *id041
+  - *id037
+  - *id042
+  - *id043
+  - *id021
+  - *id022
+  - *id023
+  - *id024
+  - *id025
+  - *id004
+  - *id026
+  - *id027
+  - *id002
+  - *id006
+  - *id009
+  - *id045
+  - *id046
+  - *id028
+  - *id029
+  - *id030
+  - *id031
+  - *id032
+  - *id034
+  - *id033
+  - *id047
+  - *id044
+  config:
+    prompt: "abcde> "

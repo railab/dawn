@@ -1,0 +1,13 @@
+# Host-side runtime dependencies for NTFC integration tests.
+# Checked by dawnpy-tests before launching the NTFC suite.
+#
+# Project tooling (dawnpy, dawnpy-serial, dawnpy-can, dawnpy-udp,
+# dawnpy-modbus, dawnpy-tests) is installed separately via
+# `pip install -e tools/<pkg>` and is NOT listed here.
+bleak
+dawnpy-ble
+pytest
+PyYAML
+pymodbus
+nxslib
+ntfc

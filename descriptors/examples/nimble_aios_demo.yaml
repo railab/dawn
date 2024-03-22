@@ -1,0 +1,155 @@
+metadata:
+  title: NimBLE Automation IO Service (AIOS) Demo
+  version: '1.0'
+  description: >
+    Minimal demo focused on the Bluetooth SIG Automation IO Service
+    (UUID 0x1815). Exposes four digital inputs (buttons / GPI), four
+    digital outputs (LEDs / GPO), one analog input (dummy float), and
+    four analog outputs packed into the four-channel PWM driver.
+    Pair with nRF Connect (or any AIOS-aware client) to exercise the
+    digital read/write, analog read, and PWM duty-cycle write paths.
+  os_required:
+  - /dev/gpio0
+  - /dev/gpio1
+  - /dev/gpio2
+  - /dev/gpio3
+  - /dev/gpio4
+  - /dev/gpio5
+  - /dev/gpio6
+  - /dev/gpio7
+  - /dev/pwm0
+  - ble
+ios:
+- &analog_input_io
+  id: dummyio1
+  type: dummy
+  dtype: float
+  config:
+    init_value: 1.5
+- &pwm_ch0
+  id: pwm_ch0
+  type: virt
+  dtype: uint32
+- &pwm_ch1
+  id: pwm_ch1
+  type: virt
+  dtype: uint32
+- &pwm_ch2
+  id: pwm_ch2
+  type: virt
+  dtype: uint32
+- &pwm_ch3
+  id: pwm_ch3
+  type: virt
+  dtype: uint32
+- &pwm0
+  id: pwm0
+  type: pwm
+  dtype: uint32
+  config:
+    device: 0
+    freq: 1000
+- &pwm_freq
+  id: pwm_freq
+  type: config
+  dtype: uint32
+  rw: true
+  config:
+    objid_ref: pwm0
+    objcfg_ref: freq
+- &aios_gpi1
+  id: gpi1
+  type: gpi
+  dtype: bool
+  config:
+    device: 0
+- &aios_gpi2
+  id: gpi2
+  type: gpi
+  dtype: bool
+  config:
+    device: 1
+- &aios_gpi3
+  id: gpi3
+  type: gpi
+  dtype: bool
+  config:
+    device: 2
+- &aios_gpi4
+  id: gpi4
+  type: gpi
+  dtype: bool
+  config:
+    device: 3
+- &aios_gpo1
+  id: gpo1
+  type: gpo
+  dtype: bool
+  config:
+    device: 4
+- &aios_gpo2
+  id: gpo2
+  type: gpo
+  dtype: bool
+  config:
+    device: 5
+- &aios_gpo3
+  id: gpo3
+  type: gpo
+  dtype: bool
+  config:
+    device: 6
+- &aios_gpo4
+  id: gpo4
+  type: gpo
+  dtype: bool
+  config:
+    device: 7
+programs:
+- id: pwm_vecpack
+  type: vecpack
+  config:
+    inputs:
+    - *pwm_ch0
+    - *pwm_ch1
+    - *pwm_ch2
+    - *pwm_ch3
+    output: *pwm0
+protocols:
+- id: nimble1
+  type: nimble
+  config:
+    gap_name: dawn-aios
+    services:
+      dis:
+        enabled: true
+      aios:
+        groups:
+        - digital_inputs:
+          - *aios_gpi1
+          - *aios_gpi2
+          - *aios_gpi3
+          - *aios_gpi4
+          digital_outputs:
+          - *aios_gpo1
+          - *aios_gpo2
+          - *aios_gpo3
+          - *aios_gpo4
+        - analog_inputs:
+          - *analog_input_io
+          analog_outputs:
+          - data: *pwm_ch0
+            metadata:
+              user_description: "PWM ch0"
+          - data: *pwm_ch1
+            metadata:
+              user_description: "PWM ch1"
+          - data: *pwm_ch2
+            metadata:
+              user_description: "PWM ch2"
+          - data: *pwm_ch3
+            metadata:
+              user_description: "PWM ch3"
+          - data: *pwm_freq
+            metadata:
+              user_description: "PWM freq"

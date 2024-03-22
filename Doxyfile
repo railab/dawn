@@ -1,0 +1,151 @@
+# Doxyfile
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+PROJECT_NAME           = "Dawn Framework"
+PROJECT_NUMBER         = "1.0"
+PROJECT_BRIEF          = "Universal data acquisition framework for embedded systems"
+PROJECT_LOGO           =
+
+# Input Settings
+INPUT                  = dawn/include dawn/src
+INPUT_ENCODING         = UTF-8
+FILE_PATTERNS          = *.h *.hxx *.hpp *.cpp *.cxx *.cc
+
+# Exclude patterns
+EXCLUDE_PATTERNS       = */tests/* */external/* external
+EXCLUDE_SYMLINKS       = YES
+RECURSIVE              = YES
+
+# Output Settings
+OUTPUT_DIRECTORY       = Documentation/_doxygen
+GENERATE_HTML          = YES
+GENERATE_XML           = YES
+GENERATE_LATEX         = NO
+GENERATE_MAN           = NO
+
+# XML Settings (for Breathe)
+XML_SCHEMA             =
+XML_DTD                =
+
+# Documentation Settings
+EXTRACT_ALL            = NO
+EXTRACT_PRIVATE        = NO
+EXTRACT_PROTECTED      = YES
+EXTRACT_STATIC         = NO
+EXTRACT_ANON_NSPACES   = NO
+
+# Detailed description
+HIDE_UNDOC_MEMBERS     = YES
+HIDE_UNDOC_CLASSES     = YES
+HIDE_FRIEND_COMPOUNDS  = YES
+HIDE_IN_BODY_DOCS      = NO
+
+# Class-related settings
+SHOW_INCLUDE_FILES     = YES
+SHOW_USED_FILES        = YES
+SHOW_FILES             = YES
+SHOW_NAMESPACES        = YES
+
+# Sort settings
+SORT_MEMBER_DOCS       = YES
+SORT_BRIEF_DOCS        = YES
+SORT_MEMBERS_CTORS_1ST = YES
+SORT_GROUP_NAMES       = YES
+SORT_BY_SCOPE_NAME     = NO
+
+# Grouping and Member Documentation
+GROUP_NESTED_CLASSES   = YES
+DISTRIBUTE_GROUP_DOC   = NO
+HIDE_SCOPE_NAMES       = NO
+
+# C++ Specific Settings
+TYPEDEF_HIDES_STRUCT   = NO
+INLINE_INHERITED_MEMB  = YES
+INLINE_INFO            = YES
+INLINE_SIMPLE_STRUCTS  = NO
+
+# Documentation Format
+JAVADOC_AUTOBRIEF      = YES
+JAVADOC_BANNER         = NO
+QT_AUTOBRIEF           = NO
+
+# Comment Parsing
+DOXYGEN_EXECUTABLE     = doxygen
+PARSE_INTERNAL         = NO
+FORCE_LOCAL_RANGES     = NO
+
+# Source Browsing
+SOURCE_BROWSER         = YES
+REFERENCES_RELATION    = YES
+REFERENCES_LINK_SOURCE = YES
+USE_HTAGS              = NO
+
+# Search
+SEARCHENGINE           = NO
+SERVER_BASED_SEARCH    = NO
+
+# Visualization
+ENABLE_PREPROCESSING   = YES
+MACRO_EXPANSION        = YES
+EXPAND_ONLY_PREDEF     = NO
+
+# Predefined macros (add common C++ macros)
+PREDEFINED             = __cplusplus \
+                         "override=" \
+                         "final=" \
+                         "constexpr=" \
+                         "noexcept=" \
+                         "CONFIG_DAWN_INSPECT" \
+                         "DAWNASSERT(x,y)=" \
+                         "DAWNLOG_ERR(...)=" \
+                         "DAWNLOG_WARN(...)=" \
+                         "DAWNLOG_INFO(...)=" \
+                         "DAWNLOG_DEBUG(...)="
+
+# Quiet mode
+QUIET                  = YES
+WARNINGS               = YES
+WARN_IF_UNDOCUMENTED   = YES
+WARN_IF_DOC_LACKED     = NO
+WARN_NO_PARAMDOC       = YES
+WARN_AS_ERROR          = NO
+
+# Dot (Graphviz) Settings
+HAVE_DOT               = YES
+DOT_NUM_THREADS        = 4
+DOT_FONTNAME           = Helvetica
+DOT_FONTSIZE           = 10
+DOT_GRAPH_MAX_NODES    = 50
+DOT_IMAGE_FORMAT       = svg
+INTERACTIVE_SVG        = YES
+DOT_CLEANUP            = YES
+
+# Class diagrams
+CLASS_DIAGRAMS         = YES
+MSCGEN_PATH            =
+DIA_PATH               =
+
+# Include dependency graphs
+INCLUDE_GRAPH          = YES
+INCLUDED_BY_GRAPH      = YES
+CALL_GRAPH             = YES
+CALLER_GRAPH           = YES
+GRAPHICAL_HIERARCHY    = YES
+
+# Verbatim source files
+VERBATIM_HEADERS       = YES
+
+# Pattern rules
+USE_MATHJAX            = NO
+MATHJAX_VERSION        = MathJax_2
+
+# Language
+OUTPUT_LANGUAGE        = English
+
+# Configuration
+CITE_BIB_FILES         =
+
+# RTL languages
+RTL_SUPPORT            = NO

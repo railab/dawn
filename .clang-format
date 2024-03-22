@@ -1,0 +1,30 @@
+BasedOnStyle: Mozilla
+
+IndentWidth: 2
+ColumnLimit: 100
+
+PointerAlignment: Right
+DerivePointerAlignment: false
+
+BreakBeforeBraces: GNU
+BreakAfterReturnType: Automatic
+
+BinPackArguments: false
+BinPackParameters: false
+Cpp11BracedListStyle: true
+
+AllowShortFunctionsOnASingleLine: false
+
+AlignConsecutiveMacros: AcrossEmptyLines
+AlignEscapedNewlines: LeftWithLastLine
+
+AlignTrailingComments:
+  Kind: Always
+  OverEmptyLines: 2
+
+SeparateDefinitionBlocks: Always
+IndentPPDirectives: AfterHash
+InsertNewlineAtEOF: true
+MaxEmptyLinesToKeep: 1
+InsertTrailingCommas: Wrapped
+SortIncludes: Never

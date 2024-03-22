@@ -1,0 +1,13 @@
+#
+# examples/out-of-tree-demo/external/src/prog/Kconfig
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config DAWN_OOT_DEMO_PROG
+	bool "OOT demo: custom PROG classes"
+	default n
+	depends on DAWN
+	---help---
+	  Enable the demo's custom user-defined PROG classes (CProgMyEcho)
+	  and the user PROG factory hook.

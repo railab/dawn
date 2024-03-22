@@ -1,0 +1,11 @@
+# ntfc/tests/ntfc.yaml
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+module: "Dawn"
+
+requirements:
+  - ["CONFIG_DEBUG_SYMBOLS", True]
+  - ["CONFIG_SYSTEM_NSH", True]
+  - ["CONFIG_INIT_ENTRYPOINT", "nsh_main"]

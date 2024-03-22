@@ -1,0 +1,205 @@
+#
+# For a description of the syntax of this configuration file,
+# see the file kconfig-language.txt in the NuttX tools repository.
+#
+
+config DAWN
+	bool "Dawn Framework"
+	default n
+	---help---
+		Enable Dawn.
+
+if DAWN
+
+config DAWN_DEBUG_INFO
+	bool "Dawn debug info messages"
+	default n
+	---help---
+		Enable info messages for Dawn.
+
+config DAWN_DEBUG_WARN
+	bool "Dawn debug warn messages"
+	default n
+	---help---
+		Enable warning messages for Dawn.
+
+config DAWN_DEBUG_ERROR
+	bool "Dawn debug ERROR messages"
+	default n
+	---help---
+		Enable error messages for Dawn.
+
+config DAWN_DESC_VALID
+	bool "Dawn validate descriptor"
+	default y
+	---help---
+		Enable additional descriptor checks.
+		Can help detect simple errors in the descriptor, but at the moment
+		it doesn't check much.
+
+config DAWN_DESC_VALID_CRC32
+	bool "Dawn validate descriptor checksum"
+	default y
+	---help---
+		Use CRC32 checksum to validate the descriptor.
+		When DAWN_DESC_SLOTS > 1, CRC is effectively mandatory for
+		runtime descriptor switching safety.
+
+config DAWN_DESC_SLOTS
+	int "Dawn descriptor slots count"
+	range 1 8
+	default 1
+	---help---
+		Number of descriptor slots available at runtime.
+		Slot 0 is the boot (FLASH/static) descriptor.
+		Slots 1..N-1 are RAM upload slots.
+
+config DAWN_DESC_SLOT_SIZE
+	int "Dawn descriptor RAM slot size (bytes)"
+	default 4096 if DAWN_DESC_SLOTS > 1
+	default 0
+	---help---
+		Maximum size of one RAM descriptor slot in bytes.
+			Total static RAM usage is approximately:
+			(DAWN_DESC_SLOTS - 1) * DAWN_DESC_SLOT_SIZE.
+
+config DAWN_DESC_SWITCH
+	bool "Dawn runtime descriptor switching"
+	default y
+	depends on DAWN_DESC_SLOTS > 1 && DAWN_LIFECYCLE_TEARDOWN
+	---help---
+		Enable runtime descriptor slot switching support.
+		When disabled, Dawn runs only the initially loaded descriptor.
+
+config DAWN_LIFECYCLE_TEARDOWN
+	bool "Enable object teardown (stop/deinit/delete)"
+	default y
+	---help---
+		Enable Dawn teardown lifecycle logic:
+		- stopAll() during shutdown paths
+		- deinitAll() calls
+		- object delete cleanup in generic handlers
+
+		Disable for minimal systems that run indefinitely and never use
+		shutdown/descriptor-switch teardown paths. This reduces runtime and
+		allows linker garbage collection to drop unused teardown code.
+
+config DAWN_OBJECT_HAS_NAME
+	bool
+	default n
+	---help---
+		Enable human-readable object names. When enabled, each object
+		has a name in format "classname_instance" (e.g., "adc_0", "pwm_0").
+		This is automatically selected by features that need it.
+
+config DAWN_OBJECT_NAME_SIZE
+	int "Object name buffer size"
+	default 16
+	depends on DAWN_OBJECT_HAS_NAME
+	---help---
+		Maximum length for object names (including null terminator).
+		Names in format "classname_instance" must fit within this size.
+		Default is 16 characters.
+
+config DAWN_INSPECT
+	bool
+	select DAWN_OBJECT_HAS_NAME
+	default n
+	---help---
+		Enable object inspection infrastructure. This is automatically
+		selected by features that need it (e.g., Shell Inspector).
+		Do not enable manually - use feature-specific options instead.
+
+		When enabled, adds:
+		- Runtime statistics tracking per object (~12 bytes/object)
+		- Handler registration with CDevInspector
+		- Read-only object iteration APIs
+
+menu "Dawn dtype support"
+
+config DAWN_DTYPE_BOOL
+	bool "Enable DTYPE_BOOL support"
+	default y
+
+config DAWN_DTYPE_INT8
+	bool "Enable DTYPE_INT8 support"
+	default y
+
+config DAWN_DTYPE_UINT8
+	bool "Enable DTYPE_UINT8 support"
+	default y
+
+config DAWN_DTYPE_INT16
+	bool "Enable DTYPE_INT16 support"
+	default y
+
+config DAWN_DTYPE_UINT16
+	bool "Enable DTYPE_UINT16 support"
+	default y
+
+config DAWN_DTYPE_INT32
+	bool "Enable DTYPE_INT32 support"
+	default y
+
+config DAWN_DTYPE_UINT32
+	bool "Enable DTYPE_UINT32 support"
+	default y
+
+config DAWN_DTYPE_INT64
+	bool "Enable DTYPE_INT64 support"
+	default y
+
+config DAWN_DTYPE_UINT64
+	bool "Enable DTYPE_UINT64 support"
+	default y
+
+config DAWN_DTYPE_FLOAT
+	bool "Enable DTYPE_FLOAT support"
+	default y
+
+config DAWN_DTYPE_DOUBLE
+	bool "Enable DTYPE_DOUBLE support"
+	default y
+
+config DAWN_DTYPE_B16
+	bool "Enable DTYPE_B16 support"
+	default y
+
+config DAWN_DTYPE_UB16
+	bool "Enable DTYPE_UB16 support"
+	default y
+
+config DAWN_DTYPE_NUMERIC
+	bool
+	default y if DAWN_DTYPE_NUMERIC_INT || DAWN_DTYPE_NUMERIC_FLOAT
+	default n
+
+config DAWN_DTYPE_NUMERIC_INT
+	bool
+	default y if DAWN_DTYPE_INT8 || DAWN_DTYPE_UINT8
+	default y if DAWN_DTYPE_INT16 || DAWN_DTYPE_UINT16
+	default y if DAWN_DTYPE_INT32 || DAWN_DTYPE_UINT32
+	default y if DAWN_DTYPE_INT64 || DAWN_DTYPE_UINT64
+	default y if DAWN_DTYPE_B16 || DAWN_DTYPE_UB16
+	default n
+
+config DAWN_DTYPE_NUMERIC_FLOAT
+	bool
+	default y if DAWN_DTYPE_FLOAT || DAWN_DTYPE_DOUBLE
+	default n
+
+config DAWN_DTYPE_CHAR
+	bool "Enable DTYPE_CHAR support"
+	default y
+
+config DAWN_DTYPE_BLOCK
+	bool "Enable DTYPE_BLOCK support"
+	default y
+
+endmenu
+
+source "$APPSDIR/external/src/io/Kconfig"
+source "$APPSDIR/external/src/proto/Kconfig"
+source "$APPSDIR/external/src/prog/Kconfig"
+
+endif # DAWN

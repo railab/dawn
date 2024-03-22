@@ -1,0 +1,127 @@
+metadata:
+  title: Shell GPIO and Config Demo
+  version: '1.0'
+  description: >
+    Provides shell access to demo IO, GPIO inputs and outputs, ADC config-backed
+    values, system information, and reset control.
+  os_required:
+  - /dev/adc0
+  - /dev/pwm0
+  - /dev/gpio0
+  - /dev/gpio1
+  - /dev/gpio2
+  - /dev/gpio3
+  - /dev/gpio4
+  - /dev/gpio5
+  - /dev/gpio6
+  - /dev/gpio7
+ios:
+- &id001
+  id: dummyio1
+  type: dummy
+  dtype: uint32
+  config:
+    init_value: 1234
+- &id006
+  id: uptime1
+  type: sysinfo
+  dtype: float
+  variant: uptime
+- &id007
+  id: cpuload1
+  type: sysinfo
+  dtype: float
+  variant: cpuload
+- &id008
+  id: gpi1
+  type: gpi
+  dtype: bool
+  config:
+    device: 0
+- &id009
+  id: gpi2
+  type: gpi
+  dtype: bool
+  config:
+    device: 1
+- &id010
+  id: gpi3
+  type: gpi
+  dtype: bool
+  config:
+    device: 2
+- &id011
+  id: gpi4
+  type: gpi
+  dtype: bool
+  config:
+    device: 3
+- &id012
+  id: gpo1
+  type: gpo
+  dtype: bool
+  config:
+    device: 4
+- &id013
+  id: gpo2
+  type: gpo
+  dtype: bool
+  config:
+    device: 5
+- &id014
+  id: gpo3
+  type: gpo
+  dtype: bool
+  config:
+    device: 6
+- &id015
+  id: gpo4
+  type: gpo
+  dtype: bool
+  config:
+    device: 7
+- &id019
+  id: reset1
+  type: boardctl
+  dtype: bool
+  variant: reset
+- &id020
+  id: cfgio1
+  type: config
+  dtype: uint32
+  rw: true
+  config:
+    objid_ref: dummyio1
+- &id024
+  id: adc1
+  type: adc_fetch
+  dtype: uint32
+  config:
+    device: 0
+- &id025
+  id: pwm1
+  type: pwm
+  dtype: uint32
+  config:
+    device: 0
+protocols:
+- id: shell1
+  type: shell
+  bindings:
+  - *id001
+  - *id006
+  - *id007
+  - *id008
+  - *id009
+  - *id010
+  - *id011
+  - *id012
+  - *id013
+  - *id014
+  - *id015
+  - *id019
+  - *id020
+  - *id024
+  - *id025
+  config:
+    prompt: abcde>

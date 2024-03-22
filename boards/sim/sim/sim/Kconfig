@@ -1,0 +1,27 @@
+#
+# For a description of the syntax of this configuration file,
+# see the file kconfig-language.txt in the NuttX tools repository.
+#
+
+config DAWN_SIM_OVERLAY
+	bool
+	default y
+	select ARCH_HAVE_RESET
+	select ARCH_HAVE_PWM_MULTICHAN
+	select BOARDCTL_UNIQUEID
+	---help---
+		Enable the Dawn simulator board overlay defaults.
+
+config DAWN_SIM_TTY_ALIAS
+	bool "Alias /dev/ttyS1 to the sim host PTY (CONFIG_SIM_UART0_NAME)"
+	default n
+	select PSEUDOFS_SOFTLINKS
+	---help---
+		Create a VFS symlink /dev/ttyS1 -> CONFIG_SIM_UART0_NAME at
+		bringup so descriptor YAML can hardcode the canonical NuttX
+		serial path /dev/ttyS1 and run unmodified on both real boards
+		and the simulator.
+
+# Include common fake drivers Kconfig
+# DAWN_BOARDS_COMMON is set by dawn/CMakeLists.txt (processed before Kconfig)
+source "$(DAWN_BOARDS_COMMON)/Kconfig"

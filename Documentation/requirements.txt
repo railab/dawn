@@ -1,0 +1,5 @@
+sphinx>=5.0.0
+sphinx-rtd-theme>=1.0.0
+sphinxcontrib-plantuml>=0.24
+breathe>=4.33.0
+Pillow>=10.0.0

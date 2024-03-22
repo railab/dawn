@@ -1,0 +1,82 @@
+metadata:
+  title: Shell and NimBLE Environmental Demo
+  version: '1.0'
+  description: >
+    Provides shell access and NimBLE exposure for an environmental sensor
+    oriented demo with reset and power control objects.
+  os_required:
+  - /dev/uorb/sensor_humi0
+  - /dev/uorb/sensor_baro0
+  - ble
+ios:
+- &id001
+  id: dummyio1
+  type: dummy
+  dtype: float
+  config:
+    init_value: -1.1
+- &id002
+  id: dummyio2
+  type: dummy
+  dtype: float
+  config:
+    init_value: 100.0
+- &id003
+  id: dummyio3
+  type: dummy
+  dtype: float
+  config:
+    init_value: 50.0
+- id: dummyio4
+  type: dummy
+  dtype: int32
+- id: dummyio5
+  type: dummy
+  dtype: int32
+- &id004
+  id: humidity1
+  type: sensor
+  dtype: float
+  config:
+    device: 0
+  subtype: hum
+- id: barometer1
+  type: sensor
+  dtype: float
+  config:
+    device: 0
+  subtype: baro
+- id: uptime1
+  type: sysinfo
+  dtype: float
+  variant: uptime
+- id: cpuload1
+  type: sysinfo
+  dtype: float
+  variant: cpuload
+- id: reset1
+  type: boardctl
+  dtype: bool
+  variant: reset
+- id: reset_cause1
+  type: boardctl
+  dtype: uint32
+  variant: reset_cause
+- id: poweroff1
+  type: boardctl
+  dtype: bool
+  variant: poweroff
+protocols:
+- id: shell1
+  type: shell
+  bindings:
+  - *id001
+  - *id002
+  - *id003
+  - *id004
+  config:
+    prompt: abcde>
+- id: nimble1
+  type: nimble
+  config:
+    gap_name: thingy53

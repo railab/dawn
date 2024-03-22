@@ -1,0 +1,17 @@
+config:
+  cwd: './external'
+  build_dir: './build'
+
+product:
+  name: "dawn-nucleo-c071rb-modbus-ntfc"
+  cores:
+    core0:
+      name: 'main'
+      device: 'serial'
+      exec_path: '/dev/ttyACM0'
+      exec_args: '115200,n,8,1'
+      defconfig: '../../boards/arm/stm32f0l0g0/nucleo-c071rb/configs/modbus_ntfc'
+      flash: 'st-flash --mass-erase write $IMAGE_BIN 0x08000000'
+      reboot: 'st-flash reset'
+      dcmake:
+        CMAKE_SUPPRESS_DEVELOPER_WARNINGS: "ON"

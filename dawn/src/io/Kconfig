@@ -1,0 +1,285 @@
+#
+# For a description of the syntax of this configuration file,
+# see the file kconfig-language.txt in the NuttX tools repository.
+#
+
+config DAWN_IO
+	bool "Dawn IO support"
+	default y
+	---help---
+		Enable support for Dawn IOs.
+
+if DAWN_IO
+
+config DAWN_IO_HAS_STATS
+	bool
+	default y
+	---help---
+		Hidden option to enable IO statistics tracking (read/write/error
+		counts). When enabled, CIOCommon tracks operation statistics that
+		can be queried at runtime. This is independent of the inspect
+		feature and can be disabled to reduce memory footprint.
+
+config DAWN_IO_NOTIFY
+	bool "Dawn IO notifications support"
+	---help---
+		Enable support for IO async notifications.
+
+config DAWN_IO_NOTIFY_STREAM
+	bool "Dawn IO stream notifications support"
+	depends on DAWN_IO_NOTIFY
+	default n
+	---help---
+		Enable stream-based IO notifications with a dedicated thread
+		per IO object. Suitable for high-frequency data streaming
+		where each IO needs its own thread and priority.
+
+config DAWN_IO_TIMESTAMP
+	bool "Dawn IO timestamp support"
+	---help---
+		Enable timestamp-aware IO support and timestamp-capable bindings.
+
+config DAWN_IO_LIMITS
+	bool "Dawn IO limits support"
+	default y
+	---help---
+		Enable IO limit configuration support
+		(IO_CFG_LIMIT_MIN/MAX/STEP). Disable to reduce RAM and code size
+		when descriptor-defined runtime limits are not needed.
+
+config DAWN_IO_SEEKABLE
+	bool "Dawn seekable IO support"
+	default n
+	---help---
+		Enable partial offset-based IO reads/writes for seekable IO objects.
+		When disabled, offset-based access returns -ENOTSUP.
+
+config DAWN_IO_CONFIG
+	bool "Dawn Config IO support"
+	default n
+	---help---
+		Enable the Config IO used for runtime configuration access.
+
+config DAWN_IO_CONTROL
+	bool "Dawn control IO support"
+	default n
+	---help---
+		Enable the Control IO used to start and stop supported objects.
+
+config DAWN_IO_TRIGGER
+	bool "Dawn trigger IO support"
+	default n
+	---help---
+		Enable the Trigger IO used to trigger supported object actions.
+
+config DAWN_IO_DUMMY
+	bool "Dawn Dummy IO support"
+	default n
+	---help---
+		Enable the dummy IO implementation used for tests and placeholders.
+
+config DAWN_IO_DUMMY_NOTIFY
+	bool "Dawn timer-driven dummy IO support"
+	select DAWN_IO_TIMERFD
+	default n
+	---help---
+		Enable a timer-driven dummy IO that stores an in-memory value and
+		emits periodic notifications.
+
+config DAWN_IO_PRINT
+	bool "Dawn Print IO support"
+	default n
+	---help---
+		Enable the print IO for debug-oriented text output.
+
+config DAWN_IO_VIRT
+	bool "Dawn Virtual IO support"
+	default n
+	---help---
+		Enable virtual IO objects used by programs and protocol bindings.
+
+config DAWN_IO_SYSINFO
+	bool "Dawn sysinfo IO support"
+	default n
+	depends on DAWN_DTYPE_FLOAT || DAWN_DTYPE_UB16
+	---help---
+		Enable sysinfo IO objects such as uptime and CPU load.
+
+config DAWN_IO_BOARDCTL
+	bool "Dawn boardctl IO support"
+	default n
+	---help---
+		Enable board control IO objects such as reset and poweroff.
+
+config DAWN_IO_UNAME
+	bool "Dawn uname IO support"
+	default n
+	depends on DAWN_DTYPE_CHAR
+	---help---
+		Enable uname IO objects such as the system hostname.
+
+config DAWN_IO_UUID
+	bool "Dawn UUID IO support"
+	default n
+	depends on DAWN_DTYPE_UINT8
+	---help---
+		Enable support for UUID (unique device identifier) IO.
+
+config DAWN_IO_SYSTIME
+	bool "Dawn system time IO support"
+	default n
+	---help---
+		Enable the system time IO for reading or exposing wall-clock time.
+
+config DAWN_IO_SENSOR
+	bool "Dawn Sensor IO support"
+	default n
+	depends on DAWN_DTYPE_FLOAT
+	---help---
+		Enable sensor-backed IO objects using the NuttX sensor framework.
+
+config DAWN_IO_ADC
+	bool
+	default n
+
+config DAWN_IO_ADC_FETCH
+	bool "Dawn ADC fetch IO support"
+	default n
+	depends on DAWN_DTYPE_INT32
+	select DAWN_IO_ADC
+	---help---
+		Enable on-demand ADC fetch IO objects.
+
+config DAWN_IO_ADC_SYNC
+	bool "Dawn ADC sync IO support"
+	default n
+	depends on DAWN_DTYPE_INT32
+	select DAWN_IO_ADC
+	select DAWN_IO_NOTIFY
+	---help---
+		Enable hardware-triggered ADC sync IO objects.
+
+config DAWN_IO_ADC_STREAM
+	bool "Dawn ADC stream IO support"
+	default n
+	depends on DAWN_DTYPE_INT32
+	select DAWN_IO_ADC
+	select DAWN_IO_NOTIFY
+	---help---
+		Enable batch ADC stream IO objects.
+
+config DAWN_IO_DAC
+	bool "Dawn DAC IO support"
+	default n
+	depends on DAWN_DTYPE_INT32
+	---help---
+		Enable DAC-backed IO objects for analog output control.
+
+config DAWN_IO_ENCODER
+	bool "Dawn Encoder IO support"
+	default n
+	depends on DAWN_DTYPE_INT32
+	---help---
+		Enable quadrature encoder position IO objects.
+
+config DAWN_IO_ENCODER_INDEX
+	bool "Dawn Encoder Index IO support"
+	default n
+	depends on DAWN_DTYPE_INT32
+	---help---
+		Enable quadrature encoder IO objects exposing position and index data.
+
+config DAWN_IO_GPO
+	bool "Dawn GPO IO support"
+	default n
+	depends on DAWN_DTYPE_UINT32
+	---help---
+		Enable general-purpose output IO objects.
+
+config DAWN_IO_GPI
+	bool "Dawn GPI IO support"
+	default n
+	depends on DAWN_DTYPE_UINT32
+	---help---
+		Enable general-purpose input IO objects.
+
+config DAWN_IO_PWM
+	bool "Dawn PWM IO support"
+	default n
+	depends on DAWN_DTYPE_UINT32
+	---help---
+		Enable PWM-backed IO objects for duty-cycle control.
+
+config DAWN_IO_PWM_DEFAULT_FREQ
+	int "Dawn PWM default frequency"
+	default 1000
+	depends on DAWN_IO_PWM
+	range 1 2147483647
+	---help---
+		Default PWM output frequency in Hz when a PWM IO descriptor does
+		not provide an explicit freq field.
+
+config DAWN_IO_BUTTONS
+	bool "Dawn Buttons IO support"
+	default n
+	---help---
+		Enable button input IO objects backed by board button drivers.
+
+config DAWN_IO_LEDS
+	bool "Dawn Leds IO support"
+	default n
+	---help---
+		Enable LED output IO objects backed by board LED drivers.
+
+config DAWN_IO_TIMERFD
+	bool
+	default n
+	---help---
+		Internal helper for timer-backed IO implementations.
+
+config DAWN_IO_TIMESTAMPIO
+	bool "Dawn timestamp IO support"
+	select DAWN_IO_TIMERFD
+	default n
+	---help---
+		Enable timer-driven timestamp IO objects.
+
+config DAWN_IO_RANDIO
+	bool "Dawn rand IO support"
+	select DAWN_IO_TIMERFD
+	default n
+	---help---
+		Enable timer-driven random-number IO objects.
+
+config DAWN_IO_DESCRIPTOR
+	bool "Dawn descriptor IO support"
+	default n
+	depends on DAWN_IO_SEEKABLE
+	---help---
+		Enable read access to the loaded descriptor through an IO object.
+
+config DAWN_IO_CAPABILITIES
+	bool "Dawn capabilities IO support"
+	default n
+	depends on DAWN_IO_SEEKABLE
+	depends on DAWN_DTYPE_BLOCK
+	---help---
+		Enable IO_CLASS_CAPABILITIES read-only seekable capability bitmap IO.
+
+config DAWN_IO_DESC_SELECTOR
+	bool "Dawn descriptor selector IO support"
+	default n
+	depends on DAWN_IO_DESCRIPTOR && DAWN_DESC_SWITCH
+	depends on DAWN_DTYPE_UINT32
+	---help---
+		Enable IO_CLASS_DESC_SELECTOR runtime descriptor slot selection.
+
+config DAWN_IO_FILE
+	bool "Dawn File IO support"
+	default n
+	depends on DAWN_IO_SEEKABLE
+	---help---
+		Enable support for file system access via the Dawn IO abstraction.
+		Access is restricted to the /data/ and /tmp/ directories.
+
+endif # DAWN_IO

@@ -1,0 +1,72 @@
+# examples/out-of-tree-demo/descriptors/demo.yaml
+#
+# YAML descriptor for the Dawn out-of-tree demo. Mirrors descriptors/demo.cxx
+# but goes through dawnpy's YAML generator. The custom IO/PROG/PROTO types
+# (`my_io_dummy`, `my_prog_dummy`, `my_proto_dummy`) are made known to dawnpy
+# via the `--types-from <oot>/dawnpy_types.py` mechanism, which the cmake
+# YAML generator wires up automatically when DAWN_OOT_ROOT is set.
+
+metadata:
+  title: Dawn OOT Demo (YAML)
+  version: "1.0"
+  description: >
+    Out-of-tree demo wired through the YAML descriptor path. Exercises the
+    --types-from extension API end-to-end.
+
+ios:
+  - &myiodummy1
+    id: myiodummy1
+    type: my_io_dummy
+    config:
+      # Custom user-config item declared in dawnpy_types.py via
+      # ConfigField(name="init_value", cpp_helper="...cfgIdInitval"). The
+      # generator emits cfgIdInitval() + this 32-bit word into the
+      # descriptor, exercising the schema-driven config path end-to-end.
+      init_value: 0xDEADBEEF
+
+  - &leds1
+    id: leds1
+    type: leds
+    dtype: uint32
+    rw: false
+    config:
+      device: 0
+
+  - &buttons1
+    id: buttons1
+    type: buttons
+    dtype: uint32
+    rw: false
+    config:
+      device: 0
+
+  - &uuid1
+    id: uuid1
+    type: uuid
+
+programs:
+  - &myprogdummy1
+    id: myprogdummy1
+    type: my_prog_dummy
+    config:
+      targets:
+        - *myiodummy1
+      # Custom user-config item declared in dawnpy_types.py via
+      # ConfigField(name="tag", cpp_helper="...cfgIdTag"). Emits
+      # cfgIdTag() + this 32-bit word into the descriptor.
+      tag: 0xCAFEBABE
+
+protocols:
+  - id: myprotodummy1
+    type: my_proto_dummy
+    bindings:
+      - *myiodummy1
+
+  - id: shell1
+    type: shell
+    bindings:
+      - *myiodummy1
+      - *leds1
+      - *buttons1
+      - *uuid1
+      - *myprogdummy1

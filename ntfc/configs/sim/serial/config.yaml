@@ -1,0 +1,16 @@
+config:
+  cwd: './external'
+  build_dir: './build'
+  build_env:
+    CC: 'gcc-14'
+    CXX: 'g++-14'
+
+product:
+  name: "dawn-sim-serial"
+  cores:
+    core0:
+      name: 'main'
+      device: 'sim'
+      defconfig: '../../boards/sim/sim/sim/configs/nsh_serial'
+      dcmake:
+        CMAKE_SUPPRESS_DEVELOPER_WARNINGS: "ON"

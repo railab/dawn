@@ -1,0 +1,6 @@
+[paths]
+dawn_root = "../.."
+
+[project]
+oot = true
+types_from = "dawnpy_types.py"

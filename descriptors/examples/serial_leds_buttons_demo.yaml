@@ -1,0 +1,72 @@
+metadata:
+  title: Serial LEDs and Buttons Demo
+  version: '1.0'
+  description: >
+    Provides serial access to demo data together with one LED output and one
+    button input.
+  os_required:
+  - /dev/ttyS0
+  - /dev/leds0
+  - /dev/buttons0
+ios:
+- &id001
+  id: dummyio1
+  type: dummy
+  dtype: bool
+- &id002
+  id: dummyio2
+  type: dummy
+  dtype: bool
+- &id003
+  id: dummyio3
+  type: dummy
+  dtype: uint16
+- &id004
+  id: dummyio4
+  type: dummy
+  dtype: uint16
+- &id005
+  id: dummyio5
+  type: dummy
+  dtype: uint32
+- &id006
+  id: dummyio6
+  type: dummy
+  dtype: uint32
+- &id007
+  id: dummyio7
+  type: dummy
+  dtype: uint64
+- &id008
+  id: dummyio8
+  type: dummy
+  dtype: uint64
+- &id009
+  id: leds1
+  type: leds
+  dtype: bool
+  config:
+    device: 0
+- &id010
+  id: buttons1
+  type: buttons
+  dtype: bool
+  config:
+    device: 0
+protocols:
+- id: serial1
+  type: serial
+  bindings:
+  - *id001
+  - *id002
+  - *id003
+  - *id004
+  - *id005
+  - *id006
+  - *id007
+  - *id008
+  - *id009
+  - *id010
+  config:
+    path: /dev/ttyS0
+    baudrate: 115200

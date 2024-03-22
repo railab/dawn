@@ -1,0 +1,62 @@
+#
+# For a description of the syntax of this configuration file,
+# see the file kconfig-language.txt in the NuttX tools repository.
+#
+
+config DAWN_PROTO_CAN
+	bool "Dawn CAN-simple proto support"
+	default n
+	---help---
+		Enable the CAN protocol implementation for Dawn.
+
+if DAWN_PROTO_CAN
+
+config DAWN_PROTO_CAN_NODEID
+	int "Dawn CAN-simple default node ID"
+	default 1
+	---help---
+		Default node ID added to CAN IDs in CAN protocol bindings.
+
+config DAWN_PROTO_CAN_EXTID
+	bool "Dawn CAN-simple EXTID support"
+	default n
+	---help---
+		Enable support for extended 29-bit CAN identifiers.
+
+config DAWN_PROTO_CAN_CANFD
+	bool "Dawn CAN-simple CANFD support"
+	default n
+	---help---
+		Enable CAN FD framing (data lengths beyond 8 bytes).
+
+config DAWN_PROTO_CAN_RTR
+	bool "Dawn CAN-simple RTR support"
+	default n
+	---help---
+		Enable RTR-based read requests for simple CAN access methods.
+
+config DAWN_PROTO_CAN_SIMPLE
+	bool "Dawn CAN simple access methods"
+	default y
+	---help---
+		Enable per-IO CAN ID access (push, simple read, simple write).
+
+config DAWN_PROTO_CAN_SEG
+	bool "Dawn CAN segmented access methods"
+	default n
+	---help---
+		Enable segmented read/write for long payloads.
+
+config DAWN_PROTO_CAN_SEG_TIMEOUT_US
+	int "Dawn CAN segmented timeout (us)"
+	default 1000000
+	---help---
+		Timeout for segmented transfers before state is reset.
+
+config DAWN_PROTO_CAN_SINGLE_ID
+	bool "Dawn CAN single-ID indexed access methods"
+	default n
+	---help---
+		Enable indexed read/write using one CAN ID per IO group.
+
+endif # DAWN_PROTO_CAN

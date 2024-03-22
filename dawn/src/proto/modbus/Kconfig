@@ -1,0 +1,113 @@
+#
+# For a description of the syntax of this configuration file,
+# see the file kconfig-language.txt in the NuttX tools repository.
+#
+
+config DAWN_PROTO_MODBUS
+	bool "Dawn MODBUS proto support"
+	default n
+	select NXMODBUS
+	select NXMODBUS_SERVER
+	---help---
+		Enable Modbus protocol support in Dawn.
+		This requires NxModbus library.
+
+if DAWN_PROTO_MODBUS
+
+config DAWN_PROTO_MODBUS_RTU
+	bool "Dawn MODBUS RTU proto support"
+	default n
+	select NXMODBUS_RTU
+	---help---
+		Enable the Modbus RTU transport backend.
+		This requires NxModbus RTU support.
+
+if DAWN_PROTO_MODBUS_RTU
+
+config DAWN_PROTO_MODBUS_RTU_PATH
+	string "Modbus RTU path"
+	default "/dev/ttyUSB0"
+	---help---
+		Set the default device path for Modbus RTU.
+
+config DAWN_PROTO_MODBUS_RTU_BAUD
+	int "Modbus RTU baud"
+	default 115200
+	---help---
+		Ignored if set to 0 (for example for RTT interface)
+
+config DAWN_PROTO_MODBUS_RTU_ADDR
+	hex "Modbus RTU address"
+	default 0x01
+	---help---
+		Modbus Slave address.
+
+config DAWN_PROTO_MODBUS_RTU_PARITY
+	hex "Modbus RTU parity"
+	default 2
+	---help---
+		Modbus parity, 0 - none, 1 - odd, 2 - even
+
+endif # DAWN_PROTO_MODBUS_RTU
+
+config DAWN_PROTO_MODBUS_COIL
+	bool "Dawn MODBUS coil register support"
+	default y
+	---help---
+		Enable support for coil registers (read-write bits).
+		Includes both individual (MODBUS_TYPE_COIL) and
+		packed (MODBUS_TYPE_COIL_PACKED) coil types.
+
+config DAWN_PROTO_MODBUS_DISCRETE
+	bool "Dawn MODBUS discrete register support"
+	default y
+	---help---
+		Enable support for discrete input registers (read-only bits).
+		Includes both individual (MODBUS_TYPE_DISCRETE) and
+		packed (MODBUS_TYPE_DISCRETE_PACKED) discrete types.
+
+config DAWN_PROTO_MODBUS_INPUT
+	bool "Dawn MODBUS input register support"
+	default y
+	---help---
+		Enable support for input registers (read-only 16-bit words).
+
+config DAWN_PROTO_MODBUS_HOLDING
+	bool "Dawn MODBUS holding register support"
+	default y
+	---help---
+		Enable support for holding registers (read-write 16-bit words).
+
+config DAWN_PROTO_MODBUS_SEEKABLE
+	bool "Dawn MODBUS seekable register support"
+	default y
+	depends on DAWN_PROTO_MODBUS_HOLDING
+	---help---
+		Enable support for seekable register windows over holding registers.
+		Requires holding register support (DAWN_PROTO_MODBUS_HOLDING).
+
+config DAWN_PROTO_MODBUS_TCP
+	bool "Dawn MODBUS TCP proto support"
+	default n
+	select NXMODBUS_TCP
+	---help---
+		Enable the Modbus TCP transport backend.
+		This requires NxModbus TCP support.
+
+if DAWN_PROTO_MODBUS_TCP
+
+config DAWN_PROTO_MODBUS_TCP_PORT
+	int "Modbus TCP port"
+	default 502
+	---help---
+		Set the default TCP port for Modbus TCP.
+
+config DAWN_PROTO_MODBUS_TCP_ADDR
+	hex "Modbus TCP unit address"
+	default 0x01
+	---help---
+		Set default unit address for Modbus TCP.
+
+endif # DAWN_PROTO_MODBUS_TCP
+
+endif # DAWN_PROTO_MODBUS

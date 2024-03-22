@@ -1,0 +1,66 @@
+==================
+Nordic nRF52840-DK
+==================
+
+Configs
+=======
+
+blinky_buttons
+--------------
+
+Extended 4-button, 4-mode runtime-control example with zero protocols. Uses
+``blinky_buttons_demo.yaml``. All logic is handled by interconnected programs
+(BitSplit, Toggle, Counter, Switch, Selector, Sequencer, Expression, Redirect).
+
+Button mapping on nRF52840-DK:
+
+* Button 1 toggles run/stop.
+* Button 2 cycles modes: all LEDs blink, LED chase, selected LED blink,
+  selected LED constant-on.
+* Button 3 selects the active LED for the two selected-LED modes. The blink
+  and constant-on modes keep independent selected LED state.
+* Button 4 changes the dwell time for blinking modes 0, 1, and 2.
+
+nimble_aios
+-----------
+
+NimBLE Automation IO Service demo using ``nimble_aios_demo.yaml``. It exposes
+GPIO-backed digital inputs and outputs, a dummy analog input, and PWM-backed
+analog outputs.
+
+nimble_blinky
+-------------
+
+Sequencer-driven LED output controlled over BLE via NimBLE. Uses
+``blinky_nimble_demo.yaml``. The device advertises as ``dawn-blink`` and
+exposes start/stop, state table, and dwell times through a custom BLE service.
+
+Host-side control is available via :file:`tools/scripts/nimble_blinky_cli.py`.
+The helper supports start/stop, status, toggle, period, and interactive
+control from a host terminal.
+
+nimble_ntfc
+-----------
+
+NTFC all-services NimBLE profile using ``ntfc_nimble_all.yaml``.
+
+nimble_ntfc_buffer
+------------------
+
+NTFC NimBLE buffer-transfer profile using ``ntfc_nimble_buffer.yaml``.
+
+nimble_ntfc_custom
+------------------
+
+NTFC custom-service NimBLE profile using ``ntfc_nimble_custom.yaml``.
+
+nimble_ots
+----------
+
+NimBLE Object Transfer Service demo using ``nimble_ots_demo.yaml``.
+
+shell
+-----
+
+Shell example focused on GPIO, config values, and reset control. Uses
+``shell_gpio_config_demo.yaml``.
