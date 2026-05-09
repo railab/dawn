@@ -141,6 +141,15 @@ int CProtoCan::onPollReady(void *priv, struct pollfd *pfds, nfds_t nfds, int pol
   ret = can_read(self->fd, &msg);
   if (ret > 0)
     {
+      if (msg.error)
+        {
+          DAWNERR("CAN error frame id=0x%03" PRIx32 " len=%u\n",
+                  static_cast<uint32_t>(msg.id),
+                  static_cast<unsigned>(msg.len));
+          pfds[0].revents = 0;
+          return OK;
+        }
+
       ret = self->msgRecv(msg);
       if (ret < 0)
         {
