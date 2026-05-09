@@ -46,11 +46,13 @@ Feature index
      - Descriptors
    * - Blinky
      - :ref:`Blinky Buttons <descriptor-blinky-buttons-demo>`,
+       :ref:`Blinky CAN <descriptor-blinky-can-demo>`,
        :ref:`Blinky NimBLE <descriptor-blinky-nimble-demo>`,
        :ref:`Blinky Modbus RTU <descriptor-blinky-modbus-rtu-demo>`,
        :ref:`Blinky Shell <descriptor-blinky-shell-demo>`
    * - CAN
-     - :ref:`CAN Button/LED <descriptor-can-button-led>`,
+     - :ref:`Blinky CAN <descriptor-blinky-can-demo>`,
+       :ref:`CAN Button/LED <descriptor-can-button-led>`,
        :ref:`CAN Dummy IO <descriptor-ntfc-can-dummy>`,
        :ref:`Programs Over CAN <descriptor-ntfc-programs-can>`,
        :ref:`Serial to CAN Gateway <descriptor-gateway-serial-can>`
@@ -126,6 +128,24 @@ Examples
       Button 4 -> counter_p2 -> dwell ConfigIO for modes 0, 1, and 2
 
   Required resources: ``/dev/buttons0``, ``/dev/leds0``
+
+.. _descriptor-blinky-can-demo:
+
+``descriptors/examples/blinky_can_demo.yaml``
+  **Blinky CAN Demo**
+
+  Sequencer-driven LED output with CAN control. Start/stop, reset,
+  start-index configuration, individual dwell values, current LED state, and
+  segmented access to the full sequencer state table are exposed through CAN
+  frames.
+
+  The simple write mappings use standard CAN IDs ``0x150`` through ``0x154``.
+  The host helper updates the blink period by writing ``cfg_dwell_off`` on
+  ``0x153`` and ``cfg_dwell_on`` on ``0x154``.
+
+  Required resources: ``/dev/can0``, ``/dev/leds0``
+
+  Host helper: :file:`tools/scripts/can_blinky_cli.py`
 
 .. _descriptor-blinky-nimble-demo:
 
