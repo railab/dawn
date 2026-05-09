@@ -59,8 +59,6 @@ int CProtoCan::notifierCb(void *priv, io_ddata_t *data)
 
 int CProtoCan::validateCanIo(const SProtoCanIOBind *v, CIOCommon *io, SCanIoData *canio)
 {
-  int ret;
-
   switch (v->type)
     {
 #ifdef CONFIG_DAWN_PROTO_CAN_SIMPLE
@@ -75,7 +73,7 @@ int CProtoCan::validateCanIo(const SProtoCanIOBind *v, CIOCommon *io, SCanIoData
 
           if (io->isNotify() == true)
             {
-              ret = io->setNotifier(notifierCb, 0, canio);
+              int ret = io->setNotifier(notifierCb, 0, canio);
               if (ret < 0)
                 {
                   DAWNERR("ERROR: set notifier failed for objId = "

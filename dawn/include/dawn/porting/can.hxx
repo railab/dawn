@@ -22,7 +22,8 @@ struct canmsg_s
   uint8_t len;
   uint8_t rtr : 1;
   uint8_t extid : 1;
-  uint8_t _res : 6;
+  uint8_t error : 1;
+  uint8_t _res : 5;
   uint8_t data[CAN_DATA_MAX];
 };
 

@@ -92,11 +92,15 @@ int can_read(int fd, FAR dawn::porting::canmsg_s *msg)
   msg->id = frame.cm_hdr.ch_id;
   msg->len = can_dlc2bytes(frame.cm_hdr.ch_dlc);
   msg->rtr = frame.cm_hdr.ch_rtr;
+  msg->error = 0;
   msg->_res = 0;
 #ifdef CONFIG_CAN_EXTID
   msg->extid = frame.cm_hdr.ch_extid;
 #else
   msg->extid = 0;
+#endif
+#ifdef CONFIG_CAN_ERRORS
+  msg->error = frame.cm_hdr.ch_error;
 #endif
 
   std::memcpy(msg->data, frame.cm_data, CAN_DATA_MAX);
