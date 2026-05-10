@@ -4,13 +4,13 @@
 Simple host-side helper for the Modbus RTU blinky demo.
 
 Usage examples:
-  python3 modbus_blinky_cli.py start
-  python3 modbus_blinky_cli.py stop
-  python3 modbus_blinky_cli.py status
-  python3 modbus_blinky_cli.py period 250000
-  python3 modbus_blinky_cli.py period 100000 500000
-  python3 modbus_blinky_cli.py toggle
-  python3 modbus_blinky_cli.py interactive
+  python3 tools/examples/modbus_blinky_cli.py start
+  python3 tools/examples/modbus_blinky_cli.py stop
+  python3 tools/examples/modbus_blinky_cli.py status
+  python3 tools/examples/modbus_blinky_cli.py period 250000
+  python3 tools/examples/modbus_blinky_cli.py period 100000 500000
+  python3 tools/examples/modbus_blinky_cli.py toggle
+  python3 tools/examples/modbus_blinky_cli.py interactive
 
 Requires:
   pip install -e tools/dawnpy

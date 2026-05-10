@@ -18,7 +18,7 @@ Modbus-RTU controlled version of the same LED sequencer demo. Uses
 ``blinky_modbus_rtu_demo.yaml`` and exposes start/stop plus writable runtime
 blink configuration over Modbus holding registers.
 
-Host-side control is available via :file:`tools/scripts/modbus_blinky_cli.py`.
+Host-side control is available via :file:`tools/examples/modbus_blinky_cli.py`.
 The helper supports start/stop, toggle, status, dwell-period updates, and
 interactive usage.
 

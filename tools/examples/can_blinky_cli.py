@@ -4,13 +4,13 @@
 Simple host-side helper for descriptors/examples/blinky_can_demo.yaml.
 
 Usage examples:
-  python3 can_blinky_cli.py start
-  python3 can_blinky_cli.py stop
-  python3 can_blinky_cli.py status
-  python3 can_blinky_cli.py period 250000
-  python3 can_blinky_cli.py period 100000 500000
-  python3 can_blinky_cli.py toggle
-  python3 can_blinky_cli.py interactive
+  python3 tools/examples/can_blinky_cli.py start
+  python3 tools/examples/can_blinky_cli.py stop
+  python3 tools/examples/can_blinky_cli.py status
+  python3 tools/examples/can_blinky_cli.py period 250000
+  python3 tools/examples/can_blinky_cli.py period 100000 500000
+  python3 tools/examples/can_blinky_cli.py toggle
+  python3 tools/examples/can_blinky_cli.py interactive
 
 Requires:
   pip install -e tools/dawnpy -e tools/dawnpy-can
