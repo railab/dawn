@@ -145,7 +145,7 @@ Examples
 
   Required resources: ``/dev/can0``, ``/dev/leds0``
 
-  Host helper: :file:`tools/scripts/can_blinky_cli.py`
+  Host helper: :file:`tools/examples/can_blinky_cli.py`
 
 .. _descriptor-blinky-nimble-demo:
 
@@ -158,7 +158,7 @@ Examples
 
   Required resources: ``/dev/gpio4``, ``ble``
 
-  Host helper: :file:`tools/scripts/nimble_blinky_cli.py`
+  Host helper: :file:`tools/examples/nimble_blinky_cli.py`
 
 .. _descriptor-blinky-shell-demo:
 
@@ -182,7 +182,7 @@ Examples
 
   Required resources: ``/dev/leds0``, ``/dev/ttyS1``
 
-  Host helper: :file:`tools/scripts/modbus_blinky_cli.py`
+  Host helper: :file:`tools/examples/modbus_blinky_cli.py`
 
 .. _descriptor-can-button-led:
 

@@ -35,7 +35,7 @@ Sequencer-driven LED output controlled over BLE via NimBLE. Uses
 ``blinky_nimble_demo.yaml``. The device advertises as ``dawn-blink`` and
 exposes start/stop, state table, and dwell times through a custom BLE service.
 
-Host-side control is available via :file:`tools/scripts/nimble_blinky_cli.py`.
+Host-side control is available via :file:`tools/examples/nimble_blinky_cli.py`.
 The helper supports start/stop, status, toggle, period, and interactive
 control from a host terminal.
 
