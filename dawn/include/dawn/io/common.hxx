@@ -124,6 +124,27 @@ public:
     IO_CLASS_SENSOR_UV = 21,            ///< Ultraviolet sensor
     IO_CLASS_SENSOR_GAS = 22,           ///< Gas sensor
 
+    // Sensor producers
+
+    IO_CLASS_SENSOR_PRODUCER_ACCELEROMETER = 23, ///< Accelerometer publisher
+    IO_CLASS_SENSOR_PRODUCER_MAGNETICFIELD = 24, ///< Magnetic field publisher
+    IO_CLASS_SENSOR_PRODUCER_GYROSCOPE = 25,     ///< Gyroscope publisher
+    IO_CLASS_SENSOR_PRODUCER_LIGHT = 26,         ///< Light publisher
+    IO_CLASS_SENSOR_PRODUCER_BAROMETER = 27,     ///< Barometer publisher
+    IO_CLASS_SENSOR_PRODUCER_PROXIMITY = 28,     ///< Proximity publisher
+    IO_CLASS_SENSOR_PRODUCER_HUMIDITY = 29,      ///< Humidity publisher
+    IO_CLASS_SENSOR_PRODUCER_TEMPERATURE = 30,   ///< Temperature publisher
+    IO_CLASS_SENSOR_PRODUCER_ATEMPERATURE = 31,  ///< Ambient temperature publisher
+    IO_CLASS_SENSOR_PRODUCER_RGB = 32,           ///< RGB color publisher
+    IO_CLASS_SENSOR_PRODUCER_IR = 33,            ///< Infrared publisher
+    IO_CLASS_SENSOR_PRODUCER_UV = 34,            ///< Ultraviolet publisher
+    IO_CLASS_SENSOR_PRODUCER_GAS = 35,           ///< Gas publisher
+    IO_CLASS_SENSOR_PRODUCER_CONFIG = 36,        ///< Sensor producer configuration IDs
+
+    // there is 59 sensor types in Nuttx now, most likely it grows later
+    // we still have many free slots, but in the future, it there are no free IO slots
+    // we can thing about combining sensor and sensor producer
+
     // System information
 
     IO_CLASS_SYSTEM_UPTIME = 41,     ///< System uptime

@@ -112,6 +112,21 @@ void CIOCapabilities::buildIoBitmap()
   setBitmapBit(ioBitmap, CIOCommon::IO_CLASS_SENSOR_UV);
   setBitmapBit(ioBitmap, CIOCommon::IO_CLASS_SENSOR_GAS);
 #endif
+#ifdef CONFIG_DAWN_IO_SENSOR_PRODUCER
+  setBitmapBit(ioBitmap, CIOCommon::IO_CLASS_SENSOR_PRODUCER_ACCELEROMETER);
+  setBitmapBit(ioBitmap, CIOCommon::IO_CLASS_SENSOR_PRODUCER_MAGNETICFIELD);
+  setBitmapBit(ioBitmap, CIOCommon::IO_CLASS_SENSOR_PRODUCER_GYROSCOPE);
+  setBitmapBit(ioBitmap, CIOCommon::IO_CLASS_SENSOR_PRODUCER_LIGHT);
+  setBitmapBit(ioBitmap, CIOCommon::IO_CLASS_SENSOR_PRODUCER_BAROMETER);
+  setBitmapBit(ioBitmap, CIOCommon::IO_CLASS_SENSOR_PRODUCER_PROXIMITY);
+  setBitmapBit(ioBitmap, CIOCommon::IO_CLASS_SENSOR_PRODUCER_HUMIDITY);
+  setBitmapBit(ioBitmap, CIOCommon::IO_CLASS_SENSOR_PRODUCER_TEMPERATURE);
+  setBitmapBit(ioBitmap, CIOCommon::IO_CLASS_SENSOR_PRODUCER_ATEMPERATURE);
+  setBitmapBit(ioBitmap, CIOCommon::IO_CLASS_SENSOR_PRODUCER_RGB);
+  setBitmapBit(ioBitmap, CIOCommon::IO_CLASS_SENSOR_PRODUCER_IR);
+  setBitmapBit(ioBitmap, CIOCommon::IO_CLASS_SENSOR_PRODUCER_UV);
+  setBitmapBit(ioBitmap, CIOCommon::IO_CLASS_SENSOR_PRODUCER_GAS);
+#endif
 #ifdef CONFIG_DAWN_IO_SYSINFO
   setBitmapBit(ioBitmap, CIOCommon::IO_CLASS_SYSTEM_UPTIME);
   setBitmapBit(ioBitmap, CIOCommon::IO_CLASS_SYSTEM_CPULOAD);

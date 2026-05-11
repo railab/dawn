@@ -1,0 +1,77 @@
+metadata:
+  title: NimBLE Sensor Producer Demo
+  version: '1.0'
+  description: >
+    Publishes BLE-provided environmental values into NuttX user sensor topics
+    so independent applications can read the values through /dev/uorb.
+  os_required:
+  - ble
+  - /dev/usensor
+  - /dev/uorb/sensor_temp10
+  - /dev/uorb/sensor_humi11
+  - /dev/uorb/sensor_baro12
+  - /dev/uorb/sensor_light13
+ios:
+- &temp_producer
+  id: ble_temp_sensor_pub
+  type: sensor_producer
+  subtype: temp
+  dtype: float
+  config:
+    device: 10
+    queue_size: 4
+    persist: true
+- &humi_producer
+  id: ble_humi_sensor_pub
+  type: sensor_producer
+  subtype: hum
+  dtype: float
+  config:
+    device: 11
+    queue_size: 4
+    persist: true
+- &baro_producer
+  id: ble_baro_sensor_pub
+  type: sensor_producer
+  subtype: baro
+  dtype: float
+  config:
+    device: 12
+    queue_size: 4
+    persist: true
+- &light_producer
+  id: ble_light_sensor_pub
+  type: sensor_producer
+  subtype: light
+  dtype: float
+  config:
+    device: 13
+    queue_size: 4
+    persist: true
+protocols:
+- id: nimble1
+  type: nimble
+  config:
+    gap_name: dawn-sensor-prod
+    services:
+      dis:
+        enabled: true
+      custom:
+      - uuid: 7f3d4a30-2b58-4bc2-9f31-3c0b2c4d0000
+        characteristics:
+        - uuid: 7f3d4a30-2b58-4bc2-9f31-3c0b2c4d0001
+          io: *temp_producer
+          flags:
+          - write
+        - uuid: 7f3d4a30-2b58-4bc2-9f31-3c0b2c4d0002
+          io: *humi_producer
+          flags:
+          - write
+        - uuid: 7f3d4a30-2b58-4bc2-9f31-3c0b2c4d0003
+          io: *baro_producer
+          flags:
+          - write
+        - uuid: 7f3d4a30-2b58-4bc2-9f31-3c0b2c4d0004
+          io: *light_producer
+          flags:
+          - write

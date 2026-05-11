@@ -1,0 +1,17 @@
+config:
+  cwd: './external'
+  build_dir: './build'
+
+product:
+  name: "dawn-nrf52840dk-nimble-sensor-producer"
+  cores:
+    core0:
+      name: 'main'
+      device: 'serial'
+      exec_path: '/dev/ttyACM0'
+      exec_args: '115200,n,8,1'
+      defconfig: '../../boards/arm/nrf52/nrf52840-dk/configs/nimble_sensor_producer'
+      flash: 'nrfutil device program --firmware $IMAGE_HEX'
+      reboot: 'nrfutil device reset'
+      dcmake:
+        CMAKE_SUPPRESS_DEVELOPER_WARNINGS: "ON"

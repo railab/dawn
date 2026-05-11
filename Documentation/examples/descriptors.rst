@@ -53,6 +53,7 @@ Feature index
    * - CAN
      - :ref:`Blinky CAN <descriptor-blinky-can-demo>`,
        :ref:`CAN Button/LED <descriptor-can-button-led>`,
+       :ref:`CAN Sensor Producer <descriptor-can-sensor-producer>`,
        :ref:`CAN Dummy IO <descriptor-ntfc-can-dummy>`,
        :ref:`Programs Over CAN <descriptor-ntfc-programs-can>`,
        :ref:`Serial to CAN Gateway <descriptor-gateway-serial-can>`
@@ -75,6 +76,7 @@ Feature index
        :ref:`NimBLE Environmental Sensor <descriptor-nimble-env-sensor-demo>`,
        :ref:`NimBLE GPIO and Analog <descriptor-nimble-gpio-analog-demo>`,
        :ref:`NimBLE OTS <descriptor-nimble-ots-demo>`,
+       :ref:`NimBLE Sensor Producer <descriptor-nimble-sensor-producer>`,
        :ref:`NTFC NimBLE All-Services <descriptor-ntfc-nimble-all>`,
        :ref:`NTFC NimBLE Buffer <descriptor-ntfc-nimble-buffer>`,
        :ref:`NTFC NimBLE Custom Service <descriptor-ntfc-nimble-custom>`,
@@ -194,6 +196,27 @@ Examples
 
   Required resources: ``/dev/can0``, ``/dev/leds0``, ``/dev/buttons0``
 
+.. _descriptor-can-sensor-producer:
+
+``descriptors/examples/can_sensor_producer.yaml``
+  **CAN Sensor Producer Demo**
+
+  Receives environmental values over CAN and republishes them as NuttX user
+  sensor topics. The descriptor creates temperature, humidity, barometer, and
+  light topics using ``sensor_producer`` IOs. Another NuttX application can
+  read those topics through ``/dev/uorb`` while Dawn only provides the CAN
+  write path.
+
+  CAN write mappings start at ``0x150``:
+  ``can_temp_sensor_pub`` is one float, ``can_humi_sensor_pub`` is one float,
+  ``can_baro_sensor_pub`` is two floats (pressure, temperature), and
+  ``can_light_sensor_pub`` is two floats (light, infrared).
+
+  Required resources:
+  ``/dev/can0``, ``/dev/usensor``, ``/dev/uorb/sensor_temp10``,
+  ``/dev/uorb/sensor_humi11``, ``/dev/uorb/sensor_baro12``,
+  ``/dev/uorb/sensor_light13``
+
 .. _descriptor-dynamic-desc-slot0:
 
 ``descriptors/examples/dynamic_desc_slot0.yaml``
@@ -312,6 +335,24 @@ Examples
   metadata and OACP/OLCP control points are over GATT.
 
   Required resources: ``ble``, ``/tmp``
+
+.. _descriptor-nimble-sensor-producer:
+
+``descriptors/examples/nimble_sensor_producer.yaml``
+  **NimBLE Sensor Producer Demo**
+
+  Receives environmental values over a descriptor-defined NimBLE custom
+  service and republishes them as NuttX user sensor topics. It uses the same
+  topic layout as ``can_sensor_producer.yaml``: temperature on instance 10,
+  humidity on instance 11, barometer on instance 12, and light on instance 13.
+
+  The device advertises as ``dawn-sensor-prod``. Host-side writes are handled
+  by :file:`tools/examples/nimble_sensor_producer_cli.py`.
+
+  Required resources:
+  ``ble``, ``/dev/usensor``, ``/dev/uorb/sensor_temp10``,
+  ``/dev/uorb/sensor_humi11``, ``/dev/uorb/sensor_baro12``,
+  ``/dev/uorb/sensor_light13``
 
 .. _descriptor-nxscope-serial:
 

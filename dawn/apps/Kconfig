@@ -4,6 +4,7 @@
 #
 
 source "$APPSDIR/external/apps/dawn/Kconfig"
+source "$APPSDIR/external/../examples/apps/Kconfig"
 
 # Optional Dawn app-extension Kconfig. dawnpy may export this to point at
 # a project-provided app registry before the first Kconfig pass runs.

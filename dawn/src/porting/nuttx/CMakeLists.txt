@@ -25,7 +25,7 @@ if(CONFIG_DAWN_IO_PWM)
   list(APPEND SRCS pwm.cxx)
 endif()
 
-if(CONFIG_DAWN_IO_SENSOR)
+if(CONFIG_DAWN_IO_SENSOR OR CONFIG_DAWN_IO_SENSOR_PRODUCER)
   list(APPEND SRCS sensors.cxx)
 endif()
 

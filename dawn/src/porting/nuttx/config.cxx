@@ -70,6 +70,12 @@
 #  endif
 #endif
 
+#ifdef CONFIG_DAWN_IO_SENSOR_PRODUCER
+#  ifndef CONFIG_USENSOR
+#    error usensor driver is required
+#  endif
+#endif
+
 #if defined(CONFIG_DAWN_IO_ENCODER) || defined(CONFIG_DAWN_IO_ENCODER_INDEX)
 #  ifndef CONFIG_SENSORS_QENCODER
 #    error CONFIG_SENSORS_QENCODER is required for encoder io

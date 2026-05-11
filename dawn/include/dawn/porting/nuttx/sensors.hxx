@@ -7,7 +7,7 @@
 
 #include <nuttx/sensors/sensor.h>
 
-#include <map>
+#include <cstddef>
 
 #include "dawn/io/common.hxx"
 #include "dawn/porting/config.hxx"
@@ -23,113 +23,115 @@ namespace dawn
 class CIOSensorPorting
 {
 public:
-  template<typename T>
-  static constexpr size_t sensor_dsize()
-  {
-    static_assert(sizeof(T) >= sizeof(io_ts_t), "sensor struct smaller than timestamp");
-    static_assert((sizeof(T) - sizeof(io_ts_t)) % sizeof(sensor_data_t) == 0,
-                  "sensor payload not aligned to sensor data size");
-    return (sizeof(T) - sizeof(io_ts_t)) / sizeof(sensor_data_t);
-  }
-
   // Sensor map info
 
   struct io_sensor_map_info_s
   {
-    const char *path; // Sensor path
-    size_t rsize;     // Read data size
-    size_t dsize;     // Data size
+    int16_t cls;          // Dawn sensor class
+    const char *path;     // NuttX sensor path suffix
+    size_t rsize;         // Kernel event structure size
+    size_t dsize;         // Number of sensor_data_t payload values
+    size_t payloadOffset; // Offset of the first payload value in the event
   } typedef SIOSensorMapInfo;
 
   // Get sensor info
 
-  SIOSensorMapInfo *getSensorInfo(int16_t cls)
+  static const SIOSensorMapInfo *getSensorInfo(int16_t cls)
   {
-    return &this->_map[cls];
-  }
-
-private:
-  // Sensors info map
-
-  std::map<int, SIOSensorMapInfo> _map = {
-    {CIOCommon::IO_CLASS_SENSOR_ACCELEROMETER,
-     {
+    static const SIOSensorMapInfo map[] = {
+      {CIOCommon::IO_CLASS_SENSOR_ACCELEROMETER,
        "accel",
        sizeof(struct sensor_accel),
-       sensor_dsize<struct sensor_accel>(),
-     }},
-    {CIOCommon::IO_CLASS_SENSOR_MAGNETICFIELD,
-     {
+       4,
+       offsetof(struct sensor_accel, x)},
+      {CIOCommon::IO_CLASS_SENSOR_MAGNETICFIELD,
        "mag",
        sizeof(struct sensor_mag),
-       sensor_dsize<struct sensor_mag>(),
-     }},
-    {CIOCommon::IO_CLASS_SENSOR_GYROSCOPE,
-     {
+       4,
+       offsetof(struct sensor_mag, x)},
+      {CIOCommon::IO_CLASS_SENSOR_GYROSCOPE,
        "gyro",
        sizeof(struct sensor_gyro),
-       sensor_dsize<struct sensor_gyro>(),
-     }},
-    {CIOCommon::IO_CLASS_SENSOR_LIGHT,
-     {
+       4,
+       offsetof(struct sensor_gyro, x)},
+      {CIOCommon::IO_CLASS_SENSOR_LIGHT,
        "light",
        sizeof(struct sensor_light),
-       sensor_dsize<struct sensor_light>(),
-     }},
-    {CIOCommon::IO_CLASS_SENSOR_BAROMETER,
-     {
+       2,
+       offsetof(struct sensor_light, light)},
+      {CIOCommon::IO_CLASS_SENSOR_BAROMETER,
        "baro",
        sizeof(struct sensor_baro),
-       sensor_dsize<struct sensor_baro>(),
-     }},
-    {CIOCommon::IO_CLASS_SENSOR_PROXIMITY,
-     {
+       2,
+       offsetof(struct sensor_baro, pressure)},
+      {CIOCommon::IO_CLASS_SENSOR_PROXIMITY,
        "prox",
        sizeof(struct sensor_prox),
-       sensor_dsize<struct sensor_prox>(),
-     }},
-    {CIOCommon::IO_CLASS_SENSOR_HUMIDITY,
-     {
+       1,
+       offsetof(struct sensor_prox, proximity)},
+      {CIOCommon::IO_CLASS_SENSOR_HUMIDITY,
        "humi",
        sizeof(struct sensor_humi),
-       sensor_dsize<struct sensor_humi>(),
-     }},
-    {CIOCommon::IO_CLASS_SENSOR_TEMPERATURE,
-     {
+       1,
+       offsetof(struct sensor_humi, humidity)},
+      {CIOCommon::IO_CLASS_SENSOR_TEMPERATURE,
        "temp",
        sizeof(struct sensor_temp),
-       sensor_dsize<struct sensor_temp>(),
-     }},
-    {CIOCommon::IO_CLASS_SENSOR_ATEMPERATURE,
-     {
+       1,
+       offsetof(struct sensor_temp, temperature)},
+      {CIOCommon::IO_CLASS_SENSOR_ATEMPERATURE,
        "ambient_temp",
        sizeof(struct sensor_temp),
-       sensor_dsize<struct sensor_temp>(),
-     }},
-    {CIOCommon::IO_CLASS_SENSOR_RGB,
-     {
+       1,
+       offsetof(struct sensor_temp, temperature)},
+      {CIOCommon::IO_CLASS_SENSOR_RGB,
        "rgb",
        sizeof(struct sensor_rgb),
-       sensor_dsize<struct sensor_rgb>(),
-     }},
-    {CIOCommon::IO_CLASS_SENSOR_IR,
-     {
+       3,
+       offsetof(struct sensor_rgb, r)},
+      {CIOCommon::IO_CLASS_SENSOR_IR,
        "ir",
        sizeof(struct sensor_ir),
-       sensor_dsize<struct sensor_ir>(),
-     }},
-    {CIOCommon::IO_CLASS_SENSOR_UV,
-     {
+       1,
+       offsetof(struct sensor_ir, ir)},
+      {CIOCommon::IO_CLASS_SENSOR_UV,
        "uv",
        sizeof(struct sensor_uv),
-       sensor_dsize<struct sensor_uv>(),
-     }},
-    {CIOCommon::IO_CLASS_SENSOR_GAS,
-     {
+       1,
+       offsetof(struct sensor_uv, uvi)},
+      {CIOCommon::IO_CLASS_SENSOR_GAS,
        "gas",
        sizeof(struct sensor_gas),
-       sensor_dsize<struct sensor_gas>(),
-     }},
-  };
+       1,
+       offsetof(struct sensor_gas, gas_resistance)},
+    };
+
+    for (size_t i = 0; i < sizeof(map) / sizeof(map[0]); i++)
+      {
+        if (map[i].cls == cls)
+          {
+            return &map[i];
+          }
+      }
+
+    return nullptr;
+  }
+
+  static int16_t producerToSensorClass(int16_t cls)
+  {
+    static_assert(CIOCommon::IO_CLASS_SENSOR_PRODUCER_GAS -
+                      CIOCommon::IO_CLASS_SENSOR_PRODUCER_ACCELEROMETER ==
+                    CIOCommon::IO_CLASS_SENSOR_GAS - CIOCommon::IO_CLASS_SENSOR_ACCELEROMETER,
+                  "Sensor and sensor producer class ranges must stay aligned");
+
+    if (cls < CIOCommon::IO_CLASS_SENSOR_PRODUCER_ACCELEROMETER ||
+        cls > CIOCommon::IO_CLASS_SENSOR_PRODUCER_GAS)
+      {
+        return CIOCommon::IO_CLASS_ANY;
+      }
+
+    return cls - CIOCommon::IO_CLASS_SENSOR_PRODUCER_ACCELEROMETER +
+           CIOCommon::IO_CLASS_SENSOR_ACCELEROMETER;
+  }
 };
 } // namespace dawn

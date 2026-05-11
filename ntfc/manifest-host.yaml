@@ -25,6 +25,11 @@ sessions:
     testpath: ntfc/tests/can
     resources: [vcan0]
 
+  - name: "sim-usensor-can"
+    confpath: ntfc/configs/sim/usensor_can/config.yaml
+    testpath: ntfc/tests/usensor_can
+    resources: [vcan0]
+
   - name: "sim-programs-can"
     confpath: ntfc/configs/sim/programs_can/config.yaml
     testpath: ntfc/tests/programs_can

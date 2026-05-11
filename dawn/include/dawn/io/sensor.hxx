@@ -39,7 +39,7 @@ public:
     IO_SENSOR_CFG_ORIENTATION = 9,    ///< Sensor orientation/mounting angle.
     IO_SENSOR_CFG_ALERT = 10,         ///< Alert threshold configuration.
     IO_SENSOR_CFG_LAST = 31
-  } typedef EIOSensorCfg;
+  };
 
   static_assert(IO_SENSOR_CFG_LAST - 1 <= SObjectCfg::ID_MAX);
 
@@ -179,7 +179,7 @@ public:
     return CIOSensor::objectId(CIOCommon::IO_CLASS_SENSOR_TEMPERATURE, dtype, ts, inst);
   }
 
-  constexpr static SObjectId::ObjectId objectIdATemp(uint8_t dtype, bool ts, uint16_t inst)
+  constexpr static SObjectId::ObjectId objectIdAtemp(uint8_t dtype, bool ts, uint16_t inst)
   {
     return CIOSensor::objectId(CIOCommon::IO_CLASS_SENSOR_ATEMPERATURE, dtype, ts, inst);
   }
@@ -227,12 +227,12 @@ public:
 private:
   constexpr static const size_t DATA_BUFFER_SIZE = 32;
 
-  SIOSensorMapInfo *info;     ///< Sensor metadata (type, path, read size, offset, data size).
-  size_t dsize;               ///< Sensor data size in bytes.
-  uint32_t updateInterval;    ///< Sensor update interval in milliseconds.
-  uint32_t measurementPeriod; ///< Sensor measurement period in milliseconds.
-  char path[PATH_MAX] = {};   ///< Sensor device file path.
-  int fd;                     ///< File descriptor for sensor device.
+  const SIOSensorMapInfo *info; ///< Sensor metadata.
+  size_t dsize;                 ///< Sensor data size in bytes.
+  uint32_t updateInterval;      ///< Sensor update interval in milliseconds.
+  uint32_t measurementPeriod;   ///< Sensor measurement period in milliseconds.
+  char path[PATH_MAX] = {};     ///< Sensor device file path.
+  int fd;                       ///< File descriptor for sensor device.
 
   int configureDesc(const CDescObject &desc);
 };

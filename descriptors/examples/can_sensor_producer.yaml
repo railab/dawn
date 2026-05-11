@@ -1,0 +1,87 @@
+metadata:
+  title: CAN Sensor Producer Demo
+  version: '1.0'
+  description: >
+    Publishes CAN-provided environmental values into NuttX user sensor topics
+    so independent applications can read the values through /dev/uorb.
+  os_required:
+  - /dev/can0
+  - /dev/usensor
+  - /dev/uorb/sensor_temp10
+  - /dev/uorb/sensor_humi11
+  - /dev/uorb/sensor_baro12
+  - /dev/uorb/sensor_light13
+vars:
+  can_id:
+    kconfig: CONFIG_DAWN_PROTO_CAN_NODEID
+ios:
+- &temp_producer
+  id: can_temp_sensor_pub
+  type: sensor_producer
+  subtype: temp
+  dtype: float
+  config:
+    device: 10
+    queue_size: 4
+    persist: true
+- &humi_producer
+  id: can_humi_sensor_pub
+  type: sensor_producer
+  subtype: hum
+  dtype: float
+  config:
+    device: 11
+    queue_size: 4
+    persist: true
+- &baro_producer
+  id: can_baro_sensor_pub
+  type: sensor_producer
+  subtype: baro
+  dtype: float
+  config:
+    device: 12
+    queue_size: 4
+    persist: true
+- &light_producer
+  id: can_light_sensor_pub
+  type: sensor_producer
+  subtype: light
+  dtype: float
+  config:
+    device: 13
+    queue_size: 4
+    persist: true
+- &timestamp_heartbeat
+  id: can_timestamp_io1
+  type: timestamp
+  dtype: uint64
+  timestamp: false
+  tags:
+  - heartbeat
+  config:
+    interval_us: 1000000
+protocols:
+- id: shell_debug
+  type: shell
+  bindings:
+  - *temp_producer
+  - *humi_producer
+  - *baro_producer
+  - *light_producer
+  - *timestamp_heartbeat
+- id: can_main
+  type: can
+  config:
+    node_id: ${can_id}
+    objects:
+    - type: push
+      can_id_start: 0
+      bindings:
+      - *timestamp_heartbeat
+    - type: write
+      can_id_start: 0x150
+      bindings:
+      - *temp_producer
+      - *humi_producer
+      - *baro_producer
+      - *light_producer

@@ -17,12 +17,7 @@ static constexpr size_t CAN_SINGLE_ID_TRANSFER_MAX = 0x300;
 
 static size_t canIoDataBytes(CIOCommon *io)
 {
-  if (io->isSeekable())
-    {
-      return io->getDataSize();
-    }
-
-  return io->getDataSize() * io->getDataDim();
+  return io->getDataSize();
 }
 
 #ifdef CONFIG_DAWN_IO_NOTIFY

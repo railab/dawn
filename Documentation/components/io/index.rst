@@ -170,6 +170,7 @@ Supported IO
    gpi.rst
    gpo.rst
    sensor.rst
+   sensor_producer.rst
    sysinfo.rst
    boardctl.rst
    uname.rst

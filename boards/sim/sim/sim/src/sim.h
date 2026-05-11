@@ -16,7 +16,9 @@
 
 /* Include common fake drivers */
 
-#include "dawn/fake_drivers.h"
+#ifdef CONFIG_DAWN_FAKE_DRIVERS
+#  include "dawn/fake_drivers.h"
+#endif
 
 /****************************************************************************
  * Pre-processor Definitions

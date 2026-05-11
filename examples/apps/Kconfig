@@ -1,0 +1,11 @@
+#
+# examples/apps/Kconfig
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menu "Dawn example applications"
+
+source "$APPSDIR/external/../examples/apps/usensor_reader/Kconfig"
+
+endmenu
