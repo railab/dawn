@@ -72,6 +72,9 @@
 #ifdef CONFIG_DAWN_IO_SENSOR
 #  include "dawn/io/sensor.hxx"
 #endif
+#ifdef CONFIG_DAWN_IO_SENSOR_PRODUCER
+#  include "dawn/io/sensor_producer.hxx"
+#endif
 #ifdef CONFIG_DAWN_IO_BOARDCTL
 #  include "dawn/io/boardctl.hxx"
 #endif
@@ -182,6 +185,23 @@ CIOCommon *CIOFactory::create(CDescObject &desc)
       case CIOCommon::IO_CLASS_SENSOR_UV:
       case CIOCommon::IO_CLASS_SENSOR_GAS:
         return new CIOSensor(desc);
+#endif
+
+#ifdef CONFIG_DAWN_IO_SENSOR_PRODUCER
+      case CIOCommon::IO_CLASS_SENSOR_PRODUCER_ACCELEROMETER:
+      case CIOCommon::IO_CLASS_SENSOR_PRODUCER_MAGNETICFIELD:
+      case CIOCommon::IO_CLASS_SENSOR_PRODUCER_GYROSCOPE:
+      case CIOCommon::IO_CLASS_SENSOR_PRODUCER_LIGHT:
+      case CIOCommon::IO_CLASS_SENSOR_PRODUCER_BAROMETER:
+      case CIOCommon::IO_CLASS_SENSOR_PRODUCER_PROXIMITY:
+      case CIOCommon::IO_CLASS_SENSOR_PRODUCER_HUMIDITY:
+      case CIOCommon::IO_CLASS_SENSOR_PRODUCER_TEMPERATURE:
+      case CIOCommon::IO_CLASS_SENSOR_PRODUCER_ATEMPERATURE:
+      case CIOCommon::IO_CLASS_SENSOR_PRODUCER_RGB:
+      case CIOCommon::IO_CLASS_SENSOR_PRODUCER_IR:
+      case CIOCommon::IO_CLASS_SENSOR_PRODUCER_UV:
+      case CIOCommon::IO_CLASS_SENSOR_PRODUCER_GAS:
+        return new CIOSensorProducer(desc);
 #endif
 
 #ifdef CONFIG_DAWN_IO_ADC_FETCH

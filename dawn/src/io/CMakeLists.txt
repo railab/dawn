@@ -51,6 +51,10 @@ if(CONFIG_DAWN_IO_SENSOR)
   list(APPEND SRCS sensor.cxx)
 endif()
 
+if(CONFIG_DAWN_IO_SENSOR_PRODUCER)
+  list(APPEND SRCS sensor_producer.cxx)
+endif()
+
 if(CONFIG_DAWN_IO_SYSINFO)
   list(APPEND SRCS sysinfo.cxx)
 endif()

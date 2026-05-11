@@ -1,0 +1,21 @@
+#
+# For a description of the syntax of this configuration file,
+# see the file kconfig-language.txt in the NuttX tools repository.
+#
+
+config EXAMPLES_USENSOR_READER
+	tristate "User sensor reader example"
+	default n
+	depends on SENSORS
+	---help---
+		Build the usensor_reader example app used to validate that
+		non-Dawn applications can consume user sensor topics produced
+		by Dawn.
+
+if EXAMPLES_USENSOR_READER
+
+config EXAMPLES_USENSOR_READER_STACKSIZE
+	int "User sensor reader stack size"
+	default 4096
+
+endif

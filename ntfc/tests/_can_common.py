@@ -190,6 +190,17 @@ def write_f32_via_can(sock, node_id, can_offset, value):
     time.sleep(CAN_WRITE_SETTLE_S)
 
 
+def write_f32_pair_via_can(sock, node_id, can_offset, first, second):
+    sock.send(
+        create_can_frame(
+            node_id + can_offset,
+            struct.pack("<ff", first, second),
+            extended=True,
+        )
+    )
+    time.sleep(CAN_WRITE_SETTLE_S)
+
+
 def _collect_two_seg_frames(sock, can_id, timeout_s=1.2, inner_timeout_s=0.25):
     """Request segmented payload repeatedly until exactly two frames arrive."""
     frames = []

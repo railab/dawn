@@ -134,9 +134,17 @@ config DAWN_IO_SYSTIME
 config DAWN_IO_SENSOR
 	bool "Dawn Sensor IO support"
 	default n
-	depends on DAWN_DTYPE_FLOAT
+	depends on DAWN_DTYPE_FLOAT || DAWN_DTYPE_B16
 	---help---
 		Enable sensor-backed IO objects using the NuttX sensor framework.
+
+config DAWN_IO_SENSOR_PRODUCER
+	bool "Dawn Sensor producer IO support"
+	default n
+	depends on DAWN_DTYPE_FLOAT  || DAWN_DTYPE_B16
+	---help---
+		Enable write-only IO objects that publish Dawn protocol data into
+		user sensor topics.
 
 config DAWN_IO_ADC
 	bool

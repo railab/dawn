@@ -41,3 +41,8 @@ sessions:
     confpath: ntfc/configs/nrf52840-dk/nimble_ntfc_buffer/config.yaml
     testpath: ntfc/tests/nimble_ntfc_buffer
     resources: [hw-nrf52840dk, bluetooth]
+
+  - name: "nrf52840dk-nimble-sensor-producer"
+    confpath: ntfc/configs/nrf52840-dk/nimble_sensor_producer/config.yaml
+    testpath: ntfc/tests/nimble_sensor_producer
+    resources: [hw-nrf52840dk, bluetooth]

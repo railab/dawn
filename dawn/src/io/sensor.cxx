@@ -98,6 +98,12 @@ int CIOSensor::configure()
 
   dsize = dtypeSize;
 
+  if (info == nullptr)
+    {
+      DAWNERR("Unsupported sensor class %d\n", getCls());
+      return -EINVAL;
+    }
+
   if (DATA_BUFFER_SIZE < info->rsize)
     {
       DAWNERR("Sensor data size %zu exceeds buffer size %zu\n", info->rsize, DATA_BUFFER_SIZE);
@@ -167,7 +173,7 @@ int CIOSensor::getDataImpl(IODataCmn &data, size_t len)
 
   // Copy data portion (skip kernel timestamp)
 
-  std::memcpy(data.getDataPtr(), buf + sizeof(io_ts_t), data.getDataSize());
+  std::memcpy(data.getDataPtr(), buf + info->payloadOffset, data.getDataSize());
 
 #ifdef CONFIG_DAWN_IO_TIMESTAMP
   if (isTimestamp())

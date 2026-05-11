@@ -34,3 +34,44 @@ void sensor_close(int fd);
  */
 
 int sensor_read(int fd, void *data, size_t len);
+
+/**
+ * @brief Register a userspace-provided sensor topic.
+ *
+ * @param path Full sensor device path.
+ * @param event_size Size of one NuttX sensor event struct.
+ * @param queue_size Number of events in the sensor circular buffer.
+ * @param persist Whether the latest value remains readable by late readers.
+ * @return OK, -EEXIST if already present, or negative error code.
+ */
+
+int sensor_user_register(const char *path, size_t event_size, uint32_t queue_size, bool persist);
+
+/**
+ * @brief Unregister a userspace-provided sensor topic.
+ *
+ * @param path Full sensor device path.
+ * @return OK or negative error code.
+ */
+
+int sensor_user_unregister(const char *path);
+
+/**
+ * @brief Open sensor device for publishing.
+ *
+ * @param path Device path.
+ * @return File descriptor or negative error code.
+ */
+
+int sensor_open_write(const char *path);
+
+/**
+ * @brief Write one or more sensor event structs.
+ *
+ * @param fd Sensor file descriptor.
+ * @param data Pointer to event data.
+ * @param len Data length in bytes.
+ * @return Number of bytes written or negative error code.
+ */
+
+int sensor_write(int fd, const void *data, size_t len);

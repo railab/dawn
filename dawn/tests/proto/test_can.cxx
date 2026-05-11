@@ -65,6 +65,7 @@ static constexpr auto CAN_DUMMYIO11 = CIODummy::objectId(SObjectId::DTYPE_UINT8,
 static constexpr auto CAN_DUMMYIO12 = CIODummy::objectId(SObjectId::DTYPE_UINT16, false, 5);
 static constexpr auto CAN_DUMMYIO13 = CIODummy::objectId(SObjectId::DTYPE_UINT32, false, 6);
 static constexpr auto CAN_DUMMYIO14 = CIODummy::objectId(SObjectId::DTYPE_UINT64, false, 7);
+static constexpr auto CAN_DUMMYIO15 = CIODummy::objectId(SObjectId::DTYPE_UINT32, false, 8);
 static constexpr auto CAN_DESCIO1 = CIODescriptor::objectId(0);
 
 // Test configurations
@@ -470,6 +471,13 @@ static uint32_t g_cfg_dummy14[] = {
   0,
 };
 
+static uint32_t g_cfg_dummy15[] = {
+  CAN_DUMMYIO15,
+  1,
+  CIODummy::cfgIdDim(),
+  2,
+};
+
 #ifdef CONFIG_DAWN_PROTO_CAN_SEG
 static uint32_t g_cfg_descio1[] = {
   CAN_DESCIO1,
@@ -693,6 +701,18 @@ static uint32_t g_bin_can_write_one_u64[] = {
   CAN_NODE_IO1_START + 6,    //
   1,
   CAN_DUMMYIO14,
+};
+
+static uint32_t g_bin_can_write_one_u32_vec2[] = {
+  CProtoCan::objectId(0),
+  2,                         //
+  CProtoCan::cfgIdNodeid(),
+  CAN_NODE_ID2,              //
+  CProtoCan::cfgIdIOBind(4),
+  CProtoCan::CAN_TYPE_WRITE, //
+  CAN_NODE_IO1_START + 7,    //
+  1,
+  CAN_DUMMYIO15,
 };
 
 //***************************************************************************
@@ -2467,6 +2487,62 @@ static void test_proto_can_write_uint64()
   TEST_ASSERT_EQUAL(OK, can.stop());
 }
 
+//***************************************************************************
+// Description: writing an 8-byte CAN frame to a two-element uint32 IO uses
+// the IO total byte size, not byte size multiplied by dimension.
+//***************************************************************************
+
+static void test_proto_can_write_u32_vector_uses_total_size()
+{
+  CDescObject descv(g_cfg_dummy15);
+  CIODummy dummy(descv);
+  CDescObject desc(g_bin_can_write_one_u32_vec2);
+  CProtoCan can(desc);
+  dawn::porting::canmsg_s msg = {0};
+  io_sdata_t<uint32_t, 2> data;
+  int ret;
+
+  can_drain_queue();
+  TEST_ASSERT_EQUAL(OK, can.configure());
+  TEST_ASSERT_EQUAL(OK, dummy.configure());
+  TEST_ASSERT_EQUAL(OK, dummy.init());
+  TEST_ASSERT_EQUAL(8, dummy.getDataSize());
+  TEST_ASSERT_EQUAL(2, dummy.getDataDim());
+  can.setObjectMapItem(CAN_DUMMYIO15, &dummy);
+
+  TEST_ASSERT_EQUAL(OK, can.init());
+  TEST_ASSERT_EQUAL(OK, can.start());
+  usleep(100);
+  can_drain_n(100);
+
+  msg.id = CAN_NODE_ID2 + CAN_NODE_IO1_START + 7;
+  msg.len = 8;
+  msg.data[0] = 0x44;
+  msg.data[1] = 0x33;
+  msg.data[2] = 0x22;
+  msg.data[3] = 0x11;
+  msg.data[4] = 0xdd;
+  msg.data[5] = 0xcc;
+  msg.data[6] = 0xbb;
+  msg.data[7] = 0xaa;
+  ret = can_send(g_can_fd, &msg);
+  TEST_ASSERT(ret > 0);
+  usleep(100);
+
+  ret = can_read(g_can_fd, &msg);
+  TEST_ASSERT(ret > 0);
+  TEST_ASSERT_EQUAL(CAN_NODE_ID2 + CAN_NODE_IO1_START + 7, msg.id);
+  TEST_ASSERT_EQUAL(8, msg.len);
+
+  usleep(10000);
+
+  TEST_ASSERT_EQUAL(OK, dummy.getData(data, 1));
+  TEST_ASSERT_EQUAL(0x11223344, data(0));
+  TEST_ASSERT_EQUAL(0xaabbccdd, data(1));
+
+  TEST_ASSERT_EQUAL(OK, can.stop());
+}
+
 extern "C"
 {
   int test_proto_can()
@@ -2518,6 +2594,7 @@ extern "C"
     DAWN_RUN_TEST(test_proto_can_write_uint16);
     DAWN_RUN_TEST(test_proto_can_write_uint32);
     DAWN_RUN_TEST(test_proto_can_write_uint64);
+    DAWN_RUN_TEST(test_proto_can_write_u32_vector_uses_total_size);
 
     // Close CAN device
 

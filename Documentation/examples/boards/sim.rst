@@ -75,6 +75,15 @@ nsh_programs_can
 
 Programs-over-CAN reference profile using ``ntfc_programs_can.yaml``.
 
+nsh_usensor_can
+---------------
+
+CAN-to-user-sensor reference profile using ``can_sensor_producer.yaml``. Dawn
+receives temperature, humidity, barometer, and light values over CAN and
+publishes them into ``/dev/uorb/sensor_*`` topics. The ``usensor_reader`` app
+from :file:`examples/apps/usensor_reader` is enabled so another NuttX task can
+read the produced sensor events while Dawn runs in parallel.
+
 nsh_serial
 ----------
 

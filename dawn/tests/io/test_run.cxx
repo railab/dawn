@@ -29,6 +29,7 @@ extern "C"
   int test_io_dummy_notify();
   int test_io_virt();
   int test_io_sensor();
+  int test_io_sensor_producer();
   int test_io_system_sysinfo();
   int test_io_system_boardctl();
   int test_io_system_uname();
@@ -88,6 +89,9 @@ static int (*test_array[])(void) = {
 #endif
 #ifdef CONFIG_DAWN_IO_SENSOR
   test_io_sensor,
+#endif
+#ifdef CONFIG_DAWN_IO_SENSOR_PRODUCER
+  test_io_sensor_producer,
 #endif
 #ifdef CONFIG_DAWN_IO_SYSINFO
   test_io_system_sysinfo,
