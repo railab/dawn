@@ -131,8 +131,8 @@ clone_nuttx_repos() {
 }
 
 create_symlink() {
-  info "Creating external/apps/external -> dawn/ symlink..."
-  dawn_src="$(cd dawn && pwd -P)"
+  info "Creating external/apps/external -> Dawn repository symlink..."
+  dawn_src="$(pwd -P)"
   ln -s "$dawn_src" external/apps/external
   ok "Symlink created"
 }
@@ -147,8 +147,8 @@ validate_setup() {
   if [ ! -L external/apps/external ]; then
     err "external/apps/external symlink missing"
     errors=$((errors + 1))
-  elif [ ! -d external/apps/external/src ]; then
-    err "Symlink target does not look like dawn/ (no src/)"
+  elif [ ! -d external/apps/external/dawn/src ]; then
+    err "Symlink target does not look like Dawn repository root (no dawn/src/)"
     errors=$((errors + 1))
   fi
 
