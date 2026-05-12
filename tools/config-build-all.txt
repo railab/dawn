@@ -8,33 +8,47 @@
 # and CMake defines with -D flags. These will override global flags
 # passed on the command line.
 
-boards/sim/sim/sim/configs/tests -e CXX=g++-14 -e CC=gcc-14
-boards/sim/sim/sim/configs/nsh_tests -e CXX=g++-14 -e CC=gcc-14
-boards/sim/sim/sim/configs/nsh_shell -e CXX=g++-14 -e CC=gcc-14
+boards/sim/sim/sim/configs/dynamic_desc -e CXX=g++-14 -e CC=gcc-14
+boards/sim/sim/sim/configs/nsh_blinky_shell -e CXX=g++-14 -e CC=gcc-14
 boards/sim/sim/sim/configs/nsh_can -e CXX=g++-14 -e CC=gcc-14
+boards/sim/sim/sim/configs/nsh_feature_modbus -e CXX=g++-14 -e CC=gcc-14
+boards/sim/sim/sim/configs/nsh_gateway -e CXX=g++-14 -e CC=gcc-14
 boards/sim/sim/sim/configs/nsh_modbus_rtu -e CXX=g++-14 -e CC=gcc-14
-boards/sim/sim/sim/configs/nsh_serial -e CXX=g++-14 -e CC=gcc-14
 boards/sim/sim/sim/configs/nsh_nxscope -e CXX=g++-14 -e CC=gcc-14
+boards/sim/sim/sim/configs/nsh_programs_can -e CXX=g++-14 -e CC=gcc-14
+boards/sim/sim/sim/configs/nsh_serial -e CXX=g++-14 -e CC=gcc-14
+boards/sim/sim/sim/configs/nsh_shell -e CXX=g++-14 -e CC=gcc-14
+boards/sim/sim/sim/configs/nsh_tests -e CXX=g++-14 -e CC=gcc-14
+boards/sim/sim/sim/configs/nsh_usensor_can -e CXX=g++-14 -e CC=gcc-14
+boards/sim/sim/sim/configs/tests -e CXX=g++-14 -e CC=gcc-14
 
-boards/x86_64/qemu/qemu-intel64/configs/nsh_udp -e CXX=g++-14 -e CC=gcc-14
+boards/x86_64/qemu/qemu-intel64/configs/nsh_modbus_tcp -e CXX=g++-14 -e CC=gcc-14
 boards/x86_64/qemu/qemu-intel64/configs/nsh_nxscope_udp -e CXX=g++-14 -e CC=gcc-14
+boards/x86_64/qemu/qemu-intel64/configs/nsh_udp -e CXX=g++-14 -e CC=gcc-14
 
+boards/arm/nrf52/nrf52840-dk/configs/blinky_buttons
 boards/arm/nrf52/nrf52840-dk/configs/nimble_aios
 boards/arm/nrf52/nrf52840-dk/configs/nimble_blinky
+boards/arm/nrf52/nrf52840-dk/configs/nimble_ntfc
+boards/arm/nrf52/nrf52840-dk/configs/nimble_ntfc_buffer
+boards/arm/nrf52/nrf52840-dk/configs/nimble_ntfc_custom
 boards/arm/nrf52/nrf52840-dk/configs/nimble_ots
+boards/arm/nrf52/nrf52840-dk/configs/nimble_sensor_producer
 boards/arm/nrf52/nrf52840-dk/configs/shell
-boards/arm/nrf52/nrf52840-dk/configs/blinky_buttons
 
 boards/arm/nrf53/thingy53/configs/nimble -D CMAKE_POLICY_VERSION_MINIMUM=3.5
+boards/arm/nrf53/thingy53/configs/rpmsghci_sdc_cpunet -D CMAKE_POLICY_VERSION_MINIMUM=3.5
+# boards/arm/nrf53/thingy53/configs/shell -D CMAKE_POLICY_VERSION_MINIMUM=3.5
 
-boards/arm/stm32f0l0g0/nucleo-c071rb/configs/blinky_shell/
-boards/arm/stm32f0l0g0/nucleo-c071rb/configs/blinky_modbus/
-boards/arm/stm32f0l0g0/nucleo-c071rb/configs/serial
+boards/arm/stm32f0l0g0/nucleo-c071rb/configs/blinky_modbus
+boards/arm/stm32f0l0g0/nucleo-c071rb/configs/blinky_shell
+boards/arm/stm32f0l0g0/nucleo-c071rb/configs/modbus
 boards/arm/stm32f0l0g0/nucleo-c071rb/configs/modbus_ntfc
+boards/arm/stm32f0l0g0/nucleo-c071rb/configs/serial
 
+boards/arm/stm32f0l0g0/nucleo-c092rc/configs/blinky_can
 boards/arm/stm32f0l0g0/nucleo-c092rc/configs/can
 boards/arm/stm32f0l0g0/nucleo-c092rc/configs/can_minimal
-boards/arm/stm32f0l0g0/nucleo-c092rc/configs/blinky_can
 
 # Out-of-tree demo (C++ descriptor + YAML descriptor variants)
 examples/out-of-tree-demo/boards/sim/sim/sim/configs/nsh_user_shell -e CXX=g++-14 -e CC=gcc-14

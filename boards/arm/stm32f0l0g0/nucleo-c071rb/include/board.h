@@ -66,6 +66,11 @@
 #define STM32_APB2_TIM16_CLKIN  STM32_PCLK1_FREQUENCY
 #define STM32_APB2_TIM17_CLKIN  STM32_PCLK1_FREQUENCY
 
+/* PWM pin mappings *********************************************************/
+
+#define GPIO_TIM1_CH1OUT (GPIO_TIM1_CH1OUT_3 | GPIO_SPEED_LOW) /* PA8 */
+#define GPIO_TIM1_CH2OUT (GPIO_TIM1_CH2OUT_3 | GPIO_SPEED_LOW) /* PB3 */
+
 /* LED definitions **********************************************************/
 
 /* LED index values for use with board_userled() */
