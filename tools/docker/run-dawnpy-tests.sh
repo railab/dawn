@@ -70,7 +70,7 @@ prepare_image_source() {
 normalize_external_symlink() {
   if [ -d external/apps ]; then
     rm -f external/apps/external
-    ln -s "$(pwd -P)/dawn" external/apps/external
+    ln -s "$(pwd -P)" external/apps/external
   fi
 }
 

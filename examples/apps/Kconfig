@@ -6,6 +6,6 @@
 
 menu "Dawn example applications"
 
-source "$APPSDIR/external/../examples/apps/usensor_reader/Kconfig"
+source "$APPSDIR/external/examples/apps/usensor_reader/Kconfig"
 
 endmenu

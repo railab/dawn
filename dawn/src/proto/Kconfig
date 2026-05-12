@@ -18,13 +18,13 @@ config DAWN_PROTO_DUMMY
 		Enable a no-op Dummy Protocol used for testing factory creation and
 		as a descriptor binding placeholder.
 
-source "$APPSDIR/external/src/proto/nxscope/Kconfig"
-source "$APPSDIR/external/src/proto/nimble/Kconfig"
-source "$APPSDIR/external/src/proto/can/Kconfig"
-source "$APPSDIR/external/src/proto/modbus/Kconfig"
-source "$APPSDIR/external/src/proto/shell/Kconfig"
-source "$APPSDIR/external/src/proto/serial/Kconfig"
-source "$APPSDIR/external/src/proto/udp/Kconfig"
-source "$APPSDIR/external/src/proto/ipc/Kconfig"
+source "$APPSDIR/external/dawn/src/proto/nxscope/Kconfig"
+source "$APPSDIR/external/dawn/src/proto/nimble/Kconfig"
+source "$APPSDIR/external/dawn/src/proto/can/Kconfig"
+source "$APPSDIR/external/dawn/src/proto/modbus/Kconfig"
+source "$APPSDIR/external/dawn/src/proto/shell/Kconfig"
+source "$APPSDIR/external/dawn/src/proto/serial/Kconfig"
+source "$APPSDIR/external/dawn/src/proto/udp/Kconfig"
+source "$APPSDIR/external/dawn/src/proto/ipc/Kconfig"
 
 endif # DAWN_PROTO

@@ -198,8 +198,8 @@ config DAWN_DTYPE_BLOCK
 
 endmenu
 
-source "$APPSDIR/external/src/io/Kconfig"
-source "$APPSDIR/external/src/proto/Kconfig"
-source "$APPSDIR/external/src/prog/Kconfig"
+source "$APPSDIR/external/dawn/src/io/Kconfig"
+source "$APPSDIR/external/dawn/src/proto/Kconfig"
+source "$APPSDIR/external/dawn/src/prog/Kconfig"
 
 endif # DAWN

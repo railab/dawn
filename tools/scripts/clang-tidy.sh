@@ -64,7 +64,7 @@ import sys
 with open(sys.argv[1], "r", encoding="utf-8") as handle:
     data = json.load(handle)
 
-roots = ("dawn/src/", "dawn/tests/", "external/apps/external/src/")
+roots = ("dawn/src/", "dawn/tests/", "external/apps/external/dawn/src/")
 ext = (".c", ".cpp", ".cxx", ".cc")
 
 cwd = os.getcwd() + os.sep
