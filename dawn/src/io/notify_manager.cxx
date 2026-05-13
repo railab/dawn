@@ -103,6 +103,8 @@ int CIONotifierManager::regIO(CIOCommon *io)
                   return -ENOMEM;
                 }
 
+              notifier->setThreadPriority(prio);
+
               entry.type = type;
               entry.prio = prio;
               entry.poll = notifier;
@@ -129,6 +131,8 @@ int CIONotifierManager::regIO(CIOCommon *io)
               DAWNERR("Failed to allocate stream notifier\n");
               return -ENOMEM;
             }
+
+          notifier->setThreadPriority(prio);
 
           entry.type = type;
           entry.prio = prio;

@@ -3,6 +3,9 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 
+#include <pthread.h>
+#include <sched.h>
+
 #include "dawn/io/dummy_notify.hxx"
 #include "dawn/io/notifier.hxx"
 #include "test_common.hxx"
@@ -46,6 +49,10 @@ static int g_callback2_cntr = 0;
 static int g_callback3_cntr = 0;
 static int g_callback4_cntr = 0;
 static int g_callback5_cntr = 0;
+static int g_callback6_cntr = 0;
+static int g_callback_sched_ret = -1;
+static int g_callback_sched_policy = CThreadedObject::THREAD_SCHEDULER_DEFAULT;
+static int g_callback_sched_priority = CThreadedObject::THREAD_PRIORITY_DEFAULT;
 
 static int notifier_callback1(void *priv, io_ddata_t *data)
 {
@@ -79,6 +86,22 @@ static int notifier_callback5(void *priv, io_ddata_t *data)
 {
   DAWNASSERT(data != nullptr, "nullptr pointer");
   g_callback5_cntr++;
+  return OK;
+}
+
+static int notifier_callback6(void *priv, io_ddata_t *data)
+{
+  struct sched_param param;
+  int policy;
+
+  DAWNASSERT(data != nullptr, "nullptr pointer");
+
+  policy = CThreadedObject::THREAD_SCHEDULER_DEFAULT;
+  param.sched_priority = CThreadedObject::THREAD_PRIORITY_DEFAULT;
+  g_callback_sched_ret = pthread_getschedparam(pthread_self(), &policy, &param);
+  g_callback_sched_policy = policy;
+  g_callback_sched_priority = param.sched_priority;
+  g_callback6_cntr++;
   return OK;
 }
 
@@ -271,6 +294,69 @@ static void test_io_notifier_reject_new_registration_after_start()
   TEST_ASSERT_EQUAL(OK, notifier.stop());
 }
 
+//***************************************************************************
+// Description: notifier thread applies configured worker priority.
+//***************************************************************************
+
+static void test_io_notifier_applies_configured_thread_priority()
+{
+  CDescObject desc4(g_cfg_valid_io4);
+  CIODummyNotify mock4(desc4);
+  CIONotifier notifier;
+  IIONotifier::SIONotifier n;
+  struct sched_param param;
+  int desiredPriority;
+  int maxPriority;
+  int minPriority;
+  int policy;
+  int ret;
+
+  g_callback6_cntr = 0;
+  g_callback_sched_ret = -1;
+  g_callback_sched_policy = CThreadedObject::THREAD_SCHEDULER_DEFAULT;
+  g_callback_sched_priority = CThreadedObject::THREAD_PRIORITY_DEFAULT;
+
+  TEST_ASSERT_EQUAL(OK, mock4.configure());
+  TEST_ASSERT_EQUAL(OK, mock4.init());
+
+  ret = pthread_getschedparam(pthread_self(), &policy, &param);
+  TEST_ASSERT_EQUAL(0, ret);
+
+  minPriority = sched_get_priority_min(policy);
+  maxPriority = sched_get_priority_max(policy);
+  TEST_ASSERT_TRUE(minPriority >= 0);
+  TEST_ASSERT_TRUE(maxPriority >= 0);
+
+  desiredPriority = param.sched_priority;
+  if (desiredPriority < maxPriority)
+    {
+      desiredPriority++;
+    }
+  else if (desiredPriority > minPriority)
+    {
+      desiredPriority--;
+    }
+
+  notifier.setThreadPriority(desiredPriority);
+
+  n.io = &mock4;
+  n.priv = nullptr;
+  n.cb = notifier_callback6;
+  n.prio = 0;
+  TEST_ASSERT_EQUAL(OK, notifier.regNotifier(n));
+
+  TEST_ASSERT_EQUAL(OK, notifier.start());
+  TEST_ASSERT_EQUAL(OK, mock4.start());
+  usleep(6000);
+  TEST_ASSERT_EQUAL(OK, mock4.stop());
+  TEST_ASSERT_EQUAL(OK, notifier.stop());
+
+  TEST_ASSERT_EQUAL(1, g_callback6_cntr);
+  TEST_ASSERT_EQUAL(0, g_callback_sched_ret);
+  TEST_ASSERT_EQUAL(policy, g_callback_sched_policy);
+  TEST_ASSERT_EQUAL(desiredPriority, g_callback_sched_priority);
+}
+
 extern "C"
 {
   int test_io_notifier()
@@ -282,6 +368,7 @@ extern "C"
     DAWN_RUN_TEST(test_io_notifier_per_io_isolation);
     DAWN_RUN_TEST(test_io_notifier_bind_set);
     DAWN_RUN_TEST(test_io_notifier_reject_new_registration_after_start);
+    DAWN_RUN_TEST(test_io_notifier_applies_configured_thread_priority);
 
     return UNITY_END();
   }

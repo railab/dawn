@@ -39,6 +39,26 @@ public:
   CStreamNotifier(const CStreamNotifier &) = delete;
   CStreamNotifier &operator=(const CStreamNotifier &) = delete;
 
+  void setThreadConfig(const CThreadedObject::SThreadConfig &config)
+  {
+    threadCtl.setThreadConfig(config);
+  }
+
+  void setThreadStackSize(size_t stackSize)
+  {
+    threadCtl.setThreadStackSize(stackSize);
+  }
+
+  void setThreadPriority(int priority)
+  {
+    threadCtl.setThreadPriority(priority);
+  }
+
+  void setThreadScheduler(int scheduler)
+  {
+    threadCtl.setThreadScheduler(scheduler);
+  }
+
   int regNotifier(SIONotifier n) override;
   int start();
   int stop();

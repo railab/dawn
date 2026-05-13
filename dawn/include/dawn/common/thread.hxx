@@ -6,9 +6,10 @@
 #pragma once
 
 #include <atomic>
+#include <cstddef>
 #include <cstdint>
 #include <functional>
-#include <thread>
+#include <pthread.h>
 #include <utility>
 
 #include "dawn/porting/config.hxx"
@@ -20,20 +21,63 @@ namespace dawn
  *
  * Provides the low-level thread lifecycle API used by composed thread owners
  * and the convenience helpers previously exposed by the mixin wrapper.
+ *
+ * The worker thread is implemented with POSIX pthreads so Dawn can control
+ * stack size, scheduling policy, and priority on a per-thread basis.
+ * When no configuration is supplied, the OS default stack size and the
+ * creating thread's scheduler settings are used.
  */
 
 class CThreadedObject
 {
 public:
   /**
+   * @brief Default thread priority behavior.
+   *
+   * Value 0 keeps the creator thread's default priority.
+   */
+
+  static constexpr int THREAD_PRIORITY_DEFAULT = 0;
+
+  /**
+   * @brief Default scheduler behavior.
+   *
+   * Value -1 keeps the creator thread's current scheduling policy.
+   */
+
+  static constexpr int THREAD_SCHEDULER_DEFAULT = -1;
+
+  /**
+   * @brief Per-thread runtime configuration.
+   */
+
+  struct SThreadConfig
+  {
+    size_t stackSize; ///< Requested stack size in bytes (0 = OS default).
+    int priority;     ///< Requested thread priority (0 = creator default).
+    int scheduler;    ///< Requested scheduler policy (-1 = creator default).
+
+    constexpr SThreadConfig(size_t stackSizeBytes = 0,
+                            int priorityValue = THREAD_PRIORITY_DEFAULT,
+                            int schedulerPolicy = THREAD_SCHEDULER_DEFAULT)
+      : stackSize(stackSizeBytes)
+      , priority(priorityValue)
+      , scheduler(schedulerPolicy)
+    {
+    }
+  };
+
+  /**
    * @brief Constructor - initializes thread management state.
    */
 
   CThreadedObject()
-    : th(nullptr)
+    : th()
+    , thCreated(false)
     , thQuit(true)
     , thQuitDone(true)
     , threadFunc(nullptr)
+    , threadConfig()
   {
   }
 
@@ -56,6 +100,84 @@ public:
   void setThreadFunc(Func &&func)
   {
     threadFunc = std::forward<Func>(func);
+  }
+
+  /**
+   * @brief Replace the full thread configuration.
+   */
+
+  void setThreadConfig(const SThreadConfig &config)
+  {
+    threadConfig = config;
+  }
+
+  /**
+   * @brief Get current thread configuration.
+   */
+
+  const SThreadConfig &getThreadConfig() const
+  {
+    return threadConfig;
+  }
+
+  /**
+   * @brief Configure worker thread stack size.
+   *
+   * @param stackSize Requested stack size in bytes (0 = OS default).
+   */
+
+  void setThreadStackSize(size_t stackSize)
+  {
+    threadConfig.stackSize = stackSize;
+  }
+
+  /**
+   * @brief Get configured worker thread stack size.
+   */
+
+  size_t getThreadStackSize() const
+  {
+    return threadConfig.stackSize;
+  }
+
+  /**
+   * @brief Configure worker thread priority.
+   *
+   * @param priority Requested priority (0 = creator default).
+   */
+
+  void setThreadPriority(int priority)
+  {
+    threadConfig.priority = priority;
+  }
+
+  /**
+   * @brief Get configured worker thread priority.
+   */
+
+  int getThreadPriority() const
+  {
+    return threadConfig.priority;
+  }
+
+  /**
+   * @brief Configure worker thread scheduler policy.
+   *
+   * @param scheduler POSIX scheduler policy (-1 = creator default).
+   */
+
+  void setThreadScheduler(int scheduler)
+  {
+    threadConfig.scheduler = scheduler;
+  }
+
+  /**
+   * @brief Get configured worker thread scheduler policy.
+   */
+
+  int getThreadScheduler() const
+  {
+    return threadConfig.scheduler;
   }
 
   /**
@@ -94,7 +216,7 @@ public:
 
   bool hasThreadObject() const
   {
-    return th != nullptr;
+    return thCreated;
   }
 
   void requestStop()
@@ -172,17 +294,17 @@ protected:
   }
 
 private:
-  std::thread *th;                  ///< Pointer to the worker std::thread object.
-                                    ///< Managed by threadStart()/threadStop().
-  std::atomic_bool thQuit;          ///< Quit signal flag for thread function
-  std::atomic_bool thQuitDone;      ///< Thread completion confirmation flag
+  pthread_t th;                     ///< Worker pthread handle.
+  bool thCreated;                   ///< True when pthread_create() succeeded.
+  std::atomic_bool thQuit;          ///< Quit signal flag for thread function.
+  std::atomic_bool thQuitDone;      ///< Thread completion confirmation flag.
+  std::function<void()> threadFunc; ///< Stored thread function callback.
+  SThreadConfig threadConfig;       ///< Per-thread configuration.
 
-private:
-  std::function<void()> threadFunc; ///< Stored thread function callback
-
-  /** @brief Internal thread entry point wrapper */
-
+  int joinThread();
+  int buildThreadAttr(pthread_attr_t &attr, bool &needsDestroy) const;
   void threadWrapper();
+  static void *threadEntry(void *arg);
 };
 
 } // Namespace dawn

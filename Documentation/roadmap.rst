@@ -46,10 +46,6 @@ Tier 1
 
 #. generate defconfig.dawn based on YAML descriptor
 
-#. io/notifier.cxx: poll thread for each used notifier priority
-
-#. custom thread class implementation so we can control stack size and priority
-
 #. optimise for small systems
 
    - small system configurations for mem footprint tracking
