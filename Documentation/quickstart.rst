@@ -6,11 +6,11 @@ Quick Start
 
    Dawn is developed and tested on **Linux only**. Other operating
    systems have not been tested and probably need extra work.
-   See :doc:`environment` for the full list of host requirements and
+   See :doc:`guides/environment` for the full list of host requirements and
    for what each test suite needs.
 
    If you prefer an Ubuntu container that automates this setup, see
-   :doc:`docker`.
+   :doc:`guides/docker`.
 
 Requirements
 ============
@@ -300,7 +300,7 @@ More Examples
 For more example and reference configurations, see :ref:`examples`.
 
 For an overview of running Dawn on the NuttX simulator and QEMU
-targets, see :doc:`host_development`.
+targets, see :doc:`guides/host_development`.
 
 Next Steps
 ==========
@@ -311,6 +311,6 @@ After the simulator shell demo:
   and board-oriented descriptors.
 * Use :doc:`examples/boards/index` to find simulator, QEMU, and hardware board
   configurations.
-* Use :doc:`qa/index` for unit tests and integration testing.
+* Use :doc:`qa/index` for unit tests and integration QA.
 * Use :doc:`customization` for out-of-tree projects and custom Dawn objects.
-* Use :doc:`host_development` for simulator and QEMU workflows.
+* Use :doc:`guides/host_development` for simulator and QEMU workflows.

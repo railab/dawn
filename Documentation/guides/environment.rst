@@ -42,7 +42,7 @@ These are required to build Dawn and run the simulator / Dawn Shell:
 * A working C/C++ toolchain. Use **gcc 14 or older** for the current NuttX
   libcxx build path; gcc 15 does not currently build it cleanly. Add
   ``-e CXX=g++-14 -e CC=gcc-14`` to ``dawnpy build`` invocations when
-  your default host compiler is newer than gcc 14 (see :doc:`quickstart`).
+  your default host compiler is newer than gcc 14 (see :doc:`/quickstart`).
 * Cross toolchains for non-host targets you intend to build (e.g.
   ``arm-none-eabi-gcc`` for ARM boards). Not required for sim-only
   development.
@@ -80,7 +80,7 @@ The full QA pipeline (``dawnpy-tests``) runs unit tests inside the
 NuttX **simulator** (a NuttX build that runs as a regular Linux
 process) and integration tests (NTFC) against both the simulator and
 **QEMU** VMs. These layers depend on host facilities only available on
-Linux. See :doc:`host_development` for the wider host-based workflow
+Linux. See :doc:`/guides/host_development` for the wider host-based workflow
 the QA pipeline plugs into.
 
 The one-time environment bootstrap is performed by ``testenv_init.sh``
@@ -114,7 +114,7 @@ The Linux kernel must provide:
   for QEMU.
 
 For the per-suite breakdown of which host components each NTFC
-integration test depends on, see :doc:`qa/ntfc`.
+integration test depends on, see :doc:`/qa/ntfc`.
 
 Help wanted
 ===========

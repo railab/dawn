@@ -9,7 +9,7 @@ Custom NuttX simulator board used by Dawn:
 - unnecessary functionality removed from board files
 - most configurations enable Dawn's fake drivers so the descriptor-driven
   pipeline runs on the host without real peripherals; see
-  :doc:`/components/fake_devices` and :doc:`/host_development` for the
+  :doc:`/components/fake_devices` and :doc:`/guides/host_development` for the
   broader host workflow
 
 Configs

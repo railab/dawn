@@ -144,5 +144,5 @@ layers happy". Planned improvements include:
   so NTFC suites can validate behaviour beyond the current driver stub.
 
 See :doc:`/qa/index` for how the QA pipeline already exercises these
-drivers via the simulator and QEMU configs, and :doc:`/host_development`
+drivers via the simulator and QEMU configs, and :doc:`/guides/host_development`
 for the broader picture of host-based Dawn development.
