@@ -93,3 +93,7 @@ to GitHub Container Registry as `ghcr.io/<owner>/<repo>/dawn-container`.
 It builds on pull requests that touch Docker files, publishes automatically on
 pushes to `main` or `master` that touch Docker files, and can also be run
 manually from the Actions tab.
+
+The Docker QA workflow runs `tools/docker/run-qa.sh --local` against the current
+checkout. It runs on every pull request, on a nightly schedule, and on manual
+request from the Actions tab.

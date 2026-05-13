@@ -8,11 +8,6 @@ Dawn project. Items are organized by priority and category.
 Tier 1
 ======
 
-#. setup CI for Dawn on github
-
-   - run dawnpy-test per PR
-   - nightly build on HW
-
 #. dawnpy packages in PIP
 
 #. find a better way to organise descriptors, now it is a mess
