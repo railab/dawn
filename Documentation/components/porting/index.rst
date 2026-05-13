@@ -17,7 +17,10 @@ System Requirements
 To port Dawn to a new system (though not currently planned), the following
 features must be provided:
 
-* **C++11 or newer**: Support for ``std::thread``, ``std::mutex``, and atomics.
+* **C++11 or newer**: Support for ``std::function``, ``std::mutex``, and
+  atomics.
+* **POSIX threads**: Support for ``pthread_create()``, join, stack-size
+  attributes, and scheduler/priority configuration.
 * **POSIX-like API**: Support for ``open()``, ``close()``, ``read()``,
   ``write()``, and ``poll()``.
 * **CMake**: The build system is exclusively based on CMake.

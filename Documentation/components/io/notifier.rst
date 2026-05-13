@@ -66,8 +66,9 @@ The ``IO_CFG_NOTIFY`` descriptor item configures notifier type, thread
 priority, and batch count per IO:
 
 - **Type**: ``poll`` (default) or ``stream``.
-- **Priority**: Thread priority level. Poll notifiers with the same priority
-  share a thread. Stream notifiers always get their own thread.
+- **Priority**: OS worker-thread priority. Poll notifiers with the same
+  priority share one thread and therefore one effective scheduler priority.
+  Stream notifiers always get their own thread.
 - **Batch**: Number of samples to read per event (default 1). The notifier
   calls ``ddata_alloc(batch)`` and ``getData(data, batch)`` with this count.
 
@@ -98,7 +99,10 @@ Notifier settings are configured in the IO's ``notify`` config block:
            priority: 100
 
 When ``notify`` is omitted, the IO uses the poll notifier with default
-priority (0) and batch count (1).
+priority (0 = inherited/default worker priority) and batch count (1).
+
+The descriptor does not currently expose notifier stack size or scheduler
+policy. Those remain internal class-level thread settings.
 
 Configuration
 =============
