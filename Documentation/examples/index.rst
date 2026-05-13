@@ -5,7 +5,7 @@ Examples
 ========
 
 Example descriptors and board configurations are documented separately.
-For the descriptor schema, see :doc:`../descriptors`.
+For the descriptor schema, see :doc:`../components/descriptors`.
 
 .. toctree::
    :maxdepth: 1

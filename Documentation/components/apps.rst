@@ -34,7 +34,7 @@ so a user factory only needs to handle the class IDs it owns. Reuse a
 built-in class ID to override the default implementation, or pick an ID
 in the user-reserved range (``IO_CLASS_USER`` 500,
 ``PROG_CLASS_USER`` / ``PROTO_CLASS_USER`` 511) to add a brand-new type.
-See :doc:`../customization` and :doc:`../api/oot` for the full recipe.
+See :doc:`../customization` and :doc:`../customization/oot_api` for the full recipe.
 
 App lifecycle hooks
 ^^^^^^^^^^^^^^^^^^^

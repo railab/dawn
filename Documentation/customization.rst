@@ -295,9 +295,17 @@ YAML:
     No ``pip install`` required. For vendor SDKs distributed to
     multiple downstreams, the same :class:`TypeRegistration` can be
     exposed as a ``dawnpy.extensions:descriptor_types`` entry-point in
-    ``pyproject.toml``. See :doc:`api/oot` for both paths and the API.
+    ``pyproject.toml``. See :doc:`customization/oot_api` for both paths and the API.
 
     Custom per-type config items go on the TypeInfo's
     ``config_fields`` (:class:`ConfigField` or dict). See
-    :doc:`api/oot`. Field shapes that don't fit the existing
+    :doc:`customization/oot_api`. Field shapes that don't fit the existing
     generators require the C++ descriptor path.
+
+Reference
+=========
+
+.. toctree::
+   :maxdepth: 1
+
+   Out-of-Tree API Reference <customization/oot_api.rst>

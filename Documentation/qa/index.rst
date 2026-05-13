@@ -1,14 +1,15 @@
 .. _testing:
+.. _qa:
 
-=======
-Testing
-=======
+==
+QA
+==
 
 Overview
 ========
 
 Dawn relies heavily on host-based execution for QA - the simulator and
-QEMU targets described in :doc:`/host_development`, combined with the
+QEMU targets described in :doc:`/guides/host_development`, combined with the
 :doc:`/components/fake_devices`. The pipeline below assumes those
 targets are available.
 

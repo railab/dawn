@@ -42,7 +42,7 @@ Host requirements
 -----------------
 
 Each suite below depends on different host facilities (Linux only -
-see :doc:`/environment` for the general host setup):
+see :doc:`/guides/environment` for the general host setup):
 
 * CAN-based suites (``can``, ``programs_can``, ``gateway``) need
   SocketCAN with the ``vcan`` kernel module - ``testenv_init.sh``

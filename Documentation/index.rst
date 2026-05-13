@@ -84,17 +84,12 @@ Last Updated: |today|
 
    Home <self>
    quickstart.rst
-   docker.rst
-   environment.rst
-   host_development.rst
-   descriptors.rst
    guides/index.rst
-   components/index.rst
+   Implementation <components/index.rst>
    examples/index.rst
    tools/index.rst
    api/index.rst
-   api/oot.rst
-   qa/index.rst
+   QA <qa/index.rst>
    customization.rst
    roadmap.rst
    glossary.rst

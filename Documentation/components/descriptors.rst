@@ -150,11 +150,11 @@ Additional slots can be used for descriptor switching workflows.
 Related pages
 =============
 
-- :doc:`examples/descriptors` lists the descriptor files available in this
+- :doc:`/examples/descriptors` lists the descriptor files available in this
   repository and groups them by feature.
-- :doc:`tools/dawnpy` documents descriptor generation commands such as
+- :doc:`/tools/dawnpy` documents descriptor generation commands such as
   ``desc-gen`` for C++ generation and ``desc-bin`` for raw binary export.
-- :doc:`components/index` describes the IO, Program, and Protocol component
+- :doc:`/components/index` describes the IO, Program, and Protocol component
   types that descriptor entries can instantiate.
 - :ref:`descriptor` documents the runtime descriptor loader and binary
   container internals.

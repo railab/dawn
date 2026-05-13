@@ -1,6 +1,6 @@
-============
-Architecture
-============
+==============
+Implementation
+==============
 
 Overview
 ========
@@ -9,7 +9,7 @@ Dawn runtime is descriptor-driven.
 The descriptor binary defines which objects exist, how they are configured,
 and how they are connected.
 
-A general architecture view is shown below.
+A general implementation view is shown below.
 
 .. uml::
    :scale: 80%
@@ -64,7 +64,7 @@ A general architecture view is shown below.
 Core Model
 ==========
 
-The core architecture element is :doc:`common/descriptor`, a binary data array
+The core implementation element is :doc:`common/descriptor`, a binary data array
 in memory that defines system objects and configuration payloads.
 Object model details are documented in :doc:`common/object`.
 
@@ -186,6 +186,7 @@ All IO/PROG/PROTO component pages follow the standardized template in
    template.rst
    apps.rst
    dawn/index.rst
+   descriptors.rst
    common/index.rst
    io/index.rst
    prog/index.rst
