@@ -58,8 +58,6 @@ Brainstorming & Future Ideas
 - Dawn LED effects can be implemented as Programs or directly in IO.
 - LED effect handling can include simple on/off, but simple on/off IO does not
   provide effect features.
-- RGB should likely follow the same approach, with 3 channels updated in one
-  IO access.
 
 Possible LED implementations:
 

@@ -263,6 +263,26 @@ int sim_bringup(void)
     }
 #endif
 
+#ifdef CONFIG_DAWN_FAKE_RGBLED
+  ret = fake_rgbled_initialize(0);
+  if (ret < 0)
+    {
+      syslog(LOG_ERR, "ERROR: fake_rgbled_initialize() failed: %d\n", ret);
+    }
+
+  ret = fake_rgbled_initialize(1);
+  if (ret < 0)
+    {
+      syslog(LOG_ERR, "ERROR: fake_rgbled_initialize() failed: %d\n", ret);
+    }
+
+  ret = fake_rgbled_initialize(2);
+  if (ret < 0)
+    {
+      syslog(LOG_ERR, "ERROR: fake_rgbled_initialize() failed: %d\n", ret);
+    }
+#endif
+
 #ifdef CONFIG_DAWN_FAKE_UID
   ret = fake_uid_initialize();
   if (ret < 0)

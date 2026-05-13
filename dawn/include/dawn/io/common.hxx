@@ -165,6 +165,7 @@ public:
     IO_CLASS_GPO_SINGLE = 61, ///< Single GPIO output
     IO_CLASS_BUTTONS = 62,    ///< Button input
     IO_CLASS_LEDS = 63,       ///< LED output
+    IO_CLASS_RGBLED = 64,     ///< RGB LED output
 
     // PWM output
 

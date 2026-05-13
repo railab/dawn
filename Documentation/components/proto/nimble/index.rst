@@ -48,6 +48,7 @@ Supported fields:
 - ``config.services``: per-service binding tree (see per-service pages).
 - ``config.services.bas.battery_level``: Battery Service source IO; must be
   notify-capable. See :doc:`bas`.
+- ``config.services.custom``: generic vendor service definitions.
 
 External Control
 ================

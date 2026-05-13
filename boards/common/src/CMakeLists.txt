@@ -28,6 +28,10 @@ if(CONFIG_DAWN_FAKE_USERLEDS)
   list(APPEND SRCS fake_userleds.c)
 endif()
 
+if(CONFIG_DAWN_FAKE_RGBLED)
+  list(APPEND SRCS fake_rgbled.c)
+endif()
+
 if(CONFIG_DAWN_FAKE_BUTTONS)
   list(APPEND SRCS fake_buttons.c)
 endif()

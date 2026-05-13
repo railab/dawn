@@ -60,6 +60,12 @@ int fake_sensors_initialize(void);
 int fake_userleds_initialize(int devno, uint8_t lednum);
 #endif
 
+/* Fake RGB LED driver */
+
+#ifdef CONFIG_DAWN_FAKE_RGBLED
+int fake_rgbled_initialize(int devno);
+#endif
+
 /* Fake button driver */
 
 #ifdef CONFIG_DAWN_FAKE_BUTTONS

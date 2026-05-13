@@ -178,6 +178,7 @@ Supported IO
    systime.rst
    virtual.rst
    leds.rst
+   rgbled.rst
    buttons.rst
    timestamp.rst
    rand.rst

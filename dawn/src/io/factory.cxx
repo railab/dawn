@@ -66,6 +66,9 @@
 #ifdef CONFIG_DAWN_IO_LEDS
 #  include "dawn/io/leds.hxx"
 #endif
+#ifdef CONFIG_DAWN_IO_RGB_LED
+#  include "dawn/io/rgbled.hxx"
+#endif
 #ifdef CONFIG_DAWN_IO_VIRT
 #  include "dawn/io/virt.hxx"
 #endif
@@ -277,6 +280,11 @@ CIOCommon *CIOFactory::create(CDescObject &desc)
 #ifdef CONFIG_DAWN_IO_LEDS
       case CIOCommon::IO_CLASS_LEDS:
         return new CIOLeds(desc);
+#endif
+
+#ifdef CONFIG_DAWN_IO_RGB_LED
+      case CIOCommon::IO_CLASS_RGBLED:
+        return new CIORgbLed(desc);
 #endif
 
 #ifdef CONFIG_DAWN_IO_VIRT

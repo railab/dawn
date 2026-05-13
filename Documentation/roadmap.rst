@@ -24,9 +24,19 @@ Tier 1
 
 #. Demo: Thingy:53
 
-   - what exactly should it do ?
-   - gas sensor demo
-   - missing battery state
+   - [X] set RGB
+   - [ ] battery state
+   - [ ] read sensors over BLE
+   - [ ] gas sensor demo
+   - [ ] reconfigure sensors parameters over BLE
+   - [ ] RF switch support
+   - [ ] low power mode
+   - [ ] something with button
+   - [ ] something with buzzer
+   - [ ] something with microphone
+   - [ ] something with QSPI mem
+   - [ ] something with USB
+   - [ ] something with NFC
 
 #. release nxscope-gui
 
@@ -113,8 +123,6 @@ Tier 3
 ======
 
 #. IO: read system log (syslog)
-
-#. IO: RGB LED
 
 #. IO: improve ADC support
 

@@ -109,6 +109,12 @@ Supported fake drivers
      - ``/dev/userleds``
      - User-LED lower-half. Tracks per-LED state in memory; reports the
        supported LED set based on the requested LED count.
+   * - ``DAWN_FAKE_RGBLED``
+     - ``/dev/rgbledN``
+     - NuttX RGBLED upper-half driver backed by one fake multi-channel PWM
+       lower half. Accepts standard ``#RRGGBB`` writes and produces no
+       physical signal. Requires ``CONFIG_PWM_MULTICHAN`` with at least three
+       PWM channels. Used by ``CIORgbLed`` unit and NTFC simulator coverage.
    * - ``DAWN_FAKE_BUTTONS``
      - ``/dev/buttonsN``
      - Button input lower-half. Tracks per-button state in memory;

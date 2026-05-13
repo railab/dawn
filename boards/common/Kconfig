@@ -75,6 +75,17 @@ config DAWN_FAKE_USERLEDS
 	---help---
 		Enable the fake user LED driver for tests and simulation.
 
+config DAWN_FAKE_RGBLED
+	bool "Fake RGB LED driver"
+	default n
+	depends on RGBLED && PWM && PWM_MULTICHAN
+	depends on PWM_NCHANNELS >= 3
+	---help---
+		Enable a fake /dev/rgbledN character driver for tests and simulation.
+		The fake device registers NuttX's RGBLED upper half backed by fake
+		PWM lower halves, so it accepts the same #RRGGBB writes as a board
+		RGB LED device.
+
 config DAWN_FAKE_BUTTONS
 	bool "Fake button driver"
 	default n
