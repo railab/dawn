@@ -127,6 +127,10 @@ if(CONFIG_DAWN_IO_LEDS)
   list(APPEND SRCS leds.cxx)
 endif()
 
+if(CONFIG_DAWN_IO_RGB_LED)
+  list(APPEND SRCS rgbled.cxx)
+endif()
+
 if(CONFIG_DAWN_IO_TIMESTAMPIO)
   list(APPEND SRCS timestamp.cxx)
 endif()

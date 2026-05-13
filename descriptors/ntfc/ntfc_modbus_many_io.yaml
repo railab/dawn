@@ -1,0 +1,186 @@
+metadata:
+  title: NTFC Modbus Many IO Map
+  version: "1.0"
+  description: >
+    Simulator-focused Modbus RTU descriptor that instantiates a broad set of
+    Dawn IO classes and exposes representative readable/writable surfaces.
+    RGB LED is backed by boards/common fake /dev/rgbled0 and uses uint32
+    0x00RRGGBB values.
+  os_required:
+    - /dev/ttyS1
+    - /dev/rgbled0
+    - /dev/leds0
+    - /dev/buttons0
+    - /dev/adc0
+    - /dev/dac0
+    - /dev/pwm0
+
+ios:
+  - &rgbled0
+    id: rgbled0
+    type: rgb_led
+    dtype: uint32
+    config:
+      device: 0
+      init_val: 0x000000
+
+  - &dummy_bool
+    id: dummy_bool
+    type: dummy
+    dtype: bool
+    config:
+      init_value: false
+
+  - &dummy_u16
+    id: dummy_u16
+    type: dummy
+    dtype: uint16
+    config:
+      init_value: 0x1234
+
+  - &dummy_u32
+    id: dummy_u32
+    type: dummy
+    dtype: uint32
+    config:
+      init_value: 0x01020304
+
+  - &dummy_u64
+    id: dummy_u64
+    type: dummy
+    dtype: uint64
+    config:
+      init_value: 0x0102030405060708
+
+  - &leds0
+    id: leds0
+    type: leds
+    dtype: uint32
+    config:
+      device: 0
+      init_val: 0
+
+  - &buttons0
+    id: buttons0
+    type: buttons
+    dtype: uint32
+    config:
+      device: 0
+
+  - &adc0
+    id: adc0
+    type: adc_fetch
+    dtype: int32
+    config:
+      device: 0
+
+  - &dac0
+    id: dac0
+    type: dac
+    dtype: int32
+    config:
+      device: 0
+
+  - &pwm0
+    id: pwm0
+    type: pwm
+    dtype: uint32
+    config:
+      device: 0
+      freq: 1000
+
+  - &rand0
+    id: rand0
+    type: rand
+    dtype: uint32
+
+  - &uptime0
+    id: uptime0
+    type: sysinfo
+    dtype: uint32
+    variant: uptime
+
+  - &descriptor0
+    id: descriptor0
+    type: descriptor
+    dtype: uint32
+    config:
+      device: 0
+
+  - &descriptor1
+    id: descriptor1
+    type: descriptor
+    dtype: uint32
+    config:
+      device: 1
+
+  - &descselector0
+    id: descselector0
+    type: descselector
+    dtype: uint32
+
+  - &capabilities0
+    id: capabilities0
+    type: capabilities
+    dtype: block
+
+protocols:
+  - id: modbus0
+    type: modbus_rtu
+    bindings:
+      - *rgbled0
+      - *dummy_bool
+      - *dummy_u16
+      - *dummy_u32
+      - *dummy_u64
+      - *leds0
+      - *buttons0
+      - *adc0
+      - *dac0
+      - *pwm0
+      - *rand0
+      - *uptime0
+      - *descriptor0
+      - *descriptor1
+      - *descselector0
+      - *capabilities0
+    config:
+      path: /dev/ttyS1
+      baudrate: 115200
+      registers:
+        - type: coil
+          start: 0x0100
+          bindings:
+            - *dummy_bool
+        - type: input
+          start: 0x0200
+          bindings:
+            - *buttons0
+            - *dummy_u32
+            - *dummy_u64
+            - *rand0
+            - *uptime0
+        - type: holding
+          start: 0x0300
+          bindings:
+            - *rgbled0
+            - *dummy_u16
+            - *dummy_u32
+            - *dummy_u64
+            - *leds0
+            - *descselector0
+        - type: seekable
+          config: 256
+          start: 0x1000
+          bindings:
+            - *descriptor0
+        - type: seekable
+          config: 256
+          start: 0x1200
+          bindings:
+            - *descriptor1
+        - type: seekable
+          config: 64
+          start: 0x1400
+          bindings:
+            - *capabilities0

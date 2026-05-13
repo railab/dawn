@@ -157,6 +157,9 @@ void CIOCapabilities::buildIoBitmap()
 #ifdef CONFIG_DAWN_IO_LEDS
   setBitmapBit(ioBitmap, CIOCommon::IO_CLASS_LEDS);
 #endif
+#ifdef CONFIG_DAWN_IO_RGB_LED
+  setBitmapBit(ioBitmap, CIOCommon::IO_CLASS_RGBLED);
+#endif
 #ifdef CONFIG_DAWN_IO_PWM
   setBitmapBit(ioBitmap, CIOCommon::IO_CLASS_PWM);
 #endif

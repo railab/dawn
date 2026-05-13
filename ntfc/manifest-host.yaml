@@ -50,6 +50,11 @@ sessions:
     testpath: ntfc/tests/modbus
     resources: [pty-bridge]
 
+  - name: "sim-modbus-many-io"
+    confpath: ntfc/configs/sim/modbus_many_io/config.yaml
+    testpath: ntfc/tests/modbus_many_io
+    resources: [pty-bridge]
+
   - name: "sim-nxscope"
     confpath: ntfc/configs/sim/nxscope/config.yaml
     testpath: ntfc/tests/nxscope

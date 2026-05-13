@@ -239,6 +239,16 @@ config DAWN_IO_LEDS
 	---help---
 		Enable LED output IO objects backed by board LED drivers.
 
+config DAWN_IO_RGB_LED
+	bool "Dawn RGB LED IO support"
+	default n
+	depends on DAWN_DTYPE_UINT32
+	---help---
+		Enable RGB LED output IO objects backed by /dev/rgbledN devices.
+		Dawn values use DTYPE_UINT32 with 0x00RRGGBB encoding and are
+		converted to the #RRGGBB string format expected by NuttX RGB LED
+		drivers.
+
 config DAWN_IO_TIMERFD
 	bool
 	default n

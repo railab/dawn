@@ -38,6 +38,7 @@ static void test_io_capabilities_blob()
   uint8_t *ptr;
   uint16_t payloadLen;
   uint32_t ioW1;
+  uint32_t ioW2;
   uint32_t descSlots;
   uint32_t slotSize;
   int ret;
@@ -69,6 +70,10 @@ static void test_io_capabilities_blob()
   // IO section: verify capabilities class bit (53 -> word 1, bit 21).
   ioW1 = readle32(&ptr[8 + 4]);
   TEST_ASSERT((ioW1 & (1u << 21)) != 0u);
+
+  // check next word
+  ioW2 = readle32(&ptr[8 + 8]);
+  TEST_ASSERT((ioW2 & 1u) != 0u);
 
   // Metadata section starts after 3x64-byte sections.
   descSlots = readle32(&ptr[8 + 192 + 24]);

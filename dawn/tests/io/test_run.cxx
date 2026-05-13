@@ -44,6 +44,7 @@ extern "C"
   int test_io_pwm();
   int test_io_buttons();
   int test_io_leds();
+  int test_io_rgbled();
   int test_io_timerfd();
   int test_io_timestamp();
   int test_io_rand();
@@ -131,6 +132,9 @@ static int (*test_array[])(void) = {
 #endif
 #ifdef CONFIG_DAWN_IO_LEDS
   test_io_leds,
+#endif
+#ifdef CONFIG_DAWN_IO_RGB_LED
+  test_io_rgbled,
 #endif
 #ifdef CONFIG_DAWN_IO_PWM
   test_io_pwm,

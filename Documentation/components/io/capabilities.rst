@@ -114,7 +114,8 @@ adding a new built-in IO, PROG, or PROTO class:
 3. Keep ``tools/dawnpy/src/dawnpy/descriptor/capabilities_blob.py`` in sync if
    the blob layout, metadata words, or flag meanings change.
 4. Update the component documentation for the new object and mention any
-   relevant capability dependencies.
+   relevant capability dependencies. For example, ``CONFIG_DAWN_IO_RGB_LED``
+   advertises ``CIOCommon::IO_CLASS_RGBLED`` when RGB LED IO support is built.
 
 Configuration
 =============

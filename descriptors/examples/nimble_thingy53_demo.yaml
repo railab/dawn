@@ -1,0 +1,36 @@
+metadata:
+  title: Thingy:53 RGB LED NimBLE Demo
+  version: "1.0"
+  description: >
+    Exposes the Thingy:53 RGB LED as a Dawn uint32 RGB value over a NimBLE
+    custom service. The rgbled IO uses 0x00RRGGBB values and converts them to
+    the #RRGGBB string format expected by the NuttX /dev/rgbled0 driver.
+  os_required:
+    - /dev/rgbled0
+    - ble
+
+ios:
+  - &rgb_led
+    id: rgbled0
+    type: rgb_led
+    dtype: uint32
+    config:
+      device: 0
+      init_val: 0x000000
+
+protocols:
+  - id: nimble1
+    type: nimble
+    config:
+      gap_name: dawn-thingy53
+      services:
+        dis:
+          enabled: true
+        custom:
+          - uuid: 9f2d2b30-74d3-4f34-9f37-ef7d8f6d3000
+            characteristics:
+              - uuid: 9f2d2b30-74d3-4f34-9f37-ef7d8f6d3001
+                io: *rgb_led
+                flags:
+                  - read
+                  - write

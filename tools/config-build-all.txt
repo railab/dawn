@@ -12,6 +12,7 @@ boards/sim/sim/sim/configs/dynamic_desc -e CXX=g++-14 -e CC=gcc-14
 boards/sim/sim/sim/configs/nsh_blinky_shell -e CXX=g++-14 -e CC=gcc-14
 boards/sim/sim/sim/configs/nsh_can -e CXX=g++-14 -e CC=gcc-14
 boards/sim/sim/sim/configs/nsh_feature_modbus -e CXX=g++-14 -e CC=gcc-14
+boards/sim/sim/sim/configs/nsh_modbus_many_io -e CXX=g++-14 -e CC=gcc-14
 boards/sim/sim/sim/configs/nsh_gateway -e CXX=g++-14 -e CC=gcc-14
 boards/sim/sim/sim/configs/nsh_modbus_rtu -e CXX=g++-14 -e CC=gcc-14
 boards/sim/sim/sim/configs/nsh_nxscope -e CXX=g++-14 -e CC=gcc-14
@@ -37,6 +38,7 @@ boards/arm/nrf52/nrf52840-dk/configs/nimble_sensor_producer
 boards/arm/nrf52/nrf52840-dk/configs/shell
 
 boards/arm/nrf53/thingy53/configs/nimble -D CMAKE_POLICY_VERSION_MINIMUM=3.5
+boards/arm/nrf53/thingy53/configs/nimble_thingy53 -D CMAKE_POLICY_VERSION_MINIMUM=3.5
 boards/arm/nrf53/thingy53/configs/rpmsghci_sdc_cpunet -D CMAKE_POLICY_VERSION_MINIMUM=3.5
 # boards/arm/nrf53/thingy53/configs/shell -D CMAKE_POLICY_VERSION_MINIMUM=3.5
 
