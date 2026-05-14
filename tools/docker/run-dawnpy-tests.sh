@@ -125,14 +125,6 @@ normalize_warning_flags() {
   fi
 }
 
-normalize_sim_modbus_parity() {
-  modbus_test="ntfc/tests/modbus/test_modbus.py"
-
-  if [ -f "$modbus_test" ]; then
-    sed -i 's/^RTU_PARITY = "E"$/RTU_PARITY = "N"/' "$modbus_test"
-  fi
-}
-
 cleanup() {
   sh ./testenv_init.sh stop >/dev/null 2>&1 || true
 }
@@ -144,7 +136,6 @@ run_repo_init
 prepare_python_environment
 normalize_clang_format
 normalize_warning_flags
-normalize_sim_modbus_parity
 ensure_tun_device
 sh ./testenv_init.sh "$TESTENV_CMD"
 dawnpy-tests "$@"

@@ -17,7 +17,7 @@ from dawnpy_modbus.client import ModbusClient
 DESC_PATH = "descriptors/ntfc/ntfc_modbus_many_io.yaml"
 MODBUS_UNIT = 0x01
 RTU_BAUD = 115200
-RTU_PARITY = "E"
+RTU_PARITY = "N"
 SERIAL_PORT = "/tmp/ttyNX0"
 
 
