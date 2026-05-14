@@ -1,0 +1,31 @@
+config:
+  cwd: './external'
+  build_dir: './build'
+
+product:
+  name: "dawn-nrf5340dk-nimble-ntfc"
+  cores:
+    core0:
+      name: 'cpuapp'
+      device: 'serial'
+      exec_path: '/dev/ttyACM0'
+      exec_args: '115200,n,8,1'
+      defconfig: '../../boards/arm/nrf53/nrf5340-dk/configs/nimble_ntfc'
+      flash: 'nrfutil device program --core application --firmware $IMAGE_HEX'
+      reboot: 'nrfutil device reset --core application'
+      dcmake:
+        CMAKE_SUPPRESS_DEVELOPER_WARNINGS: "ON"
+        CMAKE_POLICY_VERSION_MINIMUM: "3.5"
+
+    core1:
+      name: 'cpunet'
+      device: 'serial'
+      exec_path: '/dev/ttyACM1'
+      exec_args: '115200,n,8,1'
+      defconfig: '../../boards/arm/nrf53/nrf5340-dk/configs/rpmsghci_sdc_cpunet'
+      flash: 'nrfutil device program --core network --firmware $IMAGE_HEX'
+      reboot: 'nrfutil device reset --core network'
+      flash_only: true
+      dcmake:
+        CMAKE_SUPPRESS_DEVELOPER_WARNINGS: "ON"
+        CMAKE_POLICY_VERSION_MINIMUM: "3.5"

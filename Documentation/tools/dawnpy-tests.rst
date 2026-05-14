@@ -60,7 +60,9 @@ Common options:
 * ``--skip-ntfc``: skip NTFC tox and integration test steps.
 * ``--ntfc-only``: run only NTFC tox and integration test steps.
 * ``--ntfc-list PATH``: NTFC manifest YAML file. Defaults to
-  ``ntfc/manifest-host.yaml``.
+  ``ntfc/manifest-host.yaml``; hardware examples include
+  ``ntfc/manifest-nrf52840dk.yaml``, ``ntfc/manifest-nrf5340dk.yaml``,
+  and ``ntfc/manifest-nucleo-c071rb.yaml``.
 * ``--size-only``: run only build size analysis, building missing
   configurations first.
 * ``--debug`` / ``--no-debug``: enable verbose logging.

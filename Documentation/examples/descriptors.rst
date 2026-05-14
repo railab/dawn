@@ -346,8 +346,14 @@ Examples
   topic layout as ``can_sensor_producer.yaml``: temperature on instance 10,
   humidity on instance 11, barometer on instance 12, and light on instance 13.
 
-  The device advertises as ``dawn-sensor-prod``. Host-side writes are handled
-  by :file:`tools/examples/nimble_sensor_producer_cli.py`.
+  The device advertises as ``dawn-sensor-prod``. The descriptor exposes four
+  write-only custom BLE characteristics for those sensor values. Host-side
+  writes are handled by :file:`tools/examples/nimble_sensor_producer_cli.py`.
+
+  The NTFC hardware suites use this descriptor together with the
+  :file:`examples/apps/usensor_reader` helper so a parallel NuttX app can
+  confirm that BLE writes were republished into the expected
+  ``/dev/uorb/sensor_*`` topics.
 
   Required resources:
   ``ble``, ``/dev/usensor``, ``/dev/uorb/sensor_temp10``,
@@ -497,9 +503,10 @@ NTFC
 ``descriptors/ntfc/ntfc_nimble_all.yaml``
   **NTFC NimBLE All-Services Target**
 
-  Descriptor used by ``ntfc/tests/nimble_ntfc``. It advertises as
-  ``ntfc-nimbl`` and enables the
-  supported NimBLE service set used by the NTFC BLE suite: DIS, BAS, TPS,
+  Descriptor used by ``ntfc/tests/nimble_ntfc`` and the
+  ``nimble_ntfc`` board configs for nRF52840-DK and nRF5340-DK. It
+  advertises as ``ntfc-nimble`` and enables the supported NimBLE
+  service set used by the NTFC BLE suite: DIS, BAS, TPS,
   AIOS, ESS, IMDS, and OTS.
 
   Most measurement values are backed by ``dummy_notify`` IOs with short update

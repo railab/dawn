@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
-"""NTFC tests for the nRF52840-DK all-services NimBLE target."""
+"""NTFC tests for the board-agnostic all-services NimBLE target."""
 
 from __future__ import annotations
 
@@ -249,7 +249,7 @@ class TestNimbleNtfcAllCharacteristics:
 
     @pytest.fixture(scope="class", autouse=True)
     def _start_dawn(self):
-        """Launch Dawn exactly like the working nimble_ots hardware suite."""
+        """Launch Dawn on any NSH-backed ``nimble_ntfc`` hardware target."""
         product = pytest.products[0].core(0)
         product.sendCommand("dawn &", timeout=2)
         time.sleep(ADV_SETTLE_S)
