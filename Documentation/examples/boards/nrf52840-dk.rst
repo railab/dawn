@@ -63,15 +63,7 @@ nimble_sensor_producer
 ----------------------
 
 NimBLE-to-user-sensor reference profile using
-``nimble_sensor_producer.yaml``. The board advertises as
-``dawn-sensor-prod`` and exposes write-only custom characteristics for
-temperature, humidity, barometer, and light values. Dawn republishes those
-BLE writes into ``/dev/uorb/sensor_*`` topics.
-
-Host-side updates are available via
-:file:`tools/examples/nimble_sensor_producer_cli.py`. The config also enables
-``usensor_reader`` from :file:`examples/apps/usensor_reader` so a parallel
-NuttX app can consume the produced sensor events from the board shell.
+``nimble_sensor_producer.yaml``.
 
 shell
 -----

@@ -15,6 +15,7 @@ experimental, or placeholder configurations.
    ST Nucleo C092RC <nucleo-c092rc>
    ST Nucleo C071RB <nucleo-c071rb>
    Nordic nRF52840-DK <nrf52840-dk>
+   Nordic nRF5340-DK <nrf5340-dk>
    Nordic Thingy:53 <thingy53>
    QEMU Intel64 <qemu-intel64>
 

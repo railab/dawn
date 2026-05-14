@@ -1,0 +1,177 @@
+/****************************************************************************
+ * boards/arm/nrf53/nrf5340-dk/src/nrf5340-dk.h
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ *
+ ****************************************************************************/
+
+#ifndef __BOARDS_ARM_NRF53_NRF5340_DK_SRC_NRF5340_DK_H
+#define __BOARDS_ARM_NRF53_NRF5340_DK_SRC_NRF5340_DK_H
+
+/****************************************************************************
+ * Included Files
+ ****************************************************************************/
+
+#include <nuttx/config.h>
+#include <nuttx/compiler.h>
+
+#include "nrf53_gpio.h"
+
+/****************************************************************************
+ * Pre-processor Definitions
+ ****************************************************************************/
+
+/* Configuration ************************************************************/
+
+/* procfs File System */
+
+#ifdef CONFIG_FS_PROCFS
+#  ifdef CONFIG_NSH_PROC_MOUNTPOINT
+#    define NRF53_PROCFS_MOUNTPOINT CONFIG_NSH_PROC_MOUNTPOINT
+#  else
+#    define NRF53_PROCFS_MOUNTPOINT "/proc"
+#  endif
+#endif
+
+/* LED definitions **********************************************************/
+
+/* Definitions to configure LED GPIO as outputs */
+
+#define GPIO_LED1  (GPIO_OUTPUT | GPIO_VALUE_ONE | GPIO_PORT0 | GPIO_PIN(28))
+#define GPIO_LED2  (GPIO_OUTPUT | GPIO_VALUE_ONE | GPIO_PORT0 | GPIO_PIN(29))
+#define GPIO_LED3  (GPIO_OUTPUT | GPIO_VALUE_ONE | GPIO_PORT0 | GPIO_PIN(30))
+#define GPIO_LED4  (GPIO_OUTPUT | GPIO_VALUE_ONE | GPIO_PORT0 | GPIO_PIN(31))
+
+/* Button definitions *******************************************************/
+
+/* Board supports four buttons. */
+
+#define GPIO_BUTTON1 (GPIO_INPUT | GPIO_PULLUP | GPIO_PORT0 | GPIO_PIN(23))
+#define GPIO_BUTTON2 (GPIO_INPUT | GPIO_PULLUP | GPIO_PORT0 | GPIO_PIN(24))
+#define GPIO_BUTTON3 (GPIO_INPUT | GPIO_PULLUP | GPIO_PORT0 | GPIO_PIN(8))
+#define GPIO_BUTTON4 (GPIO_INPUT | GPIO_PULLUP | GPIO_PORT0 | GPIO_PIN(9))
+
+/* GPIO pins used by the GPIO Subsystem */
+
+#define BOARD_NGPIOIN  2 /* Amount of GPIO input pins */
+#define BOARD_NGPIOINT 2 /* Amount of GPIO input pins with interrupts */
+#define BOARD_NGPIOOUT 4 /* Amount of GPIO output pins */
+
+#define GPIO_OUT1 GPIO_LED1
+#define GPIO_OUT2 GPIO_LED2
+#define GPIO_OUT3 GPIO_LED3
+#define GPIO_OUT4 GPIO_LED4
+
+#define GPIO_IN1 GPIO_BUTTON1
+#define GPIO_IN2 GPIO_BUTTON2
+
+#define GPIO_INT1 GPIO_BUTTON3
+#define GPIO_INT2 GPIO_BUTTON4
+
+/****************************************************************************
+ * Public Types
+ ****************************************************************************/
+
+/****************************************************************************
+ * Public Data
+ ****************************************************************************/
+
+#ifndef __ASSEMBLY__
+
+/****************************************************************************
+ * Public Functions Prototypes
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: nrf53_bringup
+ *
+ * Description:
+ *   Perform architecture-specific initialization
+ *
+ *   CONFIG_BOARD_LATE_INITIALIZE=y :
+ *     Called from board_late_initialize().
+ *
+ ****************************************************************************/
+
+int nrf53_bringup(void);
+
+/****************************************************************************
+ * Name: nrf53_pwm_setup
+ *
+ * Description:
+ *   Initialize PWM driver.
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_PWM
+int nrf53_pwm_setup(void);
+#endif
+
+/****************************************************************************
+ * Name: nrf53_adc_setup
+ *
+ * Description:
+ *   Initialize ADC driver.
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_ADC
+int nrf53_adc_setup(void);
+#endif
+
+/****************************************************************************
+ * Name: nrf53_mx25_initialize
+ *
+ * Description:
+ *   Initialize the MX25RXX QSPI memory
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_NRF53_QSPI
+int nrf53_mx25_initialize(void);
+#endif
+
+/****************************************************************************
+ * Name: nrf53_gpio_initialize
+ *
+ * Description:
+ *   Initialize GPIO drivers for use with /apps/examples/gpio
+ *
+ * Return Value:
+ *   OK on success; a negated errno value on failure.
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_DEV_GPIO
+int nrf53_gpio_initialize(void);
+#endif
+
+/****************************************************************************
+ * Name: nrf53_qencoder_initialize
+ *
+ * Description:
+ *   Initialize and register the qencoder driver
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_NRF53_QDEC
+int nrf53_qencoder_initialize(int devno);
+#endif
+
+#endif /* __ASSEMBLY__ */
+#endif /* __BOARDS_ARM_NRF53_NRF5340_DK_SRC_NRF5340_DK_H */
