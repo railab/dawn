@@ -33,7 +33,6 @@ TCP_DESC_PATH = "descriptors/examples/qemu_modbus_tcp_dummy_map.yaml"
 
 MODBUS_UNIT = 0x01
 RTU_BAUD = 115200
-RTU_PARITY = "E"
 
 
 @dataclass(frozen=True)
@@ -46,6 +45,7 @@ class ModbusTarget:
     connect_attempts: int
     retry_s: float
     serial_port: str = ""
+    serial_parity: str = "E"
     tcp_host: str = ""
     tcp_port: int = 0
     readiness_probe: bool = False
@@ -75,6 +75,7 @@ def _modbus_target():
             connect_attempts=20,
             retry_s=0.2,
             serial_port="/tmp/ttyNX0",
+            serial_parity="N",
         )
 
     if device == "serial":
@@ -87,6 +88,7 @@ def _modbus_target():
             connect_attempts=30,
             retry_s=0.2,
             serial_port="/dev/ttyUSB0",
+            serial_parity="E",
             readiness_probe=True,
         )
 
@@ -110,7 +112,7 @@ def _open_rtu_client(target):
     client = ModbusClient(
         port=target.serial_port,
         baudrate=RTU_BAUD,
-        parity=RTU_PARITY,
+        parity=target.serial_parity,
         stopbits=1,
         timeout=1.5,
     )
