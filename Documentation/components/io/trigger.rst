@@ -44,7 +44,7 @@ resolved during ``CDawn::bindObjects()`` from the IDs supplied via
 Data Format
 -----------
 
-Write operations use a single ``uint8_t`` byte containing the command code:
+Write operations use a single ``uint8_t`` byte containing the command code.
 
 .. list-table::
    :header-rows: 1
