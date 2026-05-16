@@ -29,7 +29,7 @@ Implementation
 Data Format
 -----------
 
-Read and write operations use a single ``uint8_t`` byte:
+Read and write operations use a single ``uint8_t`` byte.
 
 - Write ``0`` - stop command
 - Write ``1`` - start command
