@@ -1,0 +1,22 @@
+#
+# Dawn nucleo-h743zi Kconfig
+#
+
+config DAWN_APPS_NUCLEO-H743ZI
+    bool "Dawn nucleo-h743zi application"
+    default n
+    depends on DAWN
+    ---help---
+        Enable Dawn application for nucleo-h743zi.
+
+if DAWN_APPS_NUCLEO-H743ZI
+
+config DAWN_APPS_NUCLEO-H743ZI_DESC_YAML_PATH
+    string "Dawn descriptor YAML path"
+    default ""
+    depends on DAWN_APPS_NUCLEO-H743ZI
+    ---help---
+        Path to the YAML descriptor file relative to the project root.
+
+endif # DAWN_APPS_NUCLEO-H743ZI
+

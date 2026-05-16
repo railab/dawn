@@ -37,6 +37,10 @@ console. By default it uses the Dawn simple protocol discovery commands
 Passing ``--descriptor`` / ``-d`` uses the YAML descriptor as the IO list
 instead, then reads those ObjectIDs from the device.
 
+The UDP client retries safe read/discovery requests once after a timeout.
+This helps when the first packet is lost right after boot, for example during
+ARP setup. Write commands are not retried automatically.
+
 Common options:
 
 * ``--descriptor`` / ``-d``: optional ``descriptor.yaml`` path or

@@ -52,6 +52,10 @@ boards/arm/stm32f0l0g0/nucleo-c092rc/configs/blinky_can
 boards/arm/stm32f0l0g0/nucleo-c092rc/configs/can
 boards/arm/stm32f0l0g0/nucleo-c092rc/configs/can_minimal
 
+boards/arm/stm32h7/nucleo-h743zi/configs/blinky_udp
+boards/arm/stm32h7/nucleo-h743zi/configs/blinky_serial
+
 # Out-of-tree demo (C++ descriptor + YAML descriptor variants)
 examples/out-of-tree-demo/boards/sim/sim/sim/configs/nsh_user_shell -e CXX=g++-14 -e CC=gcc-14
 examples/out-of-tree-demo/boards/sim/sim/sim/configs/nsh_user_shell_yaml -e CXX=g++-14 -e CC=gcc-14
+
