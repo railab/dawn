@@ -49,7 +49,9 @@ Feature index
        :ref:`Blinky CAN <descriptor-blinky-can-demo>`,
        :ref:`Blinky NimBLE <descriptor-blinky-nimble-demo>`,
        :ref:`Blinky Modbus RTU <descriptor-blinky-modbus-rtu-demo>`,
+       :ref:`Blinky Serial <descriptor-blinky-serial-demo>`,
        :ref:`Blinky Shell <descriptor-blinky-shell-demo>`
+       :ref:`Blinky UDP <descriptor-blinky-udp-demo>`
    * - CAN
      - :ref:`Blinky CAN <descriptor-blinky-can-demo>`,
        :ref:`CAN Button/LED <descriptor-can-button-led>`,
@@ -85,7 +87,8 @@ Feature index
      - :ref:`NXScope Serial <descriptor-nxscope-serial>`,
        :ref:`NXScope UDP <descriptor-nxscope-udp>`
    * - Serial
-     - :ref:`Dynamic Descriptor Slot0 <descriptor-dynamic-desc-slot0>`,
+     - :ref:`Blinky Serial <descriptor-blinky-serial-demo>`,
+       :ref:`Dynamic Descriptor Slot0 <descriptor-dynamic-desc-slot0>`,
        :ref:`Dynamic Descriptor Slot1 <descriptor-dynamic-desc-slot1>`,
        :ref:`Serial Core <descriptor-serial-core-demo>`,
        :ref:`Serial LEDs and Buttons <descriptor-serial-leds-buttons-demo>`,
@@ -99,6 +102,7 @@ Feature index
      - :ref:`Empty Placeholder <descriptor-empty-placeholder>`
    * - UDP
      - :ref:`Basic UDP <descriptor-udp-basic>`,
+       :ref:`Blinky UDP <descriptor-blinky-udp-demo>`
        :ref:`NXScope UDP <descriptor-nxscope-udp>`
 
 Catalog
@@ -172,6 +176,34 @@ Examples
   ConfigIO objects (start index and state table).
 
   Required resources: ``/dev/leds0``
+
+.. _descriptor-blinky-serial-demo:
+
+``descriptors/examples/blinky_serial_demo.yaml``
+  **Blinky Serial Demo**
+
+  Provides a serial-controlled runtime example where a sequencer drives the
+  board LED lower-half. Start/stop and runtime dwell parameters are exposed
+  over the Dawn serial protocol together with readback of the sequencer start
+  index and current output state.
+
+  Required resources: ``/dev/leds0``, ``/dev/ttyS0``
+
+  Host helper: :file:`tools/examples/serial_blinky_cli.py`
+
+.. _descriptor-blinky-udp-demo:
+
+``descriptors/examples/blinky_udp_demo.yaml``
+  **Blinky UDP Demo**
+
+  Provides a UDP-controlled runtime example where a sequencer drives the
+  board LED lower-half. Start/stop and runtime dwell parameters are exposed
+  over the Dawn UDP protocol together with readback of the sequencer start
+  index and current output state.
+
+  Required resources: ``/dev/leds0``, ``eth``
+
+  Host helper: :file:`tools/examples/udp_blinky_cli.py`
 
 .. _descriptor-blinky-modbus-rtu-demo:
 
