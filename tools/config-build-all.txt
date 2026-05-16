@@ -21,11 +21,14 @@ boards/sim/sim/sim/configs/nsh_serial -e CXX=g++-14 -e CC=gcc-14
 boards/sim/sim/sim/configs/nsh_shell -e CXX=g++-14 -e CC=gcc-14
 boards/sim/sim/sim/configs/nsh_tests -e CXX=g++-14 -e CC=gcc-14
 boards/sim/sim/sim/configs/nsh_usensor_can -e CXX=g++-14 -e CC=gcc-14
+boards/sim/sim/sim/configs/nsh_wakaama -e CXX=g++-14 -e CC=gcc-14
+boards/sim/sim/sim/configs/nsh_wakaama_leshan -e CXX=g++-14 -e CC=gcc-14
 boards/sim/sim/sim/configs/tests -e CXX=g++-14 -e CC=gcc-14
 
 boards/x86_64/qemu/qemu-intel64/configs/nsh_modbus_tcp -e CXX=g++-14 -e CC=gcc-14
 boards/x86_64/qemu/qemu-intel64/configs/nsh_nxscope_udp -e CXX=g++-14 -e CC=gcc-14
 boards/x86_64/qemu/qemu-intel64/configs/nsh_udp -e CXX=g++-14 -e CC=gcc-14
+boards/x86_64/qemu/qemu-intel64/configs/nsh_wakaama -e CXX=g++-14 -e CC=gcc-14
 
 boards/arm/nrf52/nrf52840-dk/configs/blinky_buttons
 boards/arm/nrf52/nrf52840-dk/configs/nimble_aios

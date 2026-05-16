@@ -5,7 +5,7 @@ metadata:
     Streams a dummy-notify signal over NXScope UDP and exposes writable
     channels for NXScope user extension set requests (simple and seekable).
   os_required:
-  - eth
+  - udp
   - /tmp
 ios:
 - &nx_dummy_notify1

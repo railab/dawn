@@ -322,6 +322,9 @@ void CIOCapabilities::buildProtoBitmap()
 #ifdef CONFIG_DAWN_PROTO_IPC
   setBitmapBit(protoBitmap, CProtoCommon::PROTO_CLASS_IPC);
 #endif
+#ifdef CONFIG_DAWN_PROTO_WAKAAMA
+  setBitmapBit(protoBitmap, CProtoCommon::PROTO_CLASS_WAKAAMA);
+#endif
 }
 
 void CIOCapabilities::setMetaWord(uint16_t index, uint32_t value)

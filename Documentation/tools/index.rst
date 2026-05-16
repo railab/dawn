@@ -22,6 +22,7 @@ purpose, install, command surface, and tests.
    dawnpy-serial.rst
    dawnpy-can.rst
    dawnpy-udp.rst
+   dawnpy-lwm2m.rst
    dawnpy-modbus.rst
    dawnpy-ble.rst
 

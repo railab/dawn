@@ -22,3 +22,6 @@
 [submodule "tools/dawn-nxscope"]
 	path = tools/dawn-nxscope
 	url = https://github.com/railab/dawn-nxscope.git
+[submodule "tools/dawnpy-lwm2m"]
+	path = tools/dawnpy-lwm2m
+	url = https://github.com/railab/dawnpy-lwm2m.git

@@ -7,7 +7,7 @@ metadata:
     on/off cycle and exposes runtime start/stop plus writable dwell timing.
   os_required:
     - /dev/leds0
-    - eth
+    - udp
 
 ios:
   - id: led1

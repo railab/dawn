@@ -60,9 +60,22 @@ sessions:
     testpath: ntfc/tests/nxscope
     resources: [pty-bridge]
 
+  - name: "sim-wakaama"
+    confpath: ntfc/configs/sim/wakaama/config.yaml
+    testpath: ntfc/tests/wakaama
+
+  - name: "sim-wakaama-bootstrap"
+    confpath: ntfc/configs/sim/wakaama_bootstrap/config.yaml
+    testpath: ntfc/tests/wakaama_bootstrap
+
   - name: "qemu-intel64-udp"
     confpath: ntfc/configs/qemu-intel64/udp/config.yaml
     testpath: ntfc/tests/udp
+    resources: [tap0]
+
+  - name: "qemu-intel64-wakaama"
+    confpath: ntfc/configs/qemu-intel64/wakaama/config.yaml
+    testpath: ntfc/tests/wakaama
     resources: [tap0]
 
   - name: "qemu-intel64-nxscope-udp"

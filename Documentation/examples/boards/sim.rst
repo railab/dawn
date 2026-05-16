@@ -98,6 +98,34 @@ nsh_shell
 
 Dawn shell configuration using ``shell_core_demo.yaml``.
 
+nsh_wakaama_leshan
+------------------
+
+Dawn Wakaama LwM2M profile for the public Eclipse Leshan sandbox. It uses
+``descriptors/ntfc/ntfc_wakaama_leshan.yaml`` and registers the endpoint
+``dawn-wakaama-leshan``.
+
+Build and run:
+
+.. code:: bash
+
+   python -m dawnpy build build_wakaama_leshan \
+     boards/sim/sim/sim/configs/nsh_wakaama_leshan \
+     -e CXX=g++-14 \
+     -e CC=gcc-14
+   ./build_wakaama_leshan/nuttx
+
+Start Dawn from NSH:
+
+.. code::
+
+   nsh> dawn
+
+``23.97.187.154`` was the A record for ``leshan.eclipseprojects.io`` when this
+profile was validated. Refresh the A record if Leshan changes. Then open
+``https://leshan.eclipseprojects.io/#/server`` and look for
+``dawn-wakaama-leshan``.
+
 nsh_tests and tests
 -------------------
 

@@ -179,6 +179,7 @@ Recommended next steps (venv-based workflow):
        pip install -e tools/dawnpy-serial \\
                     -e tools/dawnpy-can \\
                     -e tools/dawnpy-udp \\
+                    -e tools/dawnpy-lwm2m \\
                     -e tools/dawnpy-modbus \\
                     -e tools/dawnpy-ble \\
                     -e tools/dawnpy-tests

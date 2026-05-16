@@ -130,7 +130,8 @@ Main repository areas:
 - ``tools/dawnpy/``: core build/descriptor/tooling CLI.
 - ``tools/dawnpy-tests/``: Dawn QA runner extension.
 - ``tools/dawnpy-serial/``, ``tools/dawnpy-can/``,
-  ``tools/dawnpy-udp/``, ``tools/dawnpy-modbus/``:
+  ``tools/dawnpy-udp/``, ``tools/dawnpy-modbus/``,
+  ``tools/dawnpy-lwm2m/``:
   protocol-specific tooling extensions.
 - ``external/nuttx/`` and ``external/apps/``: integrated NuttX trees.
 

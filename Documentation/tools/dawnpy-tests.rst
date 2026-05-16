@@ -25,12 +25,13 @@ because the integration suites exercise every transport::
     pip install -e tools/dawnpy-serial \
                    tools/dawnpy-can \
                    tools/dawnpy-udp \
+                   tools/dawnpy-lwm2m \
                    tools/dawnpy-modbus
     pip install -e tools/dawnpy-tests
 
 Direct dependencies (installed automatically): ``dawnpy``,
-``dawnpy-serial``, ``dawnpy-can``, ``dawnpy-udp``, ``dawnpy-modbus``,
-``click >= 8.1``, ``ntfc >= 0.0.2``.
+``dawnpy-serial``, ``dawnpy-can``, ``dawnpy-udp``, ``dawnpy-lwm2m``,
+``dawnpy-modbus``, ``click >= 8.1``, ``ntfc >= 0.0.2``.
 
 Command
 =======

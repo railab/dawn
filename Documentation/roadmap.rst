@@ -67,11 +67,6 @@ Tier 2
    - setpoint, input, output as IO
    - controller parameters in config
 
-#. Protocol: lwm2m / wakaama
-
-   - URI-based: ``/ObjectID/InstanceID/ResourceID``
-     example: ``/3303/1/5700``, 3300 - temperature sensor, 1 - instance, 5700 - tempereture
-
 #. Protocol: MQTT (Sparkplug) support
 
    - ``spBv1.0/group1/device_1/temperature/sensor_1``

@@ -105,6 +105,8 @@ The Python tools live under `tools/` as separate packages:
   transport CLI
 - [dawnpy-can](https://github.com/railab/dawnpy-can) - CAN transport CLI
 - [dawnpy-udp](https://github.com/railab/dawnpy-udp) - UDP transport CLI
+- [dawnpy-lwm2m](https://github.com/railab/dawnpy-lwm2m) - LwM2M test
+  server helper for Wakaama targets
 - [dawnpy-modbus](https://github.com/railab/dawnpy-modbus) - Modbus
   transport CLI
 - [dawnpy-ble](https://github.com/railab/dawnpy-ble) - BLE transport CLI
