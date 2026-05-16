@@ -275,8 +275,6 @@ int CProtoSerial::configureDesc(const CDescObject &desc)
 
 int CProtoSerial::serialInit()
 {
-  struct termios tio;
-
   if (!path)
     {
       DAWNERR("Serial path not configured\n");
@@ -290,9 +288,24 @@ int CProtoSerial::serialInit()
       return -1;
     }
 
-  tcgetattr(fd, &tio);
-  cfmakeraw(&tio);
-  tcsetattr(fd, TCSANOW, &tio);
+#ifdef CONFIG_SERIAL_TERMIOS
+  {
+    struct termios tio;
+
+    if (tcgetattr(fd, &tio) == 0)
+      {
+        cfmakeraw(&tio);
+        if (tcsetattr(fd, TCSANOW, &tio) < 0)
+          {
+            DAWNWARN("Serial tcsetattr failed for %s\n", path);
+          }
+      }
+    else
+      {
+        DAWNWARN("Serial tcgetattr failed for %s\n", path);
+      }
+  }
+#endif
 
   DAWNINFO("Serial port initialized: %s (baud=%u)\n", path, baud);
 
