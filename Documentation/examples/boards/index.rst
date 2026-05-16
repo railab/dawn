@@ -14,6 +14,7 @@ experimental, or placeholder configurations.
    Simulator <sim>
    ST Nucleo C092RC <nucleo-c092rc>
    ST Nucleo C071RB <nucleo-c071rb>
+   ST Nucleo H743ZI <nucleo-h743zi>
    Nordic nRF52840-DK <nrf52840-dk>
    Nordic nRF5340-DK <nrf5340-dk>
    Nordic Thingy:53 <thingy53>
