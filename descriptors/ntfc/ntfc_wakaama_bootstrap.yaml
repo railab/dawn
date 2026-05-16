@@ -1,0 +1,22 @@
+metadata:
+  title: Wakaama LwM2M Bootstrap NTFC Demo
+  version: '1.0'
+  description: >
+    Uses a bootstrap server to provision the initial Wakaama registration
+    configuration.
+  os_required:
+  - udp
+protocols:
+- id: wakaama_main
+  type: wakaama
+  config:
+    endpoint: ntfc-wakaama-bootstrap
+    local_port: 56830
+    servers:
+      - port: 5685
+        bootstrap: true
+        holdoff: 1
+    device:
+      manufacturer: Dawn
+      serial_number: dawn-wakaama
+      firmware_version: '0.1'

@@ -82,6 +82,10 @@ public:
 
     PROTO_CLASS_IPC = 23,
 
+    /** @brief LwM2M protocol using Eclipse Wakaama. */
+
+    PROTO_CLASS_WAKAAMA = 24,
+
     /** @brief User-defined protocols start from here. */
 
     PROTO_CLASS_USER_START = 510,

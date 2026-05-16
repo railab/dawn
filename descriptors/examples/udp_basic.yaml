@@ -5,7 +5,7 @@ metadata:
     Provides basic UDP access to two dummy IO values plus one notify-capable IO
     for simple network protocol demonstrations.
   os_required:
-  - eth
+  - udp
   - /tmp
 ios:
 - &id001

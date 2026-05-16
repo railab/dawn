@@ -42,6 +42,9 @@
 #ifdef CONFIG_DAWN_PROTO_MODBUS_TCP
 #  include "dawn/proto/modbus/tcp.hxx"
 #endif
+#ifdef CONFIG_DAWN_PROTO_WAKAAMA
+#  include "dawn/proto/wakaama/wakaama.hxx"
+#endif
 
 using namespace dawn;
 
@@ -109,6 +112,11 @@ CProtoCommon *CProtoFactory::create(CDescObject &desc)
 #ifdef CONFIG_DAWN_PROTO_MODBUS_TCP
       case CProtoCommon::PROTO_CLASS_MODBUS_TCP:
         return new CProtoModbusTcp(desc);
+#endif
+
+#ifdef CONFIG_DAWN_PROTO_WAKAAMA
+      case CProtoCommon::PROTO_CLASS_WAKAAMA:
+        return new CProtoWakaama(desc);
 #endif
 
       default:

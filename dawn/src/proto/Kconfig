@@ -26,5 +26,6 @@ source "$APPSDIR/external/dawn/src/proto/shell/Kconfig"
 source "$APPSDIR/external/dawn/src/proto/serial/Kconfig"
 source "$APPSDIR/external/dawn/src/proto/udp/Kconfig"
 source "$APPSDIR/external/dawn/src/proto/ipc/Kconfig"
+source "$APPSDIR/external/dawn/src/proto/wakaama/Kconfig"
 
 endif # DAWN_PROTO

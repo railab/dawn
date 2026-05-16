@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-set(SRCS board.cxx config.cxx)
+set(SRCS board.cxx config.cxx memory.cxx)
 
 if(CONFIG_DAWN_IO_ADC)
   list(APPEND SRCS adc.cxx)

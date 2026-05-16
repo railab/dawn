@@ -1,0 +1,80 @@
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+# For a description of the syntax of this configuration file,
+# see the file kconfig-language.txt in the NuttX tools repository.
+#
+
+config DAWN_PROTO_WAKAAMA
+	bool "Dawn Wakaama LwM2M protocol"
+	default n
+	depends on NETUTILS_WAKAAMA && WAKAAMA_CLIENT_MODE
+	---help---
+		Expose descriptor-bound Dawn IO objects as LwM2M resources through
+		Eclipse Wakaama.
+
+if DAWN_PROTO_WAKAAMA
+
+config DAWN_PROTO_WAKAAMA_ENDPOINT
+	string "Default LwM2M endpoint name"
+	default "dawn-wakaama"
+
+config DAWN_PROTO_WAKAAMA_SERVER_HOST
+	string "Default LwM2M server host"
+	default "192.168.8.1"
+
+config DAWN_PROTO_WAKAAMA_SERVER_PORT
+	int "Default LwM2M server UDP port"
+	default 5683
+	range 1 65535
+
+config DAWN_PROTO_WAKAAMA_LOCAL_PORT
+	int "Default local UDP port"
+	default 56830
+	range 1 65535
+
+config DAWN_PROTO_WAKAAMA_LIFETIME
+	int "Default LwM2M registration lifetime"
+	default 300
+	range 1 2147483647
+
+config DAWN_PROTO_WAKAAMA_SHORT_SERVER_ID
+	int "Default LwM2M short server ID"
+	default 123
+	range 1 65535
+
+config DAWN_PROTO_WAKAAMA_DTLS_PSK
+	bool "Enable Wakaama DTLS PSK transport"
+	default n
+	depends on CRYPTO_TINYDTLS
+	---help---
+		Enable coaps:// Wakaama server connections with TinyDTLS PSK.
+
+config DAWN_PROTO_WAKAAMA_DEVICE_MANUFACTURER
+	string "Default LwM2M Device manufacturer"
+	default "Dawn"
+
+config DAWN_PROTO_WAKAAMA_DEVICE_MODEL_NUMBER
+	string "Default LwM2M Device model number"
+	default "dawn"
+
+config DAWN_PROTO_WAKAAMA_DEVICE_SERIAL_NUMBER
+	string "Default LwM2M Device serial number"
+	default "dawn"
+
+config DAWN_PROTO_WAKAAMA_DEVICE_FIRMWARE_VERSION
+	string "Default LwM2M Device firmware version"
+	default "unknown"
+
+config DAWN_PROTO_WAKAAMA_MEMORY_POOL_SIZE
+	int "Wakaama fixed memory pool size"
+	default 16384
+	range 1024 1048576
+	---help---
+		Bytes reserved for Wakaama protocol allocations. Upstream Wakaama
+		allocates during normal request handling, including read, discover,
+		write, observe, registration, and bootstrap paths. Dawn routes those
+		allocation hooks into this protocol-owned static arena instead of the
+		system heap.
+
+endif # DAWN_PROTO_WAKAAMA

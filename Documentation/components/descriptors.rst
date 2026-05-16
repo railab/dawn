@@ -120,8 +120,9 @@ OS-visible node, for example ``/dev/can0``, ``/dev/ttyS1``, ``/dev/gpio0``, or
 Use short subsystem names when there is no concrete descriptor path but the
 protocol needs a subsystem to be available:
 
-- ``eth`` for Ethernet/IP based descriptors such as UDP, Modbus TCP, and
+- ``udp`` for UDP-based descriptors such as Dawn UDP, Wakaama LwM2M, and
   NXScope UDP,
+- ``tcp`` for TCP-based descriptors such as Modbus TCP,
 - ``ble`` for NimBLE descriptors.
 
 YAML multi-descriptor files

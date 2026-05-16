@@ -49,4 +49,8 @@ if(CONFIG_DAWN_PROTO_MODBUS_TCP)
   list(APPEND SRCS test_modbus_tcp.cxx)
 endif()
 
+if(CONFIG_DAWN_PROTO_WAKAAMA)
+  list(APPEND SRCS test_wakaama.cxx)
+endif()
+
 target_sources(dawn_tests PRIVATE ${SRCS})

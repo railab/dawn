@@ -30,6 +30,7 @@ extern "C"
   int test_proto_can();
   int test_proto_modbus_rtu();
   int test_proto_modbus_tcp();
+  int test_proto_wakaama();
 }
 
 static int (*test_array[])(void) = {
@@ -83,6 +84,10 @@ static int (*test_array[])(void) = {
 
 #ifdef CONFIG_DAWN_PROTO_MODBUS_TCP
   test_proto_modbus_tcp,
+#endif
+
+#ifdef CONFIG_DAWN_PROTO_WAKAAMA
+  test_proto_wakaama,
 #endif
 
   nullptr,

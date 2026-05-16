@@ -30,7 +30,7 @@ Use the following naming rule when filling the field:
   ``/dev/uorb/sensor_humi0``)
 - use named subsystem resources for protocol prerequisites without a concrete
   device path in the descriptor
-  (for example ``eth`` or ``ble``)
+  (for example ``udp``, ``tcp``, or ``ble``)
 
 This keeps ``os_required`` aligned with the actual OS-visible paths used by
 Dawn on NuttX.
@@ -66,6 +66,8 @@ Feature index
      - :ref:`Serial to CAN Gateway <descriptor-gateway-serial-can>`
    * - IPC
      - :ref:`Local IPC <descriptor-ipc-demo>`
+   * - LwM2M
+     - :ref:`NTFC Wakaama LwM2M <descriptor-ntfc-wakaama>`
    * - Modbus
      - :ref:`Blinky Modbus RTU Demo <descriptor-blinky-modbus-rtu-demo>`,
        :ref:`Feature Modbus Slot0 <descriptor-feature-modbus-slot0>`,
@@ -201,7 +203,7 @@ Examples
   over the Dawn UDP protocol together with readback of the sequencer start
   index and current output state.
 
-  Required resources: ``/dev/leds0``, ``eth``
+  Required resources: ``/dev/leds0``, ``udp``
 
   Host helper: :file:`tools/examples/udp_blinky_cli.py`
 
@@ -412,7 +414,7 @@ Examples
   Provides a Modbus TCP register map backed by a large dummy IO set covering
   coil, packed coil, holding, and input register access.
 
-  Required resources: ``eth``
+  Required resources: ``tcp``
 
 .. _descriptor-nxscope-udp:
 
@@ -422,7 +424,7 @@ Examples
   Streams a dummy-notify signal over NXScope UDP and exposes writable channels
   for NXScope user extension set requests.
 
-  Required resources: ``eth``, ``/tmp``
+  Required resources: ``udp``, ``/tmp``
 
 .. _descriptor-serial-core-demo:
 
@@ -504,7 +506,7 @@ Examples
   Provides basic UDP access to two dummy IO values plus one notify-capable IO
   for simple network protocol demonstrations.
 
-  Required resources: ``eth``, ``/tmp``
+  Required resources: ``udp``, ``/tmp``
 
 NTFC
 ----
@@ -529,6 +531,18 @@ NTFC
   file access.
 
   Required resources: ``/dev/ttyS1``, ``/tmp``
+
+.. _descriptor-ntfc-wakaama:
+
+``descriptors/ntfc/ntfc_wakaama.yaml``
+  **NTFC Wakaama LwM2M Demo**
+
+  Descriptor used by ``ntfc/tests/wakaama``. It registers as
+  ``ntfc-wakaama`` and exposes standard digital, analog, sensor, actuation,
+  binary app data, and firmware package resources plus one custom object
+  backed by dummy/file IO values.
+
+  Required resources: ``udp``, ``/tmp``
 
 .. _descriptor-ntfc-nimble-all:
 

@@ -36,7 +36,9 @@ The rules at the moment are:
   * Runtime errors (null pointers, invalid data, unsupported operations, resource
     allocation failures) **must** return error codes, not assert.
 
-* Dynamic allocations not allowed except in the initialization stage.
+* Dynamic allocations are not allowed except in the initialization stage.
+  Protocols based on external stacks must document any violation explicitly and
+  must not allocate from the general system heap in runtime request paths.
 
 * Unit testing as much as possible.
 

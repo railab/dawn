@@ -5,7 +5,7 @@ metadata:
     Provides a Modbus TCP register map over qemu-intel64 backed by a large dummy IO set
     covering coil, packed coil, holding, and input register access.
   os_required:
-  - eth
+  - tcp
 
 ios:
 - &id001

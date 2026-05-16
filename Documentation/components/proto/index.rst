@@ -99,6 +99,7 @@ Supported Protocols
    udp.rst
    ipc.rst
    nimble/index.rst
+   wakaama.rst
    nxscope.rst
    can.rst
    modbus_rtu.rst
