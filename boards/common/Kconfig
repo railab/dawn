@@ -78,7 +78,7 @@ config DAWN_FAKE_USERLEDS
 config DAWN_FAKE_RGBLED
 	bool "Fake RGB LED driver"
 	default n
-	depends on RGBLED && PWM && PWM_MULTICHAN
+	depends on RGBLED && PWM
 	depends on PWM_NCHANNELS >= 3
 	---help---
 		Enable a fake /dev/rgbledN character driver for tests and simulation.

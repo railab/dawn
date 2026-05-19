@@ -113,8 +113,8 @@ Supported fake drivers
      - ``/dev/rgbledN``
      - NuttX RGBLED upper-half driver backed by one fake multi-channel PWM
        lower half. Accepts standard ``#RRGGBB`` writes and produces no
-       physical signal. Requires ``CONFIG_PWM_MULTICHAN`` with at least three
-       PWM channels. Used by ``CIORgbLed`` unit and NTFC simulator coverage.
+       physical signal. Requires ``CONFIG_PWM_NCHANNELS >= 3``. Used by
+       ``CIORgbLed`` unit and NTFC simulator coverage.
    * - ``DAWN_FAKE_BUTTONS``
      - ``/dev/buttonsN``
      - Button input lower-half. Tracks per-button state in memory;
