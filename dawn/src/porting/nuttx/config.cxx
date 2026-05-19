@@ -59,8 +59,8 @@
 #  ifndef CONFIG_PWM
 #    error CONFIG_PWM is required
 #  endif
-#  ifndef CONFIG_PWM_MULTICHAN
-#    error CONFIG_PWM_MULTICHAN is required
+#  if !defined(CONFIG_PWM_NCHANNELS) || CONFIG_PWM_NCHANNELS < 1
+#    error CONFIG_PWM_NCHANNELS must be at least 1
 #  endif
 #endif
 

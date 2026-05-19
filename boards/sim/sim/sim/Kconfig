@@ -7,7 +7,6 @@ config DAWN_SIM_OVERLAY
 	bool
 	default y
 	select ARCH_HAVE_RESET
-	select ARCH_HAVE_PWM_MULTICHAN
 	select BOARDCTL_UNIQUEID
 	---help---
 		Enable the Dawn simulator board overlay defaults.
