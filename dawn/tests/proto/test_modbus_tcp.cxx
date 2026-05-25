@@ -256,6 +256,24 @@ static int mbtcp_setup(CIODummy &dummy, uint32_t io_id, CProtoModbusTcp &modbus,
   return fd;
 }
 
+static void test_proto_modbus_tcp_not_listening_before_start()
+{
+  CDescObject descv1(g_cfg_dummy1);
+  CIODummy dummy1(descv1);
+  CDescObject desc(g_bin_modbus_tcp_coil);
+  CProtoModbusTcp modbus(desc);
+  int fd;
+
+  TEST_ASSERT_EQUAL(OK, modbus.configure());
+  TEST_ASSERT_EQUAL(OK, dummy1.configure());
+  TEST_ASSERT_EQUAL(OK, dummy1.init());
+  modbus.setObjectMapItem(MODBUS_DUMMYIO1, &dummy1);
+  TEST_ASSERT_EQUAL(OK, modbus.init());
+
+  fd = mbtcp_connect(15020);
+  TEST_ASSERT_TRUE(fd < 0);
+}
+
 //***************************************************************************
 // Description: reading a single coil at its initial value returns one
 // status byte = 0.
@@ -425,6 +443,7 @@ extern "C"
   {
     UNITY_BEGIN();
 
+    DAWN_RUN_TEST(test_proto_modbus_tcp_not_listening_before_start);
     DAWN_RUN_TEST(test_proto_modbus_tcp_coil_read_initial);
     DAWN_RUN_TEST(test_proto_modbus_tcp_coil_write_then_read);
     DAWN_RUN_TEST(test_proto_modbus_tcp_holding_read_initial);
