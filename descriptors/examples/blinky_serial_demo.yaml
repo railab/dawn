@@ -16,63 +16,21 @@ ios:
     config:
       device: 0
 
-  - id: ctrl_blinky
-    type: control
-    config:
-      targets:
-        - blinky_seq1
-      allowed:
-        - start
-        - stop
-
-  - id: cfg_seq_start
-    type: config
-    dtype: uint32
-    rw: true
-    config:
-      objid_ref: blinky_seq1
-      objcfg_ref: start_index
-
-  - id: cfg_dwell_off
-    type: config
-    dtype: uint32
-    rw: true
-    config:
-      objid_ref: blinky_seq1
-      objcfg_ref: states
-      field: dwell_off
-
-  - id: cfg_dwell_on
-    type: config
-    dtype: uint32
-    rw: true
-    config:
-      objid_ref: blinky_seq1
-      objcfg_ref: states
-      field: dwell_on
-
-programs:
-  - id: blinky_seq1
-    type: sequencer
-    config:
-      targets:
-        - led1
-      states:
-        - value: 0
-          dwell_us: 500000
-        - value: 1
-          dwell_us: 500000
-      start_index: 0
+includes:
+  - id: blinky
+    path: include_blocks/blinky_common.yaml
+    inputs:
+      led: led1
 
 protocols:
   - id: serial1
     type: serial
     bindings:
-      - led1
-      - ctrl_blinky
-      - cfg_seq_start
-      - cfg_dwell_off
-      - cfg_dwell_on
+      - "@blinky.led1"
+      - "@blinky.ctrl_blinky"
+      - "@blinky.cfg_seq_start"
+      - "@blinky.cfg_dwell_off"
+      - "@blinky.cfg_dwell_on"
     config:
       path: /dev/ttyS0
       baudrate: 115200

@@ -7,9 +7,10 @@
 from functools import lru_cache
 from pathlib import Path
 
-import yaml
 from dawnpy.descriptor.client import load_client_descriptor
 from dawnpy.descriptor.definitions.summary import ObjectIdResolver
+from dawnpy.descriptor.support.utils import resolve_reference
+from dawnpy.descriptor.support.vars import load_yaml_with_vars
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
@@ -20,8 +21,7 @@ def _desc_path(rel_path):
 
 @lru_cache(maxsize=None)
 def load_descriptor_spec(rel_path):
-    with _desc_path(rel_path).open("r", encoding="utf-8") as f:
-        return yaml.safe_load(f) or {}
+    return load_yaml_with_vars(str(_desc_path(rel_path)))
 
 
 @lru_cache(maxsize=None)
@@ -83,7 +83,7 @@ def can_layout(rel_path, check_collisions=False):
         bindings = obj.get("bindings", [])
         group = layout.setdefault(obj_type, {})
         for idx, binding in enumerate(bindings):
-            io_id = binding.get("id")
+            io_id = resolve_reference(binding)
             if io_id is None:
                 continue
             if io_id in group:
@@ -131,7 +131,7 @@ def modbus_seekable_groups(rel_path, proto_type="modbus_rtu"):
         start = int(reg.get("start", 0))
         bindings = reg.get("bindings", [])
         for idx, binding in enumerate(bindings):
-            io_id = binding.get("id")
+            io_id = resolve_reference(binding)
             if io_id is None:
                 continue
             if io_id in result:

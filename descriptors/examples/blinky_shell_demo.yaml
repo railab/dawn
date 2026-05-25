@@ -6,72 +6,28 @@ metadata:
     output with a two-state value/dwell table.
   os_required:
     - /dev/leds0
+
 ios:
-  - &led1
-    id: led1
+  - id: led1
     type: leds
     dtype: uint32
     config:
       device: 0
 
-  - &ctrl_blinky
-    id: ctrl_blinky
-    type: control
-    config:
-      targets:
-        - blinky_seq1
-      allowed:
-        - start
-        - stop
-
-  - &trig_blinky
-    id: trig_blinky
-    type: trigger
-    config:
-      targets:
-        - blinky_seq1
-      allowed:
-        - reset
-
-  - &cfg_seq_start
-    id: cfg_seq_start
-    type: config
-    dtype: uint32
-    rw: true
-    config:
-      objid_ref: blinky_seq1
-      objcfg_ref: start_index
-
-  - &cfg_seq_states
-    id: cfg_seq_states
-    type: config
-    dtype: uint32
-    rw: true
-    config:
-      objid_ref: blinky_seq1
-      objcfg_ref: states
-
-programs:
-  - id: blinky_seq1
-    type: sequencer
-    config:
-      targets:
-        - *led1
-      states:
-        - value: 0
-          dwell_us: 500000
-        - value: 1
-          dwell_us: 500000
-      start_index: 0
+includes:
+  - id: blinky
+    path: include_blocks/blinky_common.yaml
+    inputs:
+      led: led1
 
 protocols:
   - id: shell1
     type: shell
     bindings:
-      - *led1
-      - *ctrl_blinky
-      - *trig_blinky
-      - *cfg_seq_start
-      - *cfg_seq_states
+      - "@blinky.led1"
+      - "@blinky.ctrl_blinky"
+      - "@blinky.trig_blinky"
+      - "@blinky.cfg_seq_start"
+      - "@blinky.cfg_seq_states"
     config:
       prompt: blinky>

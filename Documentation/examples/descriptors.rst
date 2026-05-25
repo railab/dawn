@@ -144,10 +144,11 @@ Examples
 ``descriptors/examples/blinky_can_demo.yaml``
   **Blinky CAN Demo**
 
-  Sequencer-driven LED output with CAN control. Start/stop, reset,
-  start-index configuration, individual dwell values, current LED state, and
-  segmented access to the full sequencer state table are exposed through CAN
-  frames.
+  Sequencer-driven LED output with CAN control. This descriptor includes the
+  shared blinky core block and defines only the CAN-specific mapping locally.
+  Start/stop, reset, start-index configuration, individual dwell values,
+  current LED state, and segmented access to the full sequencer state table
+  are exposed through CAN frames.
 
   The simple write mappings use standard CAN IDs ``0x150`` through ``0x154``.
   The host helper updates the blink period by writing ``cfg_dwell_off`` on
@@ -162,9 +163,10 @@ Examples
 ``descriptors/examples/blinky_nimble_demo.yaml``
   **Blinky NimBLE Demo**
 
-  Sequencer-driven LED output with BLE control via NimBLE. Start/stop, full
-  state table, and individual dwell times are exposed over a custom BLE
-  service.
+  Sequencer-driven LED output with BLE control via NimBLE. This descriptor
+  includes the shared blinky core block and keeps only the NimBLE service
+  layout local. Start/stop, reset, full state table, and individual dwell
+  times are exposed over a custom BLE service.
 
   Required resources: ``/dev/gpio4``, ``ble``
 
@@ -176,8 +178,9 @@ Examples
   **Blinky Shell Demo**
 
   Provides a shell-controlled runtime example where a sequencer drives an LED
-  output. The shell exposes start/stop control and runtime configuration via
-  ConfigIO objects (start index and state table).
+  output. This descriptor includes the shared blinky core block; the shell
+  section stays local and exposes start/stop control plus runtime
+  configuration via ConfigIO objects (start index and state table).
 
   Required resources: ``/dev/leds0``
 
@@ -187,9 +190,11 @@ Examples
   **Blinky Serial Demo**
 
   Provides a serial-controlled runtime example where a sequencer drives the
-  board LED lower-half. Start/stop and runtime dwell parameters are exposed
-  over the Dawn serial protocol together with readback of the sequencer start
-  index and current output state.
+  board LED lower-half. This descriptor includes the shared blinky core block;
+  the serial section keeps only protocol-specific transport settings and
+  bindings. Start/stop and runtime dwell parameters are exposed over the Dawn
+  serial protocol together with readback of the sequencer start index and
+  current output state.
 
   Required resources: ``/dev/leds0``, ``/dev/ttyS0``
 
@@ -201,9 +206,11 @@ Examples
   **Blinky UDP Demo**
 
   Provides a UDP-controlled runtime example where a sequencer drives the
-  board LED lower-half. Start/stop and runtime dwell parameters are exposed
-  over the Dawn UDP protocol together with readback of the sequencer start
-  index and current output state.
+  board LED lower-half. This descriptor includes the shared blinky core block;
+  the UDP section keeps only transport-specific settings and bindings.
+  Start/stop and runtime dwell parameters are exposed over the Dawn UDP
+  protocol together with readback of the sequencer start index and current
+  output state.
 
   Required resources: ``/dev/leds0``, ``udp``
 
@@ -215,8 +222,9 @@ Examples
   **Blinky Modbus TCP Demo**
 
   Provides a Modbus-TCP controlled blinky demo where a sequencer drives an LED
-  output. Start/stop and runtime parameters are exposed as Modbus coil and
-  holding registers, including writable dwell values and start-index control.
+  output through the shared blinky core block. Start/stop and runtime
+  parameters are exposed as Modbus coil and holding registers, including
+  writable dwell values and start-index control.
 
   Required resources: ``/dev/leds0``, ``tcp``
 
@@ -228,8 +236,9 @@ Examples
   **Blinky Modbus RTU Demo**
 
   Provides a Modbus-RTU controlled blinky demo where a sequencer drives an LED
-  output. Start/stop and runtime parameters are exposed as Modbus registers,
-  including writable dwell values and start-index control.
+  output through the shared blinky core block. Start/stop and runtime
+  parameters are exposed as Modbus registers, including writable dwell values
+  and start-index control.
 
   Required resources: ``/dev/leds0``, ``/dev/ttyS1``
 

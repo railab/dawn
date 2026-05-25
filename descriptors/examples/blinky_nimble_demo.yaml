@@ -3,7 +3,7 @@ metadata:
   version: "1.0"
   description: >
     Sequencer-based blinky with BLE control. The sequencer drives an
-    LED with a two-state value/dwell table. Start/stop, full states
+    LED with a two-state value/dwell table. Start/stop, reset, full states
     table, and individual dwell times are exposed over BLE via a
     NimBLE custom service.
   os_required:
@@ -11,64 +11,17 @@ metadata:
     - ble
 
 ios:
-  - &led1
-    id: led1
+  - id: led1
     type: gpo
     dtype: bool
     config:
       device: 4
 
-  - &ctrl_blinky
-    id: ctrl_blinky
-    type: control
-    config:
-      targets:
-        - blinky_seq1
-      allowed:
-        - start
-        - stop
-
-  - &cfg_seq_states
-    id: cfg_seq_states
-    type: config
-    dtype: uint32
-    rw: true
-    config:
-      objid_ref: blinky_seq1
-      objcfg_ref: states
-
-  - &cfg_dwell_off
-    id: cfg_dwell_off
-    type: config
-    dtype: uint32
-    rw: true
-    config:
-      objid_ref: blinky_seq1
-      objcfg_ref: states
-      field: dwell_off
-
-  - &cfg_dwell_on
-    id: cfg_dwell_on
-    type: config
-    dtype: uint32
-    rw: true
-    config:
-      objid_ref: blinky_seq1
-      objcfg_ref: states
-      field: dwell_on
-
-programs:
-  - id: blinky_seq1
-    type: sequencer
-    config:
-      targets:
-        - *led1
-      states:
-        - value: 0
-          dwell_us: 500000
-        - value: 1
-          dwell_us: 500000
-      start_index: 0
+includes:
+  - id: blinky
+    path: include_blocks/blinky_common.yaml
+    inputs:
+      led: led1
 
 protocols:
   - id: nimble1
@@ -82,22 +35,27 @@ protocols:
           - uuid: 12345678-1234-5678-1234-56789abcdef0
             characteristics:
               - uuid: 12345678-1234-5678-1234-56789abcdef1
-                io: *ctrl_blinky
+                io: "@blinky.ctrl_blinky"
                 flags:
                   - read
                   - write
               - uuid: 12345678-1234-5678-1234-56789abcdef2
-                io: *cfg_seq_states
+                io: "@blinky.cfg_seq_states"
                 flags:
                   - read
                   - write
               - uuid: 12345678-1234-5678-1234-56789abcdef3
-                io: *cfg_dwell_off
+                io: "@blinky.cfg_dwell_off"
                 flags:
                   - read
                   - write
               - uuid: 12345678-1234-5678-1234-56789abcdef4
-                io: *cfg_dwell_on
+                io: "@blinky.cfg_dwell_on"
+                flags:
+                  - read
+                  - write
+              - uuid: 12345678-1234-5678-1234-56789abcdef5
+                io: "@blinky.trig_blinky"
                 flags:
                   - read
                   - write
