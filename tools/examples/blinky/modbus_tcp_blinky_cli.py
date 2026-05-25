@@ -4,11 +4,11 @@
 Simple host-side helper for descriptors/examples/blinky_modbus_tcp_demo.yaml.
 
 Usage examples:
-  python3 tools/examples/modbus_tcp_blinky_cli.py start
-  python3 tools/examples/modbus_tcp_blinky_cli.py stop
-  python3 tools/examples/modbus_tcp_blinky_cli.py status
-  python3 tools/examples/modbus_tcp_blinky_cli.py --host 192.168.8.104 period 250000
-  python3 tools/examples/modbus_tcp_blinky_cli.py --host 192.168.8.104 interactive
+  python3 tools/examples/blinky/modbus_tcp_blinky_cli.py start
+  python3 tools/examples/blinky/modbus_tcp_blinky_cli.py stop
+  python3 tools/examples/blinky/modbus_tcp_blinky_cli.py status
+  python3 tools/examples/blinky/modbus_tcp_blinky_cli.py --host 192.168.8.104 period 250000
+  python3 tools/examples/blinky/modbus_tcp_blinky_cli.py --host 192.168.8.104 interactive
 
 Requires:
   pip install -e tools/dawnpy -e tools/dawnpy-modbus
@@ -30,7 +30,7 @@ DEFAULT_UNIT = 1
 DEFAULT_CONNECT_ATTEMPTS = 10
 DEFAULT_RETRY_S = 0.5
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
+REPO_ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_DESCRIPTOR = str(
     REPO_ROOT / "descriptors/examples/blinky_modbus_tcp_demo.yaml"
 )

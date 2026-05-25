@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
-"""Serial blinky demo helper.
+"""CAN Blinky Demo CLI.
 
-Simple host-side helper for descriptors/examples/blinky_serial_demo.yaml.
+Simple host-side helper for descriptors/examples/blinky_can_demo.yaml.
 
 Usage examples:
-  python3 tools/examples/serial_blinky_cli.py start
-  python3 tools/examples/serial_blinky_cli.py stop
-  python3 tools/examples/serial_blinky_cli.py status
-  python3 tools/examples/serial_blinky_cli.py period 250000
-  python3 tools/examples/serial_blinky_cli.py period 100000 500000
-  python3 tools/examples/serial_blinky_cli.py toggle
-  python3 tools/examples/serial_blinky_cli.py interactive
+  python3 tools/examples/blinky/can_blinky_cli.py start
+  python3 tools/examples/blinky/can_blinky_cli.py stop
+  python3 tools/examples/blinky/can_blinky_cli.py status
+  python3 tools/examples/blinky/can_blinky_cli.py period 250000
+  python3 tools/examples/blinky/can_blinky_cli.py period 100000 500000
+  python3 tools/examples/blinky/can_blinky_cli.py toggle
+  python3 tools/examples/blinky/can_blinky_cli.py interactive
 
 Requires:
-  pip install -e tools/dawnpy -e tools/dawnpy-serial
+  pip install -e tools/dawnpy -e tools/dawnpy-can
 """
 
 from __future__ import annotations
@@ -24,33 +24,32 @@ import sys
 from pathlib import Path
 
 try:
-    from dawnpy.descriptor.client import load_client_descriptor
-    from dawnpy.descriptor.definitions.summary import ObjectIdResolver
-    from dawnpy_serial.serial import DawnSerialProtocol
+    from dawnpy_can.client import CanClient
+    from dawnpy_can.descriptor import CanAccess, load_can_descriptor
 except Exception as exc:  # pragma: no cover - import-time dependency guard
     print(
-        "Missing dependency: dawnpy / dawnpy-serial.\n"
-        "Install with: pip install -e tools/dawnpy -e tools/dawnpy-serial",
+        "Missing dependency: dawnpy-can.\n"
+        "Install with: pip install -e tools/dawnpy -e tools/dawnpy-can",
         file=sys.stderr,
     )
     raise SystemExit(1) from exc
 
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_DESCRIPTOR = str(
-    REPO_ROOT / "descriptors/examples/blinky_serial_demo.yaml"
-)
+REPO_ROOT = Path(__file__).resolve().parents[3]
+DEFAULT_DESCRIPTOR = str(REPO_ROOT / "descriptors/examples/blinky_can_demo.yaml")
+DEFAULT_IFNAME = "can0"
 DEFAULT_TIMEOUT = 1.0
-DEFAULT_PORT = "/dev/ttyACM0"
 
-OUTPUT_ID = "led1"
 CONTROL_ID = "ctrl_blinky"
+TRIGGER_ID = "trig_blinky"
+LED_ID = "led1"
 START_INDEX_ID = "cfg_seq_start"
 DWELL_OFF_ID = "cfg_dwell_off"
 DWELL_ON_ID = "cfg_dwell_on"
 
 CMD_STOP = 0
 CMD_START = 1
+CMD_RESET = 0
 
 
 def parse_int(raw: str) -> int:
@@ -80,87 +79,81 @@ def unpack_u32(data: bytes | None) -> int | None:
     return struct.unpack("<I", data[:4])[0]
 
 
-class BlinkySerial:
+class BlinkyCan:
     def __init__(
         self,
         descriptor_path: str,
-        port: str | None,
-        baudrate: int | None,
+        ifname: str,
         timeout: float,
-        debug: bool,
+        extended: bool | None,
     ) -> None:
         self.timeout = timeout
-        self.desc = load_client_descriptor(descriptor_path)
-        self.proto_desc = self.desc.get_protocol("serial")
-        if self.proto_desc is None:
-            raise RuntimeError("descriptor does not define a serial protocol")
-
-        self.port = port or DEFAULT_PORT
-        if not self.port:
-            raise RuntimeError("serial path not specified")
-
-        proto_baud = self.proto_desc.config.get("baudrate")
-        self.baudrate = baudrate or (
-            int(proto_baud) if proto_baud is not None else 115200
+        self.desc = load_can_descriptor(descriptor_path)
+        self.extended = (
+            self.desc.uses_extended_ids() if extended is None else extended
         )
+        self.client = CanClient(self.desc, ifname=ifname, extended=self.extended)
 
-        resolver = ObjectIdResolver()
-        self.output_objid = self._resolve_objid(resolver, OUTPUT_ID)
-        self.control_objid = self._resolve_objid(resolver, CONTROL_ID)
-        self.start_index_objid = self._resolve_objid(resolver, START_INDEX_ID)
-        self.dwell_off_objid = self._resolve_objid(resolver, DWELL_OFF_ID)
-        self.dwell_on_objid = self._resolve_objid(resolver, DWELL_ON_ID)
+        self.control_read = self._access(CONTROL_ID, "read")
+        self.control_write = self._access(CONTROL_ID, "write")
+        self.trigger_write = self._access(TRIGGER_ID, "write")
+        self.led_read = self._access(LED_ID, "read")
+        self.start_index_read = self._access(START_INDEX_ID, "read")
+        self.dwell_off_read = self._access(DWELL_OFF_ID, "read")
+        self.dwell_on_read = self._access(DWELL_ON_ID, "read")
+        self.dwell_off_write = self._access(DWELL_OFF_ID, "write")
+        self.dwell_on_write = self._access(DWELL_ON_ID, "write")
 
-        self.client = DawnSerialProtocol(
-            self.port,
-            baudrate=self.baudrate,
-            timeout=timeout,
-            verbose=debug,
-        )
+    def _access(self, io_id: str, method: str) -> CanAccess:
+        for access in self.desc.get_access(io_id):
+            if access.method == method:
+                return access
+        raise RuntimeError(f"missing CAN {method} access for {io_id}")
 
-    def _resolve_objid(self, resolver: ObjectIdResolver, io_id: str) -> int:
-        io = self.desc.get_io(io_id)
-        if io is None:
-            raise RuntimeError(f"descriptor missing IO '{io_id}'")
-        objid = resolver.io_objid(io)
-        if objid is None:
-            raise RuntimeError(f"failed to resolve ObjectID for '{io_id}'")
-        return objid
-
-    def __enter__(self) -> "BlinkySerial":
-        if not self.client.connect():
-            raise RuntimeError(f"failed to open serial port {self.port}")
-        if not self.client.ping():
-            self.client.disconnect()
-            raise RuntimeError("device did not respond to ping")
+    def __enter__(self) -> "BlinkyCan":
+        self.client.start()
         return self
 
     def __exit__(self, exc_type, exc, tb) -> bool:
-        self.client.disconnect()
+        self.client.close()
         return False
 
-    def read(self, objid: int) -> bytes | None:
-        return self.client.read_io(objid)
+    def read(self, access: CanAccess) -> bytes | None:
+        if access.method != "read":
+            raise RuntimeError(f"{access.method} access cannot use simple read")
+        return self.client.read_simple(access, timeout=self.timeout)
 
-    def write(self, objid: int, payload: bytes) -> None:
-        if not self.client.write_io(objid, payload):
-            raise RuntimeError(f"write failed for 0x{objid:08X}")
+    def write(self, access: CanAccess, payload: bytes) -> None:
+        if access.method != "write":
+            raise RuntimeError(f"{access.method} access cannot use simple write")
+        if len(payload) > 8:
+            raise RuntimeError("simple CAN write payload exceeds 8 bytes")
+        self.client.write_simple(access, payload)
+
+    def write_segmented(self, access: CanAccess, payload: bytes) -> None:
+        if access.method != "write_seg":
+            raise RuntimeError(f"{access.method} access cannot use segmented write")
+        self.client.write_segmented(access, payload)
 
     def start(self) -> None:
-        self.write(self.control_objid, bytes([CMD_START]))
+        self.write(self.control_write, bytes([CMD_START]))
         print("  Blinky started.")
 
     def stop(self) -> None:
-        self.write(self.control_objid, bytes([CMD_STOP]))
+        self.write(self.control_write, bytes([CMD_STOP]))
         print("  Blinky stopped.")
 
+    def reset(self) -> None:
+        self.write(self.trigger_write, bytes([CMD_RESET]))
+        print("  Blinky reset.")
+
     def period(self, off_us: int, on_us: int) -> None:
-        self.write(self.dwell_off_objid, struct.pack("<I", off_us))
-        self.write(self.dwell_on_objid, struct.pack("<I", on_us))
+        self.write(self.dwell_off_write, struct.pack("<I", off_us))
+        self.write(self.dwell_on_write, struct.pack("<I", on_us))
         print(f"  Period set: off={fmt_us(off_us)} on={fmt_us(on_us)}")
 
     def read_running(self) -> bool | None:
-        value = unpack_u8(self.read(self.control_objid))
+        value = unpack_u8(self.read(self.control_read))
         if value is None:
             return None
         return value == CMD_START
@@ -176,10 +169,10 @@ class BlinkySerial:
 
     def status(self) -> None:
         running = self.read_running()
-        output = unpack_u32(self.read(self.output_objid))
-        start_index = unpack_u32(self.read(self.start_index_objid))
-        dwell_off = unpack_u32(self.read(self.dwell_off_objid))
-        dwell_on = unpack_u32(self.read(self.dwell_on_objid))
+        start_index = unpack_u32(self.read(self.start_index_read))
+        led = unpack_u32(self.read(self.led_read))
+        dwell_off = unpack_u32(self.read(self.dwell_off_read))
+        dwell_on = unpack_u32(self.read(self.dwell_on_read))
 
         print("\nBlinky status:")
         if running is None:
@@ -191,11 +184,7 @@ class BlinkySerial:
             if start_index is not None
             else "  Start idx: <timeout>"
         )
-        print(
-            f"  LED value: {output}"
-            if output is not None
-            else "  GPIO out:  <timeout>"
-        )
+        print(f"  LED value: {led}" if led is not None else "  LED value: <timeout>")
         print(
             f"  Dwell off: {fmt_us(dwell_off)}"
             if dwell_off is not None
@@ -208,30 +197,37 @@ class BlinkySerial:
         )
 
     def info(self) -> None:
-        print("  Descriptor:            Blinky Serial Demo")
-        print(f"  Serial path:           {self.port}")
-        print(f"  Serial baudrate:       {self.baudrate}")
-        print(f"  Output IO ObjectID:    0x{self.output_objid:08X}")
-        print(f"  Control IO ObjectID:   0x{self.control_objid:08X}")
-        print(f"  Start index ObjectID:  0x{self.start_index_objid:08X}")
-        print(f"  Dwell off ObjectID:    0x{self.dwell_off_objid:08X}")
-        print(f"  Dwell on ObjectID:     0x{self.dwell_on_objid:08X}")
+        print("  CAN mapping:")
+        self._print_access("led read", self.led_read)
+        self._print_access("control read", self.control_read)
+        self._print_access("control write", self.control_write)
+        self._print_access("trigger write", self.trigger_write)
+        self._print_access("start idx read", self.start_index_read)
+        self._print_access("dwell off read", self.dwell_off_read)
+        self._print_access("dwell off write", self.dwell_off_write)
+        self._print_access("dwell on read", self.dwell_on_read)
+        self._print_access("dwell on write", self.dwell_on_write)
+
+    @staticmethod
+    def _print_access(label: str, access: CanAccess) -> None:
+        print(f"    {label + ':':17s} 0x{access.can_id:X}")
 
 
 HELP = """Commands:
   start              Start blinking
   stop               Stop blinking
+  reset              Reset sequencer
   toggle             Toggle start/stop
   period <us>        Set symmetric dwell
   period <off> <on>  Set asymmetric dwell
   status             Read state and dwell values
-  info               Show descriptor-derived ObjectIDs
+  info               Show descriptor-derived CAN IDs
   help               Show this text
   quit               Exit
 """
 
 
-def run_interactive(cli: BlinkySerial) -> None:
+def run_interactive(cli: BlinkyCan) -> None:
     print("  Type 'help' for commands.\n")
     while True:
         try:
@@ -254,11 +250,13 @@ def run_interactive(cli: BlinkySerial) -> None:
             print(f"  Error: {exc}", file=sys.stderr)
 
 
-def run_command(cli: BlinkySerial, command: str, args: list[str]) -> None:
+def run_command(cli: BlinkyCan, command: str, args: list[str]) -> None:
     if command == "start":
         cli.start()
     elif command == "stop":
         cli.stop()
+    elif command == "reset":
+        cli.reset()
     elif command == "toggle":
         cli.toggle()
     elif command == "status":
@@ -282,13 +280,14 @@ def run_command(cli: BlinkySerial, command: str, args: list[str]) -> None:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Dawn serial blinky helper")
+    parser = argparse.ArgumentParser(description="Dawn CAN blinky helper")
     parser.add_argument(
         "command",
         nargs="?",
         choices=[
             "start",
             "stop",
+            "reset",
             "toggle",
             "period",
             "status",
@@ -299,20 +298,19 @@ def main() -> int:
     )
     parser.add_argument("args", nargs="*")
     parser.add_argument("--descriptor", "-d", default=DEFAULT_DESCRIPTOR)
-    parser.add_argument("--port", "-p", default=DEFAULT_PORT)
-    parser.add_argument("--baudrate", "-b", type=int, default=None)
+    parser.add_argument("--ifname", "-i", default=DEFAULT_IFNAME)
     parser.add_argument("--timeout", type=float, default=DEFAULT_TIMEOUT)
-    parser.add_argument("--debug", action="store_true")
+    parser.add_argument("--extended", action="store_true")
 
     args = parser.parse_args()
+    extended = True if args.extended else None
 
     try:
-        with BlinkySerial(
+        with BlinkyCan(
             args.descriptor,
-            args.port,
-            args.baudrate,
+            args.ifname,
             args.timeout,
-            args.debug,
+            extended,
         ) as cli:
             if args.command == "interactive":
                 run_interactive(cli)

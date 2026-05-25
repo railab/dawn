@@ -1,16 +1,19 @@
 #!/usr/bin/env python3
-"""UDP blinky demo helper.
+"""Serial blinky demo helper.
 
-Simple host-side helper for descriptors/examples/blinky_udp_demo.yaml.
+Simple host-side helper for descriptors/examples/blinky_serial_demo.yaml.
 
 Usage examples:
-  python3 tools/examples/udp_blinky_cli.py start
-  python3 tools/examples/udp_blinky_cli.py status
-  python3 tools/examples/udp_blinky_cli.py --host 192.168.8.104 period 250000
-  python3 tools/examples/udp_blinky_cli.py --host 192.168.8.104 interactive
+  python3 tools/examples/blinky/serial_blinky_cli.py start
+  python3 tools/examples/blinky/serial_blinky_cli.py stop
+  python3 tools/examples/blinky/serial_blinky_cli.py status
+  python3 tools/examples/blinky/serial_blinky_cli.py period 250000
+  python3 tools/examples/blinky/serial_blinky_cli.py period 100000 500000
+  python3 tools/examples/blinky/serial_blinky_cli.py toggle
+  python3 tools/examples/blinky/serial_blinky_cli.py interactive
 
 Requires:
-  pip install -e tools/dawnpy -e tools/dawnpy-udp
+  pip install -e tools/dawnpy -e tools/dawnpy-serial
 """
 
 from __future__ import annotations
@@ -23,21 +26,22 @@ from pathlib import Path
 try:
     from dawnpy.descriptor.client import load_client_descriptor
     from dawnpy.descriptor.definitions.summary import ObjectIdResolver
-    from dawnpy_udp.udp import DawnUdpProtocol
+    from dawnpy_serial.serial import DawnSerialProtocol
 except Exception as exc:  # pragma: no cover - import-time dependency guard
     print(
-        "Missing dependency: dawnpy / dawnpy-udp.\n"
-        "Install with: pip install -e tools/dawnpy -e tools/dawnpy-udp",
+        "Missing dependency: dawnpy / dawnpy-serial.\n"
+        "Install with: pip install -e tools/dawnpy -e tools/dawnpy-serial",
         file=sys.stderr,
     )
     raise SystemExit(1) from exc
 
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_DESCRIPTOR = str(REPO_ROOT / "descriptors/examples/blinky_udp_demo.yaml")
-DEFAULT_HOST = "192.168.8.104"
-DEFAULT_PORT = 50000
+REPO_ROOT = Path(__file__).resolve().parents[3]
+DEFAULT_DESCRIPTOR = str(
+    REPO_ROOT / "descriptors/examples/blinky_serial_demo.yaml"
+)
 DEFAULT_TIMEOUT = 1.0
+DEFAULT_PORT = "/dev/ttyACM0"
 
 OUTPUT_ID = "led1"
 CONTROL_ID = "ctrl_blinky"
@@ -76,24 +80,29 @@ def unpack_u32(data: bytes | None) -> int | None:
     return struct.unpack("<I", data[:4])[0]
 
 
-class BlinkyUdp:
+class BlinkySerial:
     def __init__(
         self,
         descriptor_path: str,
-        host: str,
-        port: int | None,
+        port: str | None,
+        baudrate: int | None,
         timeout: float,
         debug: bool,
     ) -> None:
         self.timeout = timeout
         self.desc = load_client_descriptor(descriptor_path)
-        self.proto_desc = self.desc.get_protocol("udp")
+        self.proto_desc = self.desc.get_protocol("serial")
         if self.proto_desc is None:
-            raise RuntimeError("descriptor does not define a UDP protocol")
+            raise RuntimeError("descriptor does not define a serial protocol")
 
-        self.host = host or DEFAULT_HOST
-        proto_port = self.proto_desc.config.get("port")
-        self.port = port or (int(proto_port) if proto_port is not None else DEFAULT_PORT)
+        self.port = port or DEFAULT_PORT
+        if not self.port:
+            raise RuntimeError("serial path not specified")
+
+        proto_baud = self.proto_desc.config.get("baudrate")
+        self.baudrate = baudrate or (
+            int(proto_baud) if proto_baud is not None else 115200
+        )
 
         resolver = ObjectIdResolver()
         self.output_objid = self._resolve_objid(resolver, OUTPUT_ID)
@@ -102,9 +111,9 @@ class BlinkyUdp:
         self.dwell_off_objid = self._resolve_objid(resolver, DWELL_OFF_ID)
         self.dwell_on_objid = self._resolve_objid(resolver, DWELL_ON_ID)
 
-        self.client = DawnUdpProtocol(
-            self.host,
-            port=self.port,
+        self.client = DawnSerialProtocol(
+            self.port,
+            baudrate=self.baudrate,
             timeout=timeout,
             verbose=debug,
         )
@@ -118,9 +127,9 @@ class BlinkyUdp:
             raise RuntimeError(f"failed to resolve ObjectID for '{io_id}'")
         return objid
 
-    def __enter__(self) -> "BlinkyUdp":
+    def __enter__(self) -> "BlinkySerial":
         if not self.client.connect():
-            raise RuntimeError(f"failed to open UDP socket for {self.host}:{self.port}")
+            raise RuntimeError(f"failed to open serial port {self.port}")
         if not self.client.ping():
             self.client.disconnect()
             raise RuntimeError("device did not respond to ping")
@@ -185,7 +194,7 @@ class BlinkyUdp:
         print(
             f"  LED value: {output}"
             if output is not None
-            else "  LED value: <timeout>"
+            else "  GPIO out:  <timeout>"
         )
         print(
             f"  Dwell off: {fmt_us(dwell_off)}"
@@ -199,9 +208,9 @@ class BlinkyUdp:
         )
 
     def info(self) -> None:
-        print("  Descriptor:            Blinky UDP Demo")
-        print(f"  Host:                  {self.host}")
-        print(f"  UDP port:              {self.port}")
+        print("  Descriptor:            Blinky Serial Demo")
+        print(f"  Serial path:           {self.port}")
+        print(f"  Serial baudrate:       {self.baudrate}")
         print(f"  Output IO ObjectID:    0x{self.output_objid:08X}")
         print(f"  Control IO ObjectID:   0x{self.control_objid:08X}")
         print(f"  Start index ObjectID:  0x{self.start_index_objid:08X}")
@@ -222,7 +231,7 @@ HELP = """Commands:
 """
 
 
-def run_interactive(cli: BlinkyUdp) -> None:
+def run_interactive(cli: BlinkySerial) -> None:
     print("  Type 'help' for commands.\n")
     while True:
         try:
@@ -241,11 +250,11 @@ def run_interactive(cli: BlinkyUdp) -> None:
             run_command(cli, command, args)
         except SystemExit:
             raise
-        except Exception as exc:  # pragma: no cover
+        except Exception as exc:  # pragma: no cover - interactive shell
             print(f"  Error: {exc}", file=sys.stderr)
 
 
-def run_command(cli: BlinkyUdp, command: str, args: list[str]) -> None:
+def run_command(cli: BlinkySerial, command: str, args: list[str]) -> None:
     if command == "start":
         cli.start()
     elif command == "stop":
@@ -273,7 +282,7 @@ def run_command(cli: BlinkyUdp, command: str, args: list[str]) -> None:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Dawn UDP blinky helper")
+    parser = argparse.ArgumentParser(description="Dawn serial blinky helper")
     parser.add_argument(
         "command",
         nargs="?",
@@ -290,18 +299,18 @@ def main() -> int:
     )
     parser.add_argument("args", nargs="*")
     parser.add_argument("--descriptor", "-d", default=DEFAULT_DESCRIPTOR)
-    parser.add_argument("--host", default=DEFAULT_HOST)
-    parser.add_argument("--port", "-p", type=int, default=None)
+    parser.add_argument("--port", "-p", default=DEFAULT_PORT)
+    parser.add_argument("--baudrate", "-b", type=int, default=None)
     parser.add_argument("--timeout", type=float, default=DEFAULT_TIMEOUT)
     parser.add_argument("--debug", action="store_true")
 
     args = parser.parse_args()
 
     try:
-        with BlinkyUdp(
+        with BlinkySerial(
             args.descriptor,
-            args.host,
             args.port,
+            args.baudrate,
             args.timeout,
             args.debug,
         ) as cli:
