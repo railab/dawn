@@ -5,14 +5,14 @@ NimBLE Blinky Demo CLI
 Connects to a Dawn NimBLE blinky device and controls the LED over BLE.
 
 Usage:
-  python3 tools/examples/nimble_blinky_cli.py start         # Start blinking
-  python3 tools/examples/nimble_blinky_cli.py stop          # Stop blinking
-  python3 tools/examples/nimble_blinky_cli.py status        # Show current state
-  python3 tools/examples/nimble_blinky_cli.py period <us>   # Set dwell (same for on/off)
-  python3 tools/examples/nimble_blinky_cli.py period <off_us> <on_us>
-  python3 tools/examples/nimble_blinky_cli.py toggle        # Toggle start/stop
-  python3 tools/examples/nimble_blinky_cli.py interactive   # Interactive shell
-  python3 tools/examples/nimble_blinky_cli.py scan          # List BLE devices nearby
+  python3 tools/examples/blinky/nimble_blinky_cli.py start         # Start blinking
+  python3 tools/examples/blinky/nimble_blinky_cli.py stop          # Stop blinking
+  python3 tools/examples/blinky/nimble_blinky_cli.py status        # Show current state
+  python3 tools/examples/blinky/nimble_blinky_cli.py period <us>   # Set dwell (same for on/off)
+  python3 tools/examples/blinky/nimble_blinky_cli.py period <off_us> <on_us>
+  python3 tools/examples/blinky/nimble_blinky_cli.py toggle        # Toggle start/stop
+  python3 tools/examples/blinky/nimble_blinky_cli.py interactive   # Interactive shell
+  python3 tools/examples/blinky/nimble_blinky_cli.py scan          # List BLE devices nearby
 
 Requires: pip install bleak
 """

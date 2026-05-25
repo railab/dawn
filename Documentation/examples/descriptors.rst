@@ -155,7 +155,7 @@ Examples
 
   Required resources: ``/dev/can0``, ``/dev/leds0``
 
-  Host helper: :file:`tools/examples/can_blinky_cli.py`
+  Host helper: :file:`tools/examples/blinky/can_blinky_cli.py`
 
 .. _descriptor-blinky-nimble-demo:
 
@@ -168,7 +168,7 @@ Examples
 
   Required resources: ``/dev/gpio4``, ``ble``
 
-  Host helper: :file:`tools/examples/nimble_blinky_cli.py`
+  Host helper: :file:`tools/examples/blinky/nimble_blinky_cli.py`
 
 .. _descriptor-blinky-shell-demo:
 
@@ -193,7 +193,7 @@ Examples
 
   Required resources: ``/dev/leds0``, ``/dev/ttyS0``
 
-  Host helper: :file:`tools/examples/serial_blinky_cli.py`
+  Host helper: :file:`tools/examples/blinky/serial_blinky_cli.py`
 
 .. _descriptor-blinky-udp-demo:
 
@@ -207,7 +207,7 @@ Examples
 
   Required resources: ``/dev/leds0``, ``udp``
 
-  Host helper: :file:`tools/examples/udp_blinky_cli.py`
+  Host helper: :file:`tools/examples/blinky/udp_blinky_cli.py`
 
 .. _descriptor-blinky-modbus-tcp-demo:
 
@@ -220,7 +220,7 @@ Examples
 
   Required resources: ``/dev/leds0``, ``tcp``
 
-  Host helper: :file:`tools/examples/modbus_tcp_blinky_cli.py`
+  Host helper: :file:`tools/examples/blinky/modbus_tcp_blinky_cli.py`
 
 .. _descriptor-blinky-modbus-rtu-demo:
 
@@ -233,7 +233,7 @@ Examples
 
   Required resources: ``/dev/leds0``, ``/dev/ttyS1``
 
-  Host helper: :file:`tools/examples/modbus_blinky_cli.py`
+  Host helper: :file:`tools/examples/blinky/modbus_blinky_cli.py`
 
 .. _descriptor-can-button-led:
 
