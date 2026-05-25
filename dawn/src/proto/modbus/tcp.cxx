@@ -179,22 +179,10 @@ int CProtoModbusTcp::init()
 {
   int ret;
 
-  ret = modbusInitialize();
-  if (ret < 0)
-    {
-      return ret;
-    }
-
   ret = createRegs();
   if (ret < 0)
     {
       DAWNERR("failed to create registers %d\n", ret);
-      if (mbhandle != NULL)
-        {
-          nxmb_disable(mbhandle);
-          nxmb_destroy(mbhandle);
-          mbhandle = NULL;
-        }
       return ret;
     }
 
@@ -219,10 +207,26 @@ int CProtoModbusTcp::doStart()
 {
   int ret;
 
+  /* Do not open the TCP listen socket during init(). If the socket is
+   * already listening before the worker thread starts polling NxModbus,
+   * a host can complete TCP connect() and then hit a first-request timeout
+   * while Dawn is still finishing startup. Open/enable the transport here so
+   * "protocol started" and "socket accepts requests" become the same event.
+   */
+
+  ret = modbusInitialize();
+  if (ret < 0)
+    {
+      return ret;
+    }
+
   ret = startWorkerThread([this]() { thread(); });
   if (ret < 0)
     {
       DAWNERR("failed to start thread %d\n", ret);
+      nxmb_disable(mbhandle);
+      nxmb_destroy(mbhandle);
+      mbhandle = NULL;
       return ret;
     }
 
