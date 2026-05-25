@@ -49,8 +49,9 @@ Feature index
        :ref:`Blinky CAN <descriptor-blinky-can-demo>`,
        :ref:`Blinky NimBLE <descriptor-blinky-nimble-demo>`,
        :ref:`Blinky Modbus RTU <descriptor-blinky-modbus-rtu-demo>`,
+       :ref:`Blinky Modbus TCP <descriptor-blinky-modbus-tcp-demo>`,
        :ref:`Blinky Serial <descriptor-blinky-serial-demo>`,
-       :ref:`Blinky Shell <descriptor-blinky-shell-demo>`
+       :ref:`Blinky Shell <descriptor-blinky-shell-demo>`,
        :ref:`Blinky UDP <descriptor-blinky-udp-demo>`
    * - CAN
      - :ref:`Blinky CAN <descriptor-blinky-can-demo>`,
@@ -70,6 +71,7 @@ Feature index
      - :ref:`NTFC Wakaama LwM2M <descriptor-ntfc-wakaama>`
    * - Modbus
      - :ref:`Blinky Modbus RTU Demo <descriptor-blinky-modbus-rtu-demo>`,
+       :ref:`Blinky Modbus TCP Demo <descriptor-blinky-modbus-tcp-demo>`,
        :ref:`Feature Modbus Slot0 <descriptor-feature-modbus-slot0>`,
        :ref:`Feature Modbus Slot1 <descriptor-feature-modbus-slot1>`,
        :ref:`NTFC Modbus RTU Dummy Map <descriptor-ntfc-modbus-rtu-dummy-map>`,
@@ -206,6 +208,19 @@ Examples
   Required resources: ``/dev/leds0``, ``udp``
 
   Host helper: :file:`tools/examples/udp_blinky_cli.py`
+
+.. _descriptor-blinky-modbus-tcp-demo:
+
+``descriptors/examples/blinky_modbus_tcp_demo.yaml``
+  **Blinky Modbus TCP Demo**
+
+  Provides a Modbus-TCP controlled blinky demo where a sequencer drives an LED
+  output. Start/stop and runtime parameters are exposed as Modbus coil and
+  holding registers, including writable dwell values and start-index control.
+
+  Required resources: ``/dev/leds0``, ``tcp``
+
+  Host helper: :file:`tools/examples/modbus_tcp_blinky_cli.py`
 
 .. _descriptor-blinky-modbus-rtu-demo:
 
