@@ -221,7 +221,7 @@ int ObjectBinding::init()
           return -ENODEV;
         }
 
-      res.io = proto->getObject(res.objid);
+      res.io = proto->getIOObject(res.objid);
       if (res.io == nullptr)
         {
           return -ENOENT;

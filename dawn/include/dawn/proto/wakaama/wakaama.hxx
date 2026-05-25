@@ -230,7 +230,7 @@ public:
     this->setObjectMapItem(id, nullptr);
   }
 
-  CIOCommon *getObject(SObjectId::ObjectId id)
+  CIOCommon *getIOObject(SObjectId::ObjectId id)
   {
     return this->getIO(id);
   }

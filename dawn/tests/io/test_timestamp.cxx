@@ -58,7 +58,7 @@ static int timestamp_notifier_callback2(void *priv, io_ddata_t *data)
 {
   DAWNASSERT(data != nullptr, "nullptr pointer");
   DAWNASSERT(*(static_cast<uint32_t *>(data->getDataPtr())) > 0, "invalid data");
-  printf("TS2 %d\n", *(static_cast<uint32_t *>(data->getDataPtr())));
+  printf("TS2 %" PRIu32 "\n", *(static_cast<uint32_t *>(data->getDataPtr())));
   g_callback2_cntr++;
   return OK;
 }

@@ -549,7 +549,11 @@ void assignDescriptorString(std::string &dst,
                             size_t wordCount)
 {
   dst.assign(reinterpret_cast<const char *>(&item->data[wordOffset]), wordCount * sizeof(uint32_t));
-  dst = dst.c_str();
+  size_t nul = dst.find('\0');
+  if (nul != std::string::npos)
+    {
+      dst.resize(nul);
+    }
 }
 
 int hexNibble(char ch)
