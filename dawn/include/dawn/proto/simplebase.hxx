@@ -100,6 +100,7 @@ public:
 
   explicit CProtoSimpleBase(CDescObject &desc)
     : CProtoCommon(desc)
+    , rxbuffer{}
     , initialized(false)
   {
   }
