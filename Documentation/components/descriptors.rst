@@ -58,6 +58,10 @@ A single-descriptor YAML file has these top-level sections:
   informational metadata only; Dawn does not enforce it at build time or
   runtime.
 
+``includes``
+  Optional reusable descriptor blocks loaded from other YAML files.
+  ``dawnpy`` expands them before validation and code generation.
+
 ``ios``
   IO objects such as dummy values, GPIO, sensors, file IO, descriptor slots,
   controls, triggers, and virtual values.
@@ -108,6 +112,71 @@ YAML anchors are the usual way to connect objects. In the example above,
 ``&dummy1`` defines an anchor and ``*dummy1`` references the same IO from the
 shell protocol configuration. The generator resolves these references and emits
 the object IDs used by the generated C++ descriptor.
+
+YAML include blocks
+===================
+
+Descriptors and reusable blocks may define an ``includes`` list. Each entry
+has:
+
+- ``id`` - namespace used when referring to exported block outputs,
+- ``path`` - YAML file path, resolved relative to the including YAML file,
+- ``inputs`` - optional mapping that connects the block's declared input ports
+  to outer descriptor object IDs or earlier include outputs.
+
+An included block may contain any normal Dawn sections (``ios``, ``programs``,
+``protocols``) and may also declare a public interface:
+
+``inputs``
+  List of input port names that the parent descriptor must connect.
+
+``outputs``
+  List or mapping of exported names to internal object references. Only these
+  exports are visible to the including descriptor.
+
+Inside the block, refer to declared inputs with quoted strings such as
+``"@INPUTS.control"``. Outside the block, refer to exported outputs with
+quoted strings such as ``"@blinky.control"`` where ``blinky`` is the include
+entry ``id``.
+
+``dawnpy`` automatically namespaces block-internal object IDs during expansion,
+so the parent descriptor only sees the declared ``outputs`` contract and not
+other internal IDs.
+
+Example:
+
+.. code-block:: yaml
+
+   includes:
+     - id: blinky
+       path: include_blocks/blinky_common.yaml
+
+   protocols:
+     - id: serial1
+       type: serial
+       bindings:
+         - "@blinky.led"
+         - "@blinky.control"
+
+Blocks can also encapsulate protocols and consume outer IO through declared
+``inputs``:
+
+.. code-block:: yaml
+
+   inputs:
+     - led
+
+   protocols:
+     - id: serial1
+       type: serial
+       bindings:
+         - "@INPUTS.led"
+       config:
+         path: /dev/ttyS0
+         baudrate: 115200
+
+Include expansion works in normal single-descriptor YAML files and inside each
+``descriptorN`` block of multi-descriptor YAML.
 
 YAML ``metadata.os_required``
 =============================

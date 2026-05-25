@@ -138,150 +138,27 @@ When a Dawn app uses C++ descriptor mode
 (``CONFIG_DAWN_APPS_EXAMPLE_DESC_FORMAT_CXX=y``), the build includes the
 descriptor directly from ``CONFIG_DAWN_APPS_EXAMPLE_DESC_PATH``.
 
-Descriptor Pipeline Architecture
-================================
+Descriptor Tooling Architecture
+===============================
 
-The descriptor pipeline is intentionally staged:
+`dawnpy` processes descriptor YAML in stages:
 
-1. **Decode** - YAML entries are decoded into object-specific classes
-   (``IoObject``, ``ProgramObject``, ``ProtocolObject`` in
-   ``dawnpy.descriptor.definitions.objects``) with strict field checks.
-2. **Validate** - Object-level decoding catches schema and type errors
-   early (for example malformed tags), while generation-time logic
-   resolves references and emits protocol-specific config.
-3. **Generate/consume**:
+1. decode YAML into descriptor object models,
+2. validate descriptor structure and enabled component/Kconfig constraints,
+3. generate C++ descriptor source or raw binary output,
+4. load lightweight client-side descriptor views for host tooling.
 
-   * ``DescriptorGenerator`` maps decoded objects to C++ descriptor words.
-   * Client descriptor loading maps decoded objects to lightweight runtime
-     client models.
+This page documents the tooling entry points and workflow. Descriptor schema,
+YAML structure, include-block syntax, and multi-descriptor YAML rules are
+owned by :doc:`/components/descriptors`.
 
-This split keeps parsing rules local to each object type and keeps
-generator/client orchestration focused on translation rather than schema
-interpretation.
+Within `dawnpy`, the main descriptor tooling surfaces are:
 
-Example YAML descriptor::
-
-    metadata:
-      name: "My Device"
-      version: "1.0"
-
-    ios:
-      - &adc0
-        id: adc0
-        type: adc_fetch
-        instance: 0
-        dtype: int32
-        config:
-          device: 0
-
-    programs:
-      - id: sampler0
-        type: sampling
-        instance: 0
-        config:
-          inputs: [*adc0]
-          outputs: []
-
-    protocols:
-      - id: serial0
-        type: serial
-        instance: 0
-        config:
-          bindings: [*adc0]
-
-The generator supports:
-
-* **IOs**: Analog/digital inputs/outputs, sensors, timers, and other IO
-  types.
-* **Programs**: Data processing (sampling, statistics, adjustments).
-* **Protocols**: Communication protocols (Serial, Modbus, CAN, BLE/Nimble,
-  etc.).
-* **Metadata**: Device information (name, version, manufacturer, etc.).
-* **YAML anchors**: Reference objects by ID for bindings and connections.
-* **Multi-descriptor YAML**: Multiple descriptor tables in a single YAML
-  file for FLASH-based runtime slot switching (see below).
-* **Bulk regeneration**: Regenerate all ``descriptor.cxx`` files from
-  ``descriptor.yaml`` in the ``boards/`` directory tree.
-
-Multi-descriptor YAML
----------------------
-
-A single YAML file can define multiple descriptor tables using numbered
-``descriptorN`` top-level keys. The generator produces one ``uint32_t``
-array per block and a ``dawn_register_flash_slots()`` function that
-``dawn_main`` calls at boot to register all extra slots from FLASH -
-no over-the-air upload is required.
-
-``descriptor0`` is mandatory and becomes the default boot descriptor
-(``g_dawn_desc[]``). Additional blocks are optional:
-
-.. code-block:: yaml
-
-    descriptor0:
-      metadata:
-        version: "1.0"
-      ios:
-        - &adc_main
-          id: adc_main
-          type: adc_fetch
-          instance: 0
-          dtype: int32
-          config:
-            device: 0
-      protocols:
-        - id: serial0
-          type: serial
-          instance: 0
-          config:
-            bindings: [*adc_main]
-
-    descriptor1:
-      ios:
-        - &adc_alt
-          id: adc_alt
-          type: adc_fetch
-          instance: 0
-          dtype: int32
-          config:
-            device: 1
-      protocols:
-        - id: serial0
-          type: serial
-          instance: 0
-          config:
-            bindings: [*adc_alt]
-
-Generated output (abbreviated):
-
-.. code-block:: cpp
-
-    uint32_t g_dawn_desc[] = { /* descriptor0 content */ };
-    size_t   g_dawn_desc_size = sizeof(g_dawn_desc);
-
-    uint32_t g_dawn_desc1[] = { /* descriptor1 content */ };
-    size_t   g_dawn_desc1_size = sizeof(g_dawn_desc1);
-
-    int dawn_register_flash_slots(void)
-    {
-      /* registers g_dawn_desc1 as slot 1 in CDevDescriptor */
-    }
-
-Rules:
-
-* Keys must be contiguous starting from ``descriptor0``. The generator
-  stops scanning at the first missing index (``descriptor2`` without
-  ``descriptor1`` is silently ignored).
-* Macro names that appear in more than one descriptor section are
-  ``#undef``'d between sections to prevent redefinition warnings.
-* ``CONFIG_DAWN_DESC_SLOTS`` must be at least equal to the total number
-  of defined descriptors for all slots to be addressable at runtime.
-* Runtime switching uses ``CIODescSelector`` / ``CDescSwitch`` - the
-  same mechanism as RAM-upload slots. The active slot index can be
-  written to a ``descselector`` IO object to trigger a switch.
-
-The old flat YAML format (``ios``/``programs``/``protocols`` at the top
-level) is unchanged and remains the default for single-descriptor
-deployments.
+* ``dawnpy.descriptor.definitions.objects`` - object decoding,
+* ``dawnpy.descriptor.validation`` - validation/reporting,
+* ``dawnpy.descriptor.generation`` - C++ descriptor generation,
+* ``dawnpy.descriptor.encoding`` - binary serialization,
+* ``dawnpy.descriptor.client`` - host-side descriptor loading.
 
 Python API
 ==========

@@ -1,0 +1,90 @@
+metadata:
+  title: Blinky Common Include Block
+  version: "1.0"
+  description: >
+    Reusable sequencer-driven LED blinky core intended for inclusion from
+    protocol-specific descriptors.
+
+inputs:
+  - led
+
+outputs:
+  - id: led1
+    ref: "@INPUTS.led"
+  - id: ctrl_blinky
+    ref: ctrl_blinky
+  - id: trig_blinky
+    ref: trig_blinky
+  - id: cfg_seq_start
+    ref: cfg_seq_start
+  - id: cfg_seq_states
+    ref: cfg_seq_states
+  - id: cfg_dwell_off
+    ref: cfg_dwell_off
+  - id: cfg_dwell_on
+    ref: cfg_dwell_on
+
+ios:
+  - id: ctrl_blinky
+    type: control
+    config:
+      targets:
+        - blinky_seq1
+      allowed:
+        - start
+        - stop
+
+  - id: trig_blinky
+    type: trigger
+    config:
+      targets:
+        - blinky_seq1
+      allowed:
+        - reset
+
+  - id: cfg_seq_start
+    type: config
+    dtype: uint32
+    rw: true
+    config:
+      objid_ref: blinky_seq1
+      objcfg_ref: start_index
+
+  - id: cfg_seq_states
+    type: config
+    dtype: uint32
+    rw: true
+    config:
+      objid_ref: blinky_seq1
+      objcfg_ref: states
+
+  - id: cfg_dwell_off
+    type: config
+    dtype: uint32
+    rw: true
+    config:
+      objid_ref: blinky_seq1
+      objcfg_ref: states
+      field: dwell_off
+
+  - id: cfg_dwell_on
+    type: config
+    dtype: uint32
+    rw: true
+    config:
+      objid_ref: blinky_seq1
+      objcfg_ref: states
+      field: dwell_on
+
+programs:
+  - id: blinky_seq1
+    type: sequencer
+    config:
+      targets:
+        - "@INPUTS.led"
+      states:
+        - value: 0
+          dwell_us: 500000
+        - value: 1
+          dwell_us: 500000
+      start_index: 0
