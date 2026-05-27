@@ -19,6 +19,7 @@ sessions:
   - name: "sim-dynamic-desc"
     confpath: ntfc/configs/sim/dynamic_desc/config.yaml
     testpath: ntfc/tests/dynamic_desc
+    resources: [pty-bridge]
 
   - name: "sim-can"
     confpath: ntfc/configs/sim/can/config.yaml
