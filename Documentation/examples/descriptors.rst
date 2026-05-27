@@ -300,11 +300,12 @@ Examples
 ``descriptors/examples/feature_modbus_slot0.yaml``
   **Feature Demo - Modbus RTU Bootstrap (slot 0)**
 
-  Board-agnostic Modbus RTU bootstrap descriptor. Exposes ADC and PWM plus the
-  descriptor slots and selector so a host can upload and activate the full
-  feature descriptor at runtime.
+  Board-agnostic Modbus RTU bootstrap descriptor. Exposes ADC, PWM, and
+  pulsecount plus the descriptor slots and selector so a host can upload and
+  activate the full feature descriptor at runtime.
 
-  Required resources: ``/dev/ttyS1``, ``/dev/adc0``, ``/dev/pwm0``
+  Required resources: ``/dev/ttyS1``, ``/dev/adc0``, ``/dev/pwm0``,
+  ``/dev/pulsecount0``
 
 .. _descriptor-feature-modbus-slot1:
 
@@ -485,8 +486,8 @@ Examples
   **Shell Core Demo**
 
   Provides a broad shell-accessible demo of mixed Dawn IO, including sensors,
-  ADC, DAC, GPIO, PWM, config objects, descriptor inspection, and processing
-  outputs.
+  ADC, DAC, GPIO, PWM, pulsecount, config objects, descriptor inspection, and
+  processing outputs.
 
   Required resources:
   ``/dev/uorb/sensor_accel0``, ``/dev/uorb/sensor_mag0``,
@@ -495,8 +496,8 @@ Examples
   ``/dev/gpio10``, ``/dev/gpio4``, ``/dev/gpio5``, ``/dev/gpio6``,
   ``/dev/gpio7``, ``/dev/adc0``, ``/dev/adc1``, ``/dev/adc2``,
   ``/dev/dac0``, ``/dev/dac1``, ``/dev/dac2``, ``/dev/pwm0``,
-  ``/dev/pwm1``, ``/dev/pwm2``, ``/dev/qe0``, ``/dev/qe1``,
-  ``/dev/urandom``
+  ``/dev/pwm1``, ``/dev/pwm2``, ``/dev/pulsecount0``, ``/dev/qe0``,
+  ``/dev/qe1``, ``/dev/urandom``
 
 .. _descriptor-shell-gpio-config-demo:
 

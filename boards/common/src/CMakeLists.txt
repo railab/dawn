@@ -12,6 +12,10 @@ if(CONFIG_DAWN_FAKE_PWM)
   list(APPEND SRCS fake_pwm.c)
 endif()
 
+if(CONFIG_DAWN_FAKE_PULSECOUNT)
+  list(APPEND SRCS fake_pulsecount.c)
+endif()
+
 if(CONFIG_DAWN_FAKE_ENCODER)
   list(APPEND SRCS fake_encoder.c)
 endif()

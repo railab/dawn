@@ -42,6 +42,9 @@
 #ifdef CONFIG_DAWN_IO_PWM
 #  include "dawn/io/pwm.hxx"
 #endif
+#ifdef CONFIG_DAWN_IO_PULSECOUNT
+#  include "dawn/io/pulsecount.hxx"
+#endif
 #ifdef CONFIG_DAWN_IO_DESCRIPTOR
 #  include "dawn/io/descriptor.hxx"
 #endif
@@ -240,6 +243,11 @@ CIOCommon *CIOFactory::create(CDescObject &desc)
 #ifdef CONFIG_DAWN_IO_PWM
       case CIOCommon::IO_CLASS_PWM:
         return new CIOPwm(desc);
+#endif
+
+#ifdef CONFIG_DAWN_IO_PULSECOUNT
+      case CIOCommon::IO_CLASS_PULSECOUNT:
+        return new CIOPulseCount(desc);
 #endif
 
 #ifdef CONFIG_DAWN_IO_DESCRIPTOR

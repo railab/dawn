@@ -42,6 +42,7 @@ extern "C"
   int test_io_gpo();
   int test_io_gpi();
   int test_io_pwm();
+  int test_io_pulsecount();
   int test_io_buttons();
   int test_io_leds();
   int test_io_rgbled();
@@ -138,6 +139,9 @@ static int (*test_array[])(void) = {
 #endif
 #ifdef CONFIG_DAWN_IO_PWM
   test_io_pwm,
+#endif
+#ifdef CONFIG_DAWN_IO_PULSECOUNT
+  test_io_pulsecount,
 #endif
 #ifdef CONFIG_DAWN_IO_TIMERFD
   test_io_timerfd,

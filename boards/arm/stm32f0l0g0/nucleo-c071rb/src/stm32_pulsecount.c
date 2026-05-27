@@ -1,5 +1,5 @@
 /*
- * boards/arm/stm32f0l0g0/nucleo-c071rb/src/stm32_pwm.c
+ * boards/arm/stm32f0l0g0/nucleo-c071rb/src/stm32_pulsecount.c
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -9,10 +9,10 @@
 
 #include <errno.h>
 
-#include <nuttx/timers/pwm.h>
-#include <arch/board/board.h>
+#include <nuttx/timers/pulsecount.h>
 
-#include "stm32_pwm.h"
+#include <arch/board/board.h>
+#include <stm32_pulsecount.h>
 
 #include "nucleo-c071rb.h"
 
@@ -21,38 +21,26 @@
  ****************************************************************************/
 
 /****************************************************************************
- * Name: stm32_pwm_setup
+ * Name: stm32_pulsecount_setup
  *
  * Description:
- *   Initialize PWM and register the PWM device.
+ *   Initialize pulsecount and register the pulsecount device.
  *
  ****************************************************************************/
 
-int stm32_pwm_setup(void)
+int stm32_pulsecount_setup(void)
 {
-  struct pwm_lowerhalf_s *pwm;
+  struct pulsecount_lowerhalf_s *pulsecount;
   int ret;
 
-#if defined(CONFIG_STM32F0L0G0_TIM14_PWM)
-  pwm = stm32_pwminitialize(14);
-  if (!pwm)
+#ifdef CONFIG_STM32F0L0G0_TIM1_PULSECOUNT
+  pulsecount = stm32_pulsecountinitialize(1);
+  if (pulsecount == NULL)
     {
       return -ENODEV;
     }
 
-  ret = pwm_register("/dev/pwm0", pwm);
-  if (ret < 0)
-    {
-      return ret;
-    }
-#elif defined(CONFIG_STM32F0L0G0_TIM1_PWM)
-  pwm = stm32_pwminitialize(1);
-  if (!pwm)
-    {
-      return -ENODEV;
-    }
-
-  ret = pwm_register("/dev/pwm0", pwm);
+  ret = pulsecount_register("/dev/pulsecount0", pulsecount);
   if (ret < 0)
     {
       return ret;

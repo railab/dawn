@@ -115,6 +115,10 @@ if(CONFIG_DAWN_IO_PWM)
   list(APPEND SRCS pwm.cxx)
 endif()
 
+if(CONFIG_DAWN_IO_PULSECOUNT)
+  list(APPEND SRCS pulsecount.cxx)
+endif()
+
 if(CONFIG_DAWN_IO_CONFIG)
   list(APPEND SRCS config.cxx)
 endif()

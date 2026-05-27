@@ -187,6 +187,7 @@ Supported IO
    control.rst
    trigger.rst
    pwm.rst
+   pulsecount.rst
    dac.rst
    descriptor.rst
    descselector.rst

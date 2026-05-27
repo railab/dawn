@@ -95,5 +95,17 @@ int stm32_adc_setup(void);
 int stm32_pwm_setup(void);
 #endif
 
+/****************************************************************************
+ * Name: stm32_pulsecount_setup
+ *
+ * Description:
+ *   Initialize pulsecount and register the pulsecount driver.
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_PULSECOUNT
+int stm32_pulsecount_setup(void);
+#endif
+
 #endif /* __ASSEMBLY__ */
 #endif /* __BOARDS_ARM_STM32F0L0G0_NUCLEO_C071RB_SRC_NUCLEO_C071RB_H */

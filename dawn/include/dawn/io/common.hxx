@@ -167,9 +167,10 @@ public:
     IO_CLASS_LEDS = 63,       ///< LED output
     IO_CLASS_RGBLED = 64,     ///< RGB LED output
 
-    // PWM output
+    // PWM / pulse output
 
-    IO_CLASS_PWM = 78, ///< PWM output
+    IO_CLASS_PWM = 78,        ///< PWM output
+    IO_CLASS_PULSECOUNT = 79, ///< Finite pulse-train output
 
     // ADC/DAC
 

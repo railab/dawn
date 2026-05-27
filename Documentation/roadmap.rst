@@ -134,12 +134,6 @@ Tier 3
    - read many GPIO with single read
    - missing feature on NuttX side
 
-#. IO: Pulse Output
-
-   - write number of pulses to emit
-   - pulse train parameters in configuration
-   - separate PULSECOUNT from PWM in NuttX
-
 #. IO: Counter Input / Capture Input
 
 #. IO: Comparator Input

@@ -46,6 +46,14 @@ config DAWN_FAKE_PWM
 	---help---
 		Enable the fake PWM driver for tests and simulation.
 
+config DAWN_FAKE_PULSECOUNT
+	bool "Fake pulsecount driver"
+	default n
+	select ARCH_HAVE_PULSECOUNT
+	select PULSECOUNT
+	---help---
+		Enable the fake pulsecount driver for tests and simulation.
+
 config DAWN_FAKE_ENCODER
 	bool "Fake encoder driver"
 	default n
