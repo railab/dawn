@@ -23,6 +23,10 @@ if(CONFIG_PWM)
   list(APPEND SRCS stm32_pwm.c)
 endif()
 
+if(CONFIG_PULSECOUNT)
+  list(APPEND SRCS stm32_pulsecount.c)
+endif()
+
 if(CONFIG_STM32F0L0G0_FDCAN)
   if(CONFIG_STM32F0L0G0_FDCAN_CHARDRIVER)
     list(APPEND SRCS stm32_can.c)

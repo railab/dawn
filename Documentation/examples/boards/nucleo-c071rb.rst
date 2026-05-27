@@ -26,7 +26,12 @@ modbus
 ------
 
 Feature Modbus RTU profile using ``feature_modbus_slot0.yaml`` as the boot
-descriptor. It enables descriptor slots for runtime descriptor switching.
+descriptor. It enables descriptor slots for runtime descriptor switching and
+exposes both a real ``/dev/pwm0`` output and a real TIM1-backed
+``/dev/pulsecount0`` output over Modbus.
+
+On this board the Modbus RS485 direction pin already uses PA8, so the profile
+uses TIM1 pulsecount channel 2 on PB3 and moves PWM to TIM14 channel 1 on PA7.
 
 modbus_ntfc
 -----------

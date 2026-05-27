@@ -218,6 +218,32 @@ config DAWN_IO_PWM
 	---help---
 		Enable PWM-backed IO objects for duty-cycle control.
 
+config DAWN_IO_PULSECOUNT
+	bool "Dawn pulsecount IO support"
+	default n
+	depends on DAWN_DTYPE_UINT32
+	---help---
+		Enable finite pulse-train output IO objects backed by NuttX
+		pulsecount drivers.
+
+config DAWN_IO_PULSECOUNT_DEFAULT_HIGH_NS
+	int "Dawn pulsecount default high time"
+	default 500000
+	depends on DAWN_IO_PULSECOUNT
+	range 1 1000000000
+	---help---
+		Default pulse high time in nanoseconds when a pulsecount IO
+		descriptor does not provide an explicit high_ns field.
+
+config DAWN_IO_PULSECOUNT_DEFAULT_LOW_NS
+	int "Dawn pulsecount default low time"
+	default 500000
+	depends on DAWN_IO_PULSECOUNT
+	range 1 1000000000
+	---help---
+		Default pulse low time in nanoseconds when a pulsecount IO
+		descriptor does not provide an explicit low_ns field.
+
 config DAWN_IO_PWM_DEFAULT_FREQ
 	int "Dawn PWM default frequency"
 	default 1000

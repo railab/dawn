@@ -4,8 +4,8 @@ metadata:
   user_string: bcddfgh
   description: >
     Provides a broad shell-accessible demo of mixed Dawn IO, including sensors,
-    ADC, DAC, GPIO, PWM, config objects, descriptor inspection, and processing
-    outputs.
+    ADC, DAC, GPIO, PWM, pulsecount, config objects, descriptor inspection,
+    and processing outputs.
   os_required:
   - /dev/uorb/sensor_accel0
   - /dev/uorb/sensor_mag0
@@ -30,6 +30,7 @@ metadata:
   - /dev/pwm0
   - /dev/pwm1
   - /dev/pwm2
+  - /dev/pulsecount0
   - /dev/qe0
   - /dev/qe1
   - /dev/urandom
@@ -192,6 +193,14 @@ ios:
   dtype: uint32
   config:
     device: 2
+- &id048
+  id: pulsecount1
+  type: pulsecount
+  dtype: uint32
+  config:
+    device: 0
+    high_ns: 100000
+    low_ns: 100000
 - id: encoder1
   type: encoder
   dtype: int32
@@ -302,6 +311,22 @@ ios:
   rw: true
   config:
     objid_ref: dummyio4
+- &id049
+  id: pulsecount_high1
+  type: config
+  dtype: uint32
+  rw: true
+  config:
+    objid_ref: pulsecount1
+    objcfg_ref: high_ns
+- &id050
+  id: pulsecount_low1
+  type: config
+  dtype: uint32
+  rw: true
+  config:
+    objid_ref: pulsecount1
+    objcfg_ref: low_ns
 - &id032
   id: hostname1
   type: uname
@@ -402,6 +427,7 @@ protocols:
   - *id037
   - *id042
   - *id043
+  - *id048
   - *id021
   - *id022
   - *id023
@@ -419,6 +445,8 @@ protocols:
   - *id029
   - *id030
   - *id031
+  - *id049
+  - *id050
   - *id032
   - *id034
   - *id033

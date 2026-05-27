@@ -193,6 +193,28 @@ int sim_bringup(void)
     }
 #endif
 
+#ifdef CONFIG_DAWN_FAKE_PULSECOUNT
+  /* Initialize fake pulsecount devices */
+
+  ret = fake_pulsecount_initialize(0);
+  if (ret < 0)
+    {
+      syslog(LOG_ERR, "ERROR: Failed to initialize pulsecount %d\n", ret);
+    }
+
+  ret = fake_pulsecount_initialize(1);
+  if (ret < 0)
+    {
+      syslog(LOG_ERR, "ERROR: Failed to initialize pulsecount %d\n", ret);
+    }
+
+  ret = fake_pulsecount_initialize(2);
+  if (ret < 0)
+    {
+      syslog(LOG_ERR, "ERROR: Failed to initialize pulsecount %d\n", ret);
+    }
+#endif
+
 #ifdef CONFIG_DAWN_FAKE_ENCODER
   /* Initialize fake encoders */
 

@@ -94,6 +94,16 @@ int stm32_bringup(void)
     }
 #endif
 
+#ifdef CONFIG_PULSECOUNT
+  /* Initialize pulsecount and register the pulsecount driver. */
+
+  ret = stm32_pulsecount_setup();
+  if (ret < 0)
+    {
+      syslog(LOG_ERR, "ERROR: stm32_pulsecount_setup failed: %d\n", ret);
+    }
+#endif
+
 #ifdef CONFIG_STM32F0L0G0_FDCAN_CHARDRIVER
   /* Initialize CAN and register the CAN driver. */
 
@@ -120,8 +130,7 @@ int stm32_bringup(void)
   ret = nx_mount(NULL, CONFIG_LIBC_TMPDIR, "tmpfs", 0, NULL);
   if (ret < 0)
     {
-      syslog(LOG_ERR, "ERROR: Failed to mount tmpfs at %s: %d\n",
-             CONFIG_LIBC_TMPDIR, ret);
+      syslog(LOG_ERR, "ERROR: Failed to mount tmpfs at %s: %d\n", CONFIG_LIBC_TMPDIR, ret);
     }
 #endif
 

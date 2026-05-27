@@ -36,6 +36,12 @@ int fake_dac_initialize(int devno);
 int fake_pwm_initialize(int devno);
 #endif
 
+/* Fake pulsecount driver */
+
+#ifdef CONFIG_DAWN_FAKE_PULSECOUNT
+int fake_pulsecount_initialize(int devno);
+#endif
+
 /* Fake encoder driver */
 
 #ifdef CONFIG_DAWN_FAKE_ENCODER

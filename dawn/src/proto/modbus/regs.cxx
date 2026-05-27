@@ -201,11 +201,14 @@ int CProtoModbusRegs::regReadWriteCoil(uint8_t *buff,
 
       if (read)
         {
-          ret = io->getData(*iodata, 1);
-          if (ret != OK)
+          if (io->isRead())
             {
-              err = -EIO;
-              break;
+              ret = io->getData(*iodata, 1);
+              if (ret != OK)
+                {
+                  err = -EIO;
+                  break;
+                }
             }
 
           for (size_t i = 0; i < size; i++)
@@ -284,22 +287,28 @@ int CProtoModbusRegs::regReadWriteCoilPacked(uint8_t *buff,
 
       if (read)
         {
-          ret = io->getData(*iodata, 1);
-          if (ret != OK)
+          if (io->isRead())
             {
-              err = -EIO;
-              break;
+              ret = io->getData(*iodata, 1);
+              if (ret != OK)
+                {
+                  err = -EIO;
+                  break;
+                }
             }
 
           modbus_set_bit(buff, bit, (ptr[offsetInIo] == 0) ? 0 : 1);
         }
       else
         {
-          ret = io->getData(*iodata, 1);
-          if (ret != OK)
+          if (io->isRead())
             {
-              err = -EIO;
-              break;
+              ret = io->getData(*iodata, 1);
+              if (ret != OK)
+                {
+                  err = -EIO;
+                  break;
+                }
             }
 
           ptr[offsetInIo] = modbus_get_bit(buff, bit) ? 1 : 0;
@@ -526,11 +535,14 @@ int CProtoModbusRegs::standardRegRW(uint8_t *buff,
 
       if (read)
         {
-          ret = io->getData(*iodata, 1);
-          if (ret != OK)
+          if (io->isRead())
             {
-              err = -EIO;
-              break;
+              ret = io->getData(*iodata, 1);
+              if (ret != OK)
+                {
+                  err = -EIO;
+                  break;
+                }
             }
 
           for (i = 0; i < words; i++)
@@ -647,12 +659,6 @@ static int validateRegisterIo(CIOCommon *io, uint32_t type, size_t seekWindowReg
               return -EINVAL;
             }
 
-          if (io->isRead() == false)
-            {
-              DAWNERR("coil reg doesn't support read\n");
-              return -EINVAL;
-            }
-
           if (io->getDataSize() == 0 || io->getDataDim() == 0)
             {
               DAWNERR("unsupported IO type for coil\n");
@@ -673,12 +679,6 @@ static int validateRegisterIo(CIOCommon *io, uint32_t type, size_t seekWindowReg
           if (io->isWrite() == false)
             {
               DAWNERR("coil reg doesn't support write\n");
-              return -EINVAL;
-            }
-
-          if (io->isRead() == false)
-            {
-              DAWNERR("coil reg doesn't support read\n");
               return -EINVAL;
             }
 
@@ -776,9 +776,9 @@ static int validateRegisterIo(CIOCommon *io, uint32_t type, size_t seekWindowReg
               return -ENOTSUP;
             }
 
-          if (!io->isRead() || !io->isWrite())
+          if (!io->isWrite())
             {
-              DAWNERR("holding reg requires rw IO\n");
+              DAWNERR("holding reg doesn't support write\n");
               return -EINVAL;
             }
 

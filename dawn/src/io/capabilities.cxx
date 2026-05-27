@@ -163,6 +163,9 @@ void CIOCapabilities::buildIoBitmap()
 #ifdef CONFIG_DAWN_IO_PWM
   setBitmapBit(ioBitmap, CIOCommon::IO_CLASS_PWM);
 #endif
+#ifdef CONFIG_DAWN_IO_PULSECOUNT
+  setBitmapBit(ioBitmap, CIOCommon::IO_CLASS_PULSECOUNT);
+#endif
 #ifdef CONFIG_DAWN_IO_ADC_FETCH
   setBitmapBit(ioBitmap, CIOCommon::IO_CLASS_ADC_FETCH);
 #endif

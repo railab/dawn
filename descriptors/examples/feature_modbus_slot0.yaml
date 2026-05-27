@@ -3,9 +3,9 @@ metadata:
   version: '0.1'
   user_string: feature_modbus_slot0
   description: >
-    Board-agnostic Modbus RTU bootstrap descriptor. Exposes ADC and PWM
-    plus the descriptor slots and selector so a host can upload and
-    activate the full feature descriptor (slot 1) at runtime. Uses the
+    Board-agnostic Modbus RTU bootstrap descriptor. Exposes ADC, PWM, and
+    pulsecount plus the descriptor slots and selector so a host can upload
+    and activate the full feature descriptor (slot 1) at runtime. Uses the
     canonical NuttX serial path /dev/ttyS1 - real boards register USART1
     there directly; the sim board aliases /dev/ttyS1 to its host PTY via
     DAWN_SIM_TTY_ALIAS.
@@ -13,6 +13,7 @@ metadata:
   - /dev/ttyS1
   - /dev/adc0
   - /dev/pwm0
+  - /dev/pulsecount0
 
 ios:
 - &descriptor0
@@ -53,6 +54,15 @@ ios:
   config:
     device: 0
 
+- &pulsecount0
+  id: pulsecount0
+  type: pulsecount
+  dtype: uint32
+  config:
+    device: 0
+    high_ns: 100000
+    low_ns: 100000
+
 protocols:
 - id: modbus0
   type: modbus_rtu
@@ -63,6 +73,7 @@ protocols:
   - *capabilities0
   - *adc0
   - *pwm0
+  - *pulsecount0
   config:
     path: /dev/ttyS1
     baudrate: 115200
@@ -79,6 +90,7 @@ protocols:
       start: 0x0300
       bindings:
       - *pwm0
+      - *pulsecount0
       - *descselector0
     # Seekable windows - block IO surfaces
     - type: seekable
@@ -88,11 +100,11 @@ protocols:
       - *descriptor0
     - type: seekable
       config: 256
-      start: 0x1100
+      start: 0x1101
       bindings:
       - *descriptor1
     - type: seekable
       config: 64
-      start: 0x1200
+      start: 0x1202
       bindings:
       - *capabilities0

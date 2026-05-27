@@ -25,6 +25,10 @@ ifeq ($(CONFIG_PWM),y)
 CSRCS += stm32_pwm.c
 endif
 
+ifeq ($(CONFIG_PULSECOUNT),y)
+CSRCS += stm32_pulsecount.c
+endif
+
 ifeq ($(CONFIG_STM32F0L0G0_FDCAN),y)
 ifeq ($(CONFIG_STM32F0L0G0_FDCAN_CHARDRIVER),y)
 CSRCS += stm32_can.c
