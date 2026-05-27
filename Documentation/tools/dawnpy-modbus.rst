@@ -49,6 +49,18 @@ Console
 The interactive console shares the command set documented in
 :ref:`dawnpy-console-commands` (see :doc:`dawnpy-serial`).
 
+Dawn Modbus register addresses are used exactly as declared in the
+descriptor register map; the console does not apply 1-based Modbus offset
+conversion. Seekable Dawn IOs are exposed through holding registers and the
+client reads those windows in multiple chunks when the declared window is
+larger than the single-request pymodbus limit.
+
+For single-binding holding/input groups whose runtime width is larger than
+what the descriptor alone can prove (for example board ADCs whose channel
+count is selected by the target), the client probes for the full register
+width after an exception-4 short read and then decodes the payload as a
+vector of dtype-sized elements.
+
 Tests
 =====
 
