@@ -47,6 +47,8 @@ static constexpr auto MODBUS_DUMMYIO8 = CIODummy::objectId(SObjectId::DTYPE_UINT
 static constexpr auto MODBUS_WRONLYIO1 = CIOWriteOnlyScalarMock::objectId(SObjectId::DTYPE_BOOL, 9);
 static constexpr auto MODBUS_WRONLYIO4 =
   CIOWriteOnlyScalarMock::objectId(SObjectId::DTYPE_UINT16, 10);
+static constexpr auto MODBUS_WRONLYIO7 =
+  CIOWriteOnlyScalarMock::objectId(SObjectId::DTYPE_UINT32, 11);
 
 // Regs definitions
 
@@ -129,6 +131,11 @@ static uint32_t g_cfg_wronly1[] = {
 
 static uint32_t g_cfg_wronly4[] = {
   MODBUS_WRONLYIO4,
+  0,
+};
+
+static uint32_t g_cfg_wronly7[] = {
+  MODBUS_WRONLYIO7,
   0,
 };
 
@@ -412,6 +419,23 @@ uint32_t g_bin_modbus_holding_writeonly[] = {
   REGS_HOLDING1,
   1,
   MODBUS_WRONLYIO4,
+};
+
+uint32_t g_bin_modbus_holding_writeonly_u32[] = {
+  CProtoModbusRtu::objectId(0),
+  2,
+
+  CProtoModbusRtu::cfgIdPath(3),
+  0x7665642f,
+  0x7974742f,
+  0x00003070,
+
+  CProtoModbusRtu::cfgIdIOBind(5),
+  CProtoModbusRegs::MODBUS_TYPE_HOLDING,
+  0,
+  REGS_HOLDING1,
+  1,
+  MODBUS_WRONLYIO7,
 };
 
 //***************************************************************************
@@ -1211,6 +1235,35 @@ static void test_proto_modbus_holding_writeonly_shadow_readback()
   TEST_ASSERT_EQUAL(MB_HOLDING_GET, buffer[1]);
   TEST_ASSERT_EQUAL(0xbe, buffer[3]);
   TEST_ASSERT_EQUAL(0xef, buffer[4]);
+
+  TEST_ASSERT_EQUAL(OK, modbus.stop());
+}
+
+//***************************************************************************
+// Description: write-only holding IO preserves 32-bit values across Modbus
+// writes.
+//***************************************************************************
+
+static void test_proto_modbus_holding_writeonly_shadow_readback_u32()
+{
+  CDescObject descv7(g_cfg_wronly7);
+  CIOWriteOnlyScalarMock wronly7(descv7);
+  CDescObject desc(g_bin_modbus_holding_writeonly_u32);
+  CProtoModbusRtu modbus(desc);
+  uint8_t buffer[1024];
+
+  modbus_setup_single_io(wronly7, MODBUS_WRONLYIO7, modbus);
+
+  buffer[0] = 0x00;
+  buffer[1] = 0x00;
+  buffer[2] = 0x00;
+  buffer[3] = 0x01;
+  usleep(1000);
+  TEST_ASSERT_EQUAL(13, modbus_frame_send_many(MB_HOLDING_MUL_SET, REGS_HOLDING1, 2, buffer, 4));
+  usleep(1000);
+  TEST_ASSERT_EQUAL(8, (int)read(g_pty_fd, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL(MB_HOLDING_MUL_SET, buffer[1]);
+  TEST_ASSERT_EQUAL(1u, wronly7.getLastValue());
 
   TEST_ASSERT_EQUAL(OK, modbus.stop());
 }
@@ -2057,7 +2110,7 @@ static void test_proto_modbus_input_longdata_read_initial()
 
 //***************************************************************************
 // Description: after writing 0xdeadbeef into the 4-byte IO, reading two
-// registers returns the four payload bytes in modbus word-swap order.
+// registers returns the four payload bytes in big-endian register order.
 //***************************************************************************
 
 static void test_proto_modbus_input_longdata_read_after_update()
@@ -2077,10 +2130,10 @@ static void test_proto_modbus_input_longdata_read_after_update()
   modbus_send_and_read(MB_INPUT_GET, REGS_INPUTS1, 2, buffer, sizeof(buffer), 9);
   TEST_ASSERT_EQUAL(MB_INPUT_GET, buffer[1]);
   TEST_ASSERT_EQUAL(0x04, buffer[2]);
-  TEST_ASSERT_EQUAL((data(0) >> 8) & 0xff, buffer[3]);
-  TEST_ASSERT_EQUAL(data(0) & 0xff, buffer[4]);
-  TEST_ASSERT_EQUAL((data(0) >> 24) & 0xff, buffer[5]);
-  TEST_ASSERT_EQUAL((data(0) >> 16) & 0xff, buffer[6]);
+  TEST_ASSERT_EQUAL((data(0) >> 24) & 0xff, buffer[3]);
+  TEST_ASSERT_EQUAL((data(0) >> 16) & 0xff, buffer[4]);
+  TEST_ASSERT_EQUAL((data(0) >> 8) & 0xff, buffer[5]);
+  TEST_ASSERT_EQUAL(data(0) & 0xff, buffer[6]);
 
   TEST_ASSERT_EQUAL(OK, modbus.stop());
 }
@@ -2194,10 +2247,10 @@ static void test_proto_modbus_holding_longdata_multi_write_then_read()
 
   modbus_setup_single(dummy7, MODBUS_DUMMYIO7, modbus);
 
-  buffer[0] = 0xef;
-  buffer[1] = 0xbe;
-  buffer[2] = 0xad;
-  buffer[3] = 0xde;
+  buffer[0] = 0xde;
+  buffer[1] = 0xad;
+  buffer[2] = 0xbe;
+  buffer[3] = 0xef;
   usleep(1000);
   ret = modbus_frame_send_many(MB_HOLDING_MUL_SET, REGS_HOLDING1, 2, buffer, 4);
   TEST_ASSERT_EQUAL(13, ret);
@@ -2209,10 +2262,10 @@ static void test_proto_modbus_holding_longdata_multi_write_then_read()
   modbus_send_and_read(MB_HOLDING_GET, REGS_HOLDING1, 2, buffer, sizeof(buffer), 9);
   TEST_ASSERT_EQUAL(MB_HOLDING_GET, buffer[1]);
   TEST_ASSERT_EQUAL(0x04, buffer[2]);
-  TEST_ASSERT_EQUAL(0xef, buffer[3]);
-  TEST_ASSERT_EQUAL(0xbe, buffer[4]);
-  TEST_ASSERT_EQUAL(0xad, buffer[5]);
-  TEST_ASSERT_EQUAL(0xde, buffer[6]);
+  TEST_ASSERT_EQUAL(0xde, buffer[3]);
+  TEST_ASSERT_EQUAL(0xad, buffer[4]);
+  TEST_ASSERT_EQUAL(0xbe, buffer[5]);
+  TEST_ASSERT_EQUAL(0xef, buffer[6]);
 
   TEST_ASSERT_EQUAL(OK, modbus.stop());
 }
@@ -2288,6 +2341,7 @@ extern "C"
     RUN_WITH_PTY(test_proto_modbus_holding_read_initial);
     RUN_WITH_PTY(test_proto_modbus_holding_write_then_read);
     RUN_WITH_PTY(test_proto_modbus_holding_writeonly_shadow_readback);
+    RUN_WITH_PTY(test_proto_modbus_holding_writeonly_shadow_readback_u32);
 
     // Many registers access
 

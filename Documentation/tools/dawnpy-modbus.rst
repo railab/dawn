@@ -55,6 +55,10 @@ conversion. Seekable Dawn IOs are exposed through holding registers and the
 client reads those windows in multiple chunks when the declared window is
 larger than the single-request pymodbus limit.
 
+The CLI mirrors the Modbus wire contract documented by Dawn's Modbus
+protocols: it does not define the data layout itself, it only decodes and
+encodes values using the protocol's register and byte-order rules.
+
 For single-binding holding/input groups whose runtime width is larger than
 what the descriptor alone can prove (for example board ADCs whose channel
 count is selected by the target), the client probes for the full register

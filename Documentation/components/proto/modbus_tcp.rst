@@ -29,6 +29,14 @@ Implementation
 
 - ``MODBUS_TYPE_INPUT`` and ``MODBUS_TYPE_HOLDING`` support mixed-width
   IO (16/32/64-bit) inside one group.
+- Multi-register scalar values are transferred as one contiguous register
+  payload in big-endian register order, so 32/64-bit IO values preserve their
+  numeric value when written and read back.
+- Multi-dimensional IO is flattened element-by-element in declaration order;
+  the protocol is responsible for reconstructing the typed payload on reads
+  and splitting it back into registers on writes.
+- Endianness and packing are Modbus protocol rules, not Dawn internal layout
+  rules. External clients should mirror this wire contract.
 
 - ``coil`` and ``holding`` groups may bind write-only Dawn IOs. In that
   case Modbus reads return the protocol's cached last written value because
