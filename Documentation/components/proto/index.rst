@@ -71,6 +71,12 @@ same object access model:
 - Notify-capable protocols push updates to subscribed clients.
 - Endpoint resource ownership (thread/fd/socket/device state) is
   protocol-specific but follows the common lifecycle above.
+- Wire serialization/deserialization is protocol-owned: each protocol decides
+  endianness, bit/register packing, and how multi-dimensional IO values are
+  flattened or reconstructed on the wire.
+- External tools and clients should follow the protocol's documented wire
+  rules; they are mirrors of the protocol contract, not the source of truth
+  for Dawn's internal IO layout.
 
 Doxygen
 =======

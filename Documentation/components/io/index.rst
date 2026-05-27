@@ -74,6 +74,22 @@ See :doc:`notifier` for notifier details and YAML configuration.
 
 See :doc:`iodata` for IO data container details.
 
+Data Model
+==========
+
+Dawn IO data is a typed value model, not a protocol wire buffer.
+
+- ``dtype`` defines the scalar element type.
+- ``getDataSize()`` returns the byte size of one element.
+- ``getDataDim()`` returns how many elements the IO exposes.
+- Multi-dimensional IO is a vector/array of typed elements in declaration
+  order.
+
+Protocol code owns wire serialization and deserialization at the protocol
+boundary. Endianness, register packing, bit packing, and any flattening of a
+multi-dimensional IO are protocol responsibilities. External tools should
+mirror the protocol wire rules, not define a separate Dawn data layout.
+
 Seekable IO
 ===========
 

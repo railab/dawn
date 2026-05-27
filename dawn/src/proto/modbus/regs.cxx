@@ -138,6 +138,14 @@ static size_t getIoRegBytes(const CProtoModbusRegs::SProtoModbusRegs *reg, size_
   return reg->iodata[index]->getDataSize();
 }
 
+static inline void modbusReverseBytes(uint8_t *dst, const uint8_t *src, size_t len)
+{
+  for (size_t i = 0; i < len; i++)
+    {
+      dst[i] = src[len - 1 - i];
+    }
+}
+
 // Map a byte/bit offset in Modbus register space back to the bound IO and
 // offset inside that IO. Packed coil/discrete groups can expose one vector IO
 // as multiple Modbus bits, so the Modbus index is not always the IO index.
@@ -507,11 +515,9 @@ int CProtoModbusRegs::standardRegRW(uint8_t *buff,
   io_ddata_t *iodata = nullptr;
   CIOCommon *io = nullptr;
   uint8_t *ptr = nullptr;
-  uint16_t value = 0;
   int err = 0;
   int ret;
   size_t words;
-  size_t i;
 
   while (n > 0)
     {
@@ -527,7 +533,7 @@ int CProtoModbusRegs::standardRegRW(uint8_t *buff,
       ptr = reinterpret_cast<uint8_t *>(iodata->getDataPtr());
       words = iodata->getDataSize() / sizeof(uint16_t);
 
-      if (words > n)
+      if (words == 0 || words > n)
         {
           err = -EINVAL;
           break;
@@ -545,22 +551,13 @@ int CProtoModbusRegs::standardRegRW(uint8_t *buff,
                 }
             }
 
-          for (i = 0; i < words; i++)
-            {
-              value =
-                static_cast<uint16_t>(ptr[i * 2]) | (static_cast<uint16_t>(ptr[i * 2 + 1]) << 8);
-              *buff++ = static_cast<uint8_t>((value >> 8) & 0xff);
-              *buff++ = static_cast<uint8_t>(value & 0xff);
-            }
+          modbusReverseBytes(buff, ptr, words * sizeof(uint16_t));
+          buff += words * sizeof(uint16_t);
         }
       else
         {
-          for (i = 0; i < words; i++)
-            {
-              ptr[i * 2] = buff[1];
-              ptr[i * 2 + 1] = buff[0];
-              buff += sizeof(uint16_t);
-            }
+          modbusReverseBytes(ptr, buff, words * sizeof(uint16_t));
+          buff += words * sizeof(uint16_t);
 
           ret = io->setData(*iodata);
           if (ret != OK)
