@@ -11,6 +11,7 @@
 #include "dawn/io/sdata.hxx"
 #include "dawn/proto/modbus/rtu.hxx"
 #include "mocks/fake_ioseekmock.hxx"
+#include "mocks/fake_iowriteonlymock.hxx"
 #include "test_common.hxx"
 
 extern "C"
@@ -43,6 +44,9 @@ static constexpr auto MODBUS_DUMMYIO6 = CIODummy::objectId(SObjectId::DTYPE_UINT
 
 static constexpr auto MODBUS_DUMMYIO7 = CIODummy::objectId(SObjectId::DTYPE_UINT32, false, 7);
 static constexpr auto MODBUS_DUMMYIO8 = CIODummy::objectId(SObjectId::DTYPE_UINT64, false, 8);
+static constexpr auto MODBUS_WRONLYIO1 = CIOWriteOnlyScalarMock::objectId(SObjectId::DTYPE_BOOL, 9);
+static constexpr auto MODBUS_WRONLYIO4 =
+  CIOWriteOnlyScalarMock::objectId(SObjectId::DTYPE_UINT16, 10);
 
 // Regs definitions
 
@@ -118,6 +122,16 @@ static uint32_t g_cfg_dummy7[] = {
   0,
 };
 
+static uint32_t g_cfg_wronly1[] = {
+  MODBUS_WRONLYIO1,
+  0,
+};
+
+static uint32_t g_cfg_wronly4[] = {
+  MODBUS_WRONLYIO4,
+  0,
+};
+
 // Static uint32_t g_cfg_dummy8[] =
 // {
 //   MODBUS_DUMMYIO8, 0,
@@ -148,6 +162,23 @@ static uint32_t g_bin_modbus_coil_blocking[] = {
   REGS_COILS1,
   1,
   MODBUS_DUMMYIO1,
+};
+
+static uint32_t g_bin_modbus_coil_writeonly[] = {
+  CProtoModbusRtu::objectId(0),
+  2,
+
+  CProtoModbusRtu::cfgIdPath(3),
+  0x7665642f,
+  0x7974742f,
+  0x00003070,
+
+  CProtoModbusRtu::cfgIdIOBind(5),
+  CProtoModbusRegs::MODBUS_TYPE_COIL,
+  0,
+  REGS_COILS1,
+  1,
+  MODBUS_WRONLYIO1,
 };
 
 //***************************************************************************
@@ -366,6 +397,23 @@ uint32_t g_bin_modbus_holding_blocking[] = {
   MODBUS_DUMMYIO4,
 };
 
+uint32_t g_bin_modbus_holding_writeonly[] = {
+  CProtoModbusRtu::objectId(0),
+  2,
+
+  CProtoModbusRtu::cfgIdPath(3),
+  0x7665642f,
+  0x7974742f,
+  0x00003070,
+
+  CProtoModbusRtu::cfgIdIOBind(5),
+  CProtoModbusRegs::MODBUS_TYPE_HOLDING,
+  0,
+  REGS_HOLDING1,
+  1,
+  MODBUS_WRONLYIO4,
+};
+
 //***************************************************************************
 // Description: single holding register with seekable IO
 //***************************************************************************
@@ -582,15 +630,20 @@ static int modbus_frame_send_many(uint8_t func,
 // proto.  An initial sleep gives the slave thread time to enter its receive
 // loop before the test sends a frame.  Caller stops the modbus.
 
-static void modbus_setup_single(CIODummy &dummy, uint32_t io_id, CProtoModbusRtu &modbus)
+static void modbus_setup_single_io(CIOCommon &io, uint32_t io_id, CProtoModbusRtu &modbus)
 {
   TEST_ASSERT_EQUAL(OK, modbus.configure());
-  TEST_ASSERT_EQUAL(OK, dummy.configure());
-  TEST_ASSERT_EQUAL(OK, dummy.init());
-  modbus.setObjectMapItem(io_id, &dummy);
+  TEST_ASSERT_EQUAL(OK, io.configure());
+  TEST_ASSERT_EQUAL(OK, io.init());
+  modbus.setObjectMapItem(io_id, &io);
   TEST_ASSERT_EQUAL(OK, modbus.init());
   TEST_ASSERT_EQUAL(OK, modbus.start());
   usleep(100000);
+}
+
+static void modbus_setup_single(CIODummy &dummy, uint32_t io_id, CProtoModbusRtu &modbus)
+{
+  modbus_setup_single_io(dummy, io_id, modbus);
 }
 
 // Configure + init three CIODummy IOs, bind them to the proto by id, then
@@ -755,6 +808,38 @@ static void test_proto_modbus_coil_write_then_read()
 
   TEST_ASSERT_EQUAL(OK, dummy1.getData(data, 1));
   TEST_ASSERT_EQUAL(data(0), buffer[3]);
+
+  TEST_ASSERT_EQUAL(OK, modbus.stop());
+}
+
+//***************************************************************************
+// Description: write-only coil IO initializes, accepts writes, and reads
+// back the cached last written bit value.
+//***************************************************************************
+
+static void test_proto_modbus_coil_writeonly_shadow_readback()
+{
+  CDescObject descv1(g_cfg_wronly1);
+  CIOWriteOnlyScalarMock wronly1(descv1);
+  CDescObject desc(g_bin_modbus_coil_writeonly);
+  CProtoModbusRtu modbus(desc);
+  uint8_t buffer[1024];
+
+  modbus_setup_single_io(wronly1, MODBUS_WRONLYIO1, modbus);
+
+  modbus_send_and_read(MB_COIL_GET, REGS_COILS1, 1, buffer, sizeof(buffer), 6);
+  TEST_ASSERT_EQUAL(MB_COIL_GET, buffer[1]);
+  TEST_ASSERT_EQUAL(0x00, buffer[3]);
+
+  modbus_send_and_read(MB_COIL_SET, REGS_COILS1, 0xff00, buffer, sizeof(buffer), 8);
+  TEST_ASSERT_EQUAL(MB_COIL_SET, buffer[1]);
+  TEST_ASSERT_EQUAL(0xff, buffer[4]);
+  TEST_ASSERT_EQUAL(0x00, buffer[5]);
+  TEST_ASSERT_EQUAL(1u, wronly1.getLastValue());
+
+  modbus_send_and_read(MB_COIL_GET, REGS_COILS1, 1, buffer, sizeof(buffer), 6);
+  TEST_ASSERT_EQUAL(MB_COIL_GET, buffer[1]);
+  TEST_ASSERT_EQUAL(0x01, buffer[3]);
 
   TEST_ASSERT_EQUAL(OK, modbus.stop());
 }
@@ -1092,6 +1177,40 @@ static void test_proto_modbus_holding_write_then_read()
 
   TEST_ASSERT_EQUAL(OK, dummy4.getData(data, 1));
   TEST_ASSERT_EQUAL(data(0), (buffer[3] << 8) | buffer[4]);
+
+  TEST_ASSERT_EQUAL(OK, modbus.stop());
+}
+
+//***************************************************************************
+// Description: write-only holding IO initializes, accepts writes, and reads
+// back the cached last written value.
+//***************************************************************************
+
+static void test_proto_modbus_holding_writeonly_shadow_readback()
+{
+  CDescObject descv4(g_cfg_wronly4);
+  CIOWriteOnlyScalarMock wronly4(descv4);
+  CDescObject desc(g_bin_modbus_holding_writeonly);
+  CProtoModbusRtu modbus(desc);
+  uint8_t buffer[1024];
+
+  modbus_setup_single_io(wronly4, MODBUS_WRONLYIO4, modbus);
+
+  modbus_send_and_read(MB_HOLDING_GET, REGS_HOLDING1, 1, buffer, sizeof(buffer), 7);
+  TEST_ASSERT_EQUAL(MB_HOLDING_GET, buffer[1]);
+  TEST_ASSERT_EQUAL(0x00, buffer[3]);
+  TEST_ASSERT_EQUAL(0x00, buffer[4]);
+
+  modbus_send_and_read(MB_HOLDING_SET, REGS_HOLDING1, 0xbeef, buffer, sizeof(buffer), 8);
+  TEST_ASSERT_EQUAL(MB_HOLDING_SET, buffer[1]);
+  TEST_ASSERT_EQUAL(0xbe, buffer[4]);
+  TEST_ASSERT_EQUAL(0xef, buffer[5]);
+  TEST_ASSERT_EQUAL(0xbeefu, wronly4.getLastValue());
+
+  modbus_send_and_read(MB_HOLDING_GET, REGS_HOLDING1, 1, buffer, sizeof(buffer), 7);
+  TEST_ASSERT_EQUAL(MB_HOLDING_GET, buffer[1]);
+  TEST_ASSERT_EQUAL(0xbe, buffer[3]);
+  TEST_ASSERT_EQUAL(0xef, buffer[4]);
 
   TEST_ASSERT_EQUAL(OK, modbus.stop());
 }
@@ -2152,6 +2271,7 @@ extern "C"
     RUN_WITH_PTY(test_proto_modbus_coil_read_out_of_range);
     RUN_WITH_PTY(test_proto_modbus_coil_read_initial);
     RUN_WITH_PTY(test_proto_modbus_coil_write_then_read);
+    RUN_WITH_PTY(test_proto_modbus_coil_writeonly_shadow_readback);
 
     RUN_WITH_PTY(test_proto_modbus_discrete_read_wrong_function);
     RUN_WITH_PTY(test_proto_modbus_discrete_read_out_of_range);
@@ -2167,6 +2287,7 @@ extern "C"
     RUN_WITH_PTY(test_proto_modbus_holding_read_out_of_range);
     RUN_WITH_PTY(test_proto_modbus_holding_read_initial);
     RUN_WITH_PTY(test_proto_modbus_holding_write_then_read);
+    RUN_WITH_PTY(test_proto_modbus_holding_writeonly_shadow_readback);
 
     // Many registers access
 
