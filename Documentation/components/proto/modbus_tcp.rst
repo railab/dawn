@@ -30,8 +30,11 @@ Implementation
 - ``MODBUS_TYPE_INPUT`` and ``MODBUS_TYPE_HOLDING`` support mixed-width
   IO (16/32/64-bit) inside one group.
 
-- Register shadow buffer is allocated only for notify groups.
-  Non-notify groups read directly from IO.
+- ``coil`` and ``holding`` groups may bind write-only Dawn IOs. In that
+  case Modbus reads return the protocol's cached last written value because
+  the target IO itself has no read path.
+
+- Register shadow buffer is also used for write-only Modbus outputs.
 
 Register Management
 -------------------

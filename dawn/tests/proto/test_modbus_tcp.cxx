@@ -15,6 +15,7 @@
 #include "dawn/io/notifier.hxx"
 #include "dawn/io/sdata.hxx"
 #include "dawn/proto/modbus/tcp.hxx"
+#include "mocks/fake_iowriteonlymock.hxx"
 #include "test_common.hxx"
 
 using namespace dawn;
@@ -27,6 +28,7 @@ static constexpr auto MB_HOLDING_SET = 0x6;
 
 static constexpr auto MODBUS_DUMMYIO1 = CIODummy::objectId(SObjectId::DTYPE_BOOL, false, 0);
 static constexpr auto MODBUS_DUMMYIO4 = CIODummy::objectId(SObjectId::DTYPE_UINT16, false, 4);
+static constexpr auto MODBUS_WRONLYIO1 = CIOWriteOnlyScalarMock::objectId(SObjectId::DTYPE_BOOL, 5);
 
 static constexpr auto REGS_COILS1 = 0x01;
 static constexpr auto REGS_HOLDING1 = 0x3000;
@@ -38,6 +40,11 @@ static uint32_t g_cfg_dummy1[] = {
 
 static uint32_t g_cfg_dummy4[] = {
   MODBUS_DUMMYIO4,
+  0,
+};
+
+static uint32_t g_cfg_wronly1[] = {
+  MODBUS_WRONLYIO1,
   0,
 };
 
@@ -54,6 +61,21 @@ static uint32_t g_bin_modbus_tcp_coil[] = {
   REGS_COILS1,
   1,
   MODBUS_DUMMYIO1,
+};
+
+static uint32_t g_bin_modbus_tcp_coil_writeonly[] = {
+  CProtoModbusTcp::objectId(0),
+  2,
+
+  CProtoModbusTcp::cfgIdPort(),
+  15023,
+
+  CProtoModbusTcp::cfgIdIOBind(5),
+  CProtoModbusRegs::MODBUS_TYPE_COIL,
+  0,
+  REGS_COILS1,
+  1,
+  MODBUS_WRONLYIO1,
 };
 
 static uint32_t g_bin_modbus_tcp_holding[] = {
@@ -239,14 +261,14 @@ static int mbtcp_recv_adu(int fd, uint8_t *buffer, size_t buflen)
 // Configure + init dummy and modbus, bind, start, connect a TCP client to
 // the supplied port.  Caller closes fd and stops modbus.
 
-static int mbtcp_setup(CIODummy &dummy, uint32_t io_id, CProtoModbusTcp &modbus, uint16_t port)
+static int mbtcp_setup_io(CIOCommon &io, uint32_t io_id, CProtoModbusTcp &modbus, uint16_t port)
 {
   int fd;
 
   TEST_ASSERT_EQUAL(OK, modbus.configure());
-  TEST_ASSERT_EQUAL(OK, dummy.configure());
-  TEST_ASSERT_EQUAL(OK, dummy.init());
-  modbus.setObjectMapItem(io_id, &dummy);
+  TEST_ASSERT_EQUAL(OK, io.configure());
+  TEST_ASSERT_EQUAL(OK, io.init());
+  modbus.setObjectMapItem(io_id, &io);
   TEST_ASSERT_EQUAL(OK, modbus.init());
   TEST_ASSERT_EQUAL(OK, modbus.start());
   usleep(100000);
@@ -254,6 +276,11 @@ static int mbtcp_setup(CIODummy &dummy, uint32_t io_id, CProtoModbusTcp &modbus,
   fd = mbtcp_connect(port);
   TEST_ASSERT(fd > 0);
   return fd;
+}
+
+static int mbtcp_setup(CIODummy &dummy, uint32_t io_id, CProtoModbusTcp &modbus, uint16_t port)
+{
+  return mbtcp_setup_io(dummy, io_id, modbus, port);
 }
 
 static void test_proto_modbus_tcp_not_listening_before_start()
@@ -408,6 +435,47 @@ static void test_proto_modbus_tcp_holding_write_then_read()
 }
 
 //***************************************************************************
+// Description: write-only coil IO accepts writes and reads back the cached
+// last written bit value.
+//***************************************************************************
+
+static void test_proto_modbus_tcp_coil_writeonly_shadow_readback()
+{
+  CDescObject descv1(g_cfg_wronly1);
+  CIOWriteOnlyScalarMock wronly1(descv1);
+  CDescObject desc(g_bin_modbus_tcp_coil_writeonly);
+  CProtoModbusTcp modbus(desc);
+  uint8_t buffer[64];
+  int fd;
+  int ret;
+
+  fd = mbtcp_setup_io(wronly1, MODBUS_WRONLYIO1, modbus, 15023);
+
+  ret = mbtcp_send_read_req(fd, 1, CONFIG_DAWN_PROTO_MODBUS_TCP_ADDR, MB_COIL_GET, REGS_COILS1, 1);
+  TEST_ASSERT_EQUAL(12, ret);
+  ret = mbtcp_recv_adu(fd, buffer, sizeof(buffer));
+  TEST_ASSERT_EQUAL(10, ret);
+  TEST_ASSERT_EQUAL(0, buffer[9]);
+
+  ret = mbtcp_send_write_single_req(
+    fd, 2, CONFIG_DAWN_PROTO_MODBUS_TCP_ADDR, MB_COIL_SET, REGS_COILS1, 0xff00);
+  TEST_ASSERT_EQUAL(12, ret);
+  ret = mbtcp_recv_adu(fd, buffer, sizeof(buffer));
+  TEST_ASSERT_EQUAL(12, ret);
+  TEST_ASSERT_EQUAL(MB_COIL_SET, buffer[7]);
+  TEST_ASSERT_EQUAL(1u, wronly1.getLastValue());
+
+  ret = mbtcp_send_read_req(fd, 3, CONFIG_DAWN_PROTO_MODBUS_TCP_ADDR, MB_COIL_GET, REGS_COILS1, 1);
+  TEST_ASSERT_EQUAL(12, ret);
+  ret = mbtcp_recv_adu(fd, buffer, sizeof(buffer));
+  TEST_ASSERT_EQUAL(10, ret);
+  TEST_ASSERT_EQUAL(1, buffer[9]);
+
+  close(fd);
+  TEST_ASSERT_EQUAL(OK, modbus.stop());
+}
+
+//***************************************************************************
 // Description: a discrete-read on a coil-only proto returns an exception
 // 0x02 (illegal data address).
 //***************************************************************************
@@ -448,6 +516,7 @@ extern "C"
     DAWN_RUN_TEST(test_proto_modbus_tcp_coil_write_then_read);
     DAWN_RUN_TEST(test_proto_modbus_tcp_holding_read_initial);
     DAWN_RUN_TEST(test_proto_modbus_tcp_holding_write_then_read);
+    DAWN_RUN_TEST(test_proto_modbus_tcp_coil_writeonly_shadow_readback);
     DAWN_RUN_TEST(test_proto_modbus_tcp_exception_no_register);
 
     return UNITY_END();
