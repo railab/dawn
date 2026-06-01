@@ -1,0 +1,43 @@
+# boards/arm/stm32c0/nucleo-c071rb/src/Make.defs
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+include $(TOPDIR)/Make.defs
+
+CSRCS = stm32_boot.c stm32_bringup.c
+
+ifeq ($(CONFIG_ARCH_LEDS),y)
+CSRCS += stm32_autoleds.c
+else
+CSRCS += stm32_userleds.c
+endif
+
+ifeq ($(CONFIG_ARCH_BUTTONS),y)
+CSRCS += stm32_buttons.c
+endif
+
+ifeq ($(CONFIG_ADC),y)
+CSRCS += stm32_adc.c
+endif
+
+ifeq ($(CONFIG_PWM),y)
+CSRCS += stm32_pwm.c
+endif
+
+ifeq ($(CONFIG_PULSECOUNT),y)
+CSRCS += stm32_pulsecount.c
+endif
+
+ifeq ($(CONFIG_STM32_FDCAN),y)
+ifeq ($(CONFIG_STM32_FDCAN_CHARDRIVER),y)
+CSRCS += stm32_can.c
+endif
+ifeq ($(CONFIG_STM32_FDCAN_SOCKET),y)
+CSRCS += stm32_cansock.c
+endif
+endif
+
+DEPPATH += --dep-path board
+VPATH += :board
+CFLAGS += ${INCDIR_PREFIX}$(TOPDIR)$(DELIM)arch$(DELIM)$(CONFIG_ARCH)$(DELIM)src$(DELIM)board$(DELIM)board
