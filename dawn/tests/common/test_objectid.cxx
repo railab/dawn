@@ -65,6 +65,28 @@ static void test_common_objectid_object_type()
   TEST_ASSERT(SObjectId::objectIsProg(reinterpret_cast<SObjectId::UObjectId &>(bin_prog)) == true);
 }
 
+//***************************************************************************
+// System objects use OBJTYPE_ANY with cls != 0; cls 0 is descriptor metadata.
+//***************************************************************************
+
+static void test_common_objectid_system()
+{
+  uint32_t bin_meta[] = {SObjectId::objectId(SObjectId::OBJTYPE_ANY, 0, 0, 0, 0)};
+  uint32_t bin_sys[] = {SObjectId::objectId(SObjectId::OBJTYPE_ANY, 1, 0, 0, 0)};
+  uint32_t bin_io[] = {SObjectId::objectId(SObjectId::OBJTYPE_IO, 1, 0, 0, 0)};
+
+  // Metadata (cls 0) is not a system object.
+  TEST_ASSERT(SObjectId::objectIsSystem(reinterpret_cast<SObjectId::UObjectId &>(bin_meta)) ==
+              false);
+
+  // OBJTYPE_ANY with cls != 0 is a system object.
+  TEST_ASSERT(SObjectId::objectIsSystem(reinterpret_cast<SObjectId::UObjectId &>(bin_sys)) == true);
+
+  // An IO object is never a system object.
+  TEST_ASSERT(SObjectId::objectIsSystem(reinterpret_cast<SObjectId::UObjectId &>(bin_io)) == false);
+  TEST_ASSERT(SObjectId::objectIsIO(reinterpret_cast<SObjectId::UObjectId &>(bin_sys)) == false);
+}
+
 extern "C"
 {
   int test_common_objectid()
@@ -74,6 +96,7 @@ extern "C"
     DAWN_RUN_TEST(test_common_objectid_dtype);
     DAWN_RUN_TEST(test_common_objectid_objectid);
     DAWN_RUN_TEST(test_common_objectid_object_type);
+    DAWN_RUN_TEST(test_common_objectid_system);
 
     return UNITY_END();
   }

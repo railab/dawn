@@ -45,6 +45,10 @@ if(CONFIG_DAWN_IO_RGB_LED)
   list(APPEND SRCS rgbled.cxx)
 endif()
 
+if(CONFIG_DAWN_SYSTEM_LTE)
+  list(APPEND SRCS lte.cxx)
+endif()
+
 if(CONFIG_DAWN_PROTO_CAN)
   list(APPEND SRCS can.cxx)
 endif()

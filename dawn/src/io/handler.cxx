@@ -189,6 +189,7 @@ static int resolveObjectById(SObjectId::ObjectId id,
                              IHandler &io,
                              IHandler &prog,
                              IHandler &prot,
+                             IHandler &system,
                              CObject **out)
 {
   CObject *obj;
@@ -210,6 +211,15 @@ static int resolveObjectById(SObjectId::ObjectId id,
       case SObjectId::OBJTYPE_PROG:
         {
           obj = prog.getObject(id);
+          break;
+        }
+
+      case SObjectId::OBJTYPE_ANY:
+        {
+          // cls 0 is descriptor metadata (not a runtime object); cls != 0
+          // are system objects (LTE, ...) owned by the SYSTEM handler.
+
+          obj = system.getObject(id);
           break;
         }
 
@@ -236,6 +246,7 @@ static int resolveObjectById(SObjectId::ObjectId id,
 static int bindGeneric(IHandler &io,
                        IHandler &prog,
                        IHandler &prot,
+                       IHandler &system,
                        const std::vector<SObjectId::ObjectId> &ids,
                        const std::function<int(CObject *, SObjectId::ObjectId)> &bind)
 {
@@ -244,7 +255,7 @@ static int bindGeneric(IHandler &io,
       CObject *obj;
       int ret;
 
-      ret = resolveObjectById(id, io, prog, prot, &obj);
+      ret = resolveObjectById(id, io, prog, prot, system, &obj);
       if (ret < 0)
         {
           return ret;
@@ -262,11 +273,12 @@ static int bindGeneric(IHandler &io,
 }
 #endif
 
-int CIOHandler::bindObjects(IHandler &io, IHandler &prog, IHandler &prot)
+int CIOHandler::bindObjects(IHandler &io, IHandler &prog, IHandler &prot, IHandler &system)
 {
   UNUSED(io);
   UNUSED(prog);
   UNUSED(prot);
+  UNUSED(system);
 
 #if defined(CONFIG_DAWN_IO_CONFIG) || defined(CONFIG_DAWN_IO_CONTROL) || \
   defined(CONFIG_DAWN_IO_TRIGGER)
@@ -288,6 +300,7 @@ int CIOHandler::bindObjects(IHandler &io, IHandler &prog, IHandler &prot)
             bindGeneric(io,
                         prog,
                         prot,
+                        system,
                         ids,
                         [cfg](CObject *o, SObjectId::ObjectId id) { return cfg->bind(o, id); });
           if (ret < 0)
@@ -305,6 +318,7 @@ int CIOHandler::bindObjects(IHandler &io, IHandler &prog, IHandler &prot)
           int ret = bindGeneric(io,
                                 prog,
                                 prot,
+                                system,
                                 ctrl->ids,
                                 [ctrl](CObject *o, SObjectId::ObjectId) { return ctrl->bind(o); });
           if (ret < 0)
@@ -322,6 +336,7 @@ int CIOHandler::bindObjects(IHandler &io, IHandler &prog, IHandler &prot)
           int ret = bindGeneric(io,
                                 prog,
                                 prot,
+                                system,
                                 trig->ids,
                                 [trig](CObject *o, SObjectId::ObjectId) { return trig->bind(o); });
           if (ret < 0)

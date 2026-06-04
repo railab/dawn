@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include "dawn/system/handler.hxx"
 #include "dawn/io/handler.hxx"
 #include "dawn/porting/config.hxx"
 #include "dawn/prog/handler.hxx"
@@ -98,6 +99,15 @@ private:
    */
 
   CProtoHandler proto;
+
+  /**
+   * @brief SYSTEM handler managing OBJTYPE_ANY objects (LTE, ...).
+   *
+   * Instantiates, initializes, and manages lifecycle of configurable
+   * subsystem objects that are not IO/PROG/PROTO.
+   */
+
+  CSystemHandler system;
 
   /**
    * @brief Custom I/O object factory (nullptr uses built-in).

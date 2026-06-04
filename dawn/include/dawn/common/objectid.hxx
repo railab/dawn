@@ -390,6 +390,21 @@ struct SObjectId
   };
 
   /**
+   * @brief Check if object is a System object (raw 32-bit version).
+   *
+   * System objects reuse OBJTYPE_ANY; class 0 is the descriptor metadata
+   * object, so a non-zero class marks a system configuration object.
+   *
+   * @param objid Reference to UObjectId structure.
+   * @return True if type is OBJTYPE_ANY and class is non-zero.
+   */
+
+  constexpr static bool objectIsSystem(const UObjectId &objid)
+  {
+    return (objid.s.type == OBJTYPE_ANY && objid.s.cls != 0);
+  };
+
+  /**
    * @brief Check if object is Protocol type (raw 32-bit version).
    *
    * @param objid Reference to UObjectId structure.
@@ -447,6 +462,21 @@ struct SObjectId
   constexpr static bool objectIsProg(const ObjectId objid)
   {
     return objectIdGetType(objid) == OBJTYPE_PROG;
+  };
+
+  /**
+   * @brief Check if object is a System object.
+   *
+   * System objects reuse OBJTYPE_ANY; class 0 is the descriptor metadata
+   * object, so a non-zero class marks a system configuration object.
+   *
+   * @param objid ObjectID raw value.
+   * @return True if type is OBJTYPE_ANY and class is non-zero.
+   */
+
+  constexpr static bool objectIsSystem(const ObjectId objid)
+  {
+    return objectIdGetType(objid) == OBJTYPE_ANY && objectIdGetCls(objid) != 0;
   };
 
   /**
