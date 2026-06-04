@@ -43,6 +43,15 @@ config DAWN_PROTO_WAKAAMA_SHORT_SERVER_ID
 	default 123
 	range 1 65535
 
+config DAWN_PROTO_WAKAAMA_STACKSIZE
+	int "Wakaama worker thread stack size (bytes)"
+	default 8192
+	---help---
+		Stack size for the Wakaama protocol thread. It must accommodate a
+		full RX_BUFFER_SIZE packet buffer plus the LwM2M/CoAP processing
+		(and DTLS, if enabled), so it needs more than the default pthread
+		stack.
+
 config DAWN_PROTO_WAKAAMA_DTLS_PSK
 	bool "Enable Wakaama DTLS PSK transport"
 	default n
