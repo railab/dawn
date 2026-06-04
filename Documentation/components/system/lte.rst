@@ -27,16 +27,16 @@ Implementation
 
 Config items (``cls = SYS_CLASS_LTE``):
 
-==================  ==========  =========================================
-Id                  DTYPE       Meaning
-==================  ==========  =========================================
-``LTE_CFG_APN``         CHAR    APN name
-``LTE_CFG_USERNAME``    CHAR    APN username
-``LTE_CFG_PASSWORD``    CHAR    APN password
-``LTE_CFG_AUTHTYPE``    UINT8   0=none, 1=PAP, 2=CHAP
-``LTE_CFG_IPTYPE``      UINT8   0=IPv4, 1=IPv6, 2=IPv4/IPv6
-``LTE_CFG_REG_TIMEOUT`` UINT32  registration timeout (seconds)
-==================  ==========  =========================================
+=========================  ==========  =========================================
+Id                         DTYPE       Meaning
+=========================  ==========  =========================================
+``LTE_CFG_APN``            CHAR        APN name
+``LTE_CFG_USERNAME``       CHAR        APN username
+``LTE_CFG_PASSWORD``       CHAR        APN password
+``LTE_CFG_AUTHTYPE``       UINT8       0=none, 1=PAP, 2=CHAP
+``LTE_CFG_IPTYPE``         UINT8       0=IPv4, 1=IPv6, 2=IPv4/IPv6
+``LTE_CFG_REG_TIMEOUT``    UINT32      registration timeout (seconds)
+=========================  ==========  =========================================
 
 Configuration
 =============

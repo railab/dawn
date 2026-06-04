@@ -1,0 +1,186 @@
+/****************************************************************************
+ * boards/arm/nrf91/thingy91/src/thingy91.h
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ *
+ ****************************************************************************/
+
+#ifndef __BOARDS_ARM_NRF91_THINGY91_SRC_THINGY91_H
+#define __BOARDS_ARM_NRF91_THINGY91_SRC_THINGY91_H
+
+/****************************************************************************
+ * Included Files
+ ****************************************************************************/
+
+#include <nuttx/config.h>
+#include <nuttx/compiler.h>
+
+#include "nrf91_gpio.h"
+
+/****************************************************************************
+ * Pre-processor Definitions
+ ****************************************************************************/
+
+/* Configuration ************************************************************/
+
+/* procfs File System */
+
+#ifdef CONFIG_FS_PROCFS
+#  ifdef CONFIG_NSH_PROC_MOUNTPOINT
+#    define NRF91_PROCFS_MOUNTPOINT CONFIG_NSH_PROC_MOUNTPOINT
+#  else
+#    define NRF91_PROCFS_MOUNTPOINT "/proc"
+#  endif
+#endif
+
+/* LED definitions **********************************************************/
+
+#define GPIO_LEDS_R  (GPIO_OUTPUT | GPIO_VALUE_ONE | GPIO_PORT0 | GPIO_PIN(0))
+#define GPIO_LEDS_G  (GPIO_OUTPUT | GPIO_VALUE_ONE | GPIO_PORT0 | GPIO_PIN(1))
+#define GPIO_LEDS_B  (GPIO_OUTPUT | GPIO_VALUE_ONE | GPIO_PORT0 | GPIO_PIN(2))
+
+#define GPIO_LEDW_R  (GPIO_OUTPUT | GPIO_VALUE_ONE | GPIO_PORT0 | GPIO_PIN(29))
+#define GPIO_LEDW_G  (GPIO_OUTPUT | GPIO_VALUE_ONE | GPIO_PORT0 | GPIO_PIN(30))
+#define GPIO_LEDW_B  (GPIO_OUTPUT | GPIO_VALUE_ONE | GPIO_PORT0 | GPIO_PIN(31))
+
+/* Button definitions *******************************************************/
+
+/* Board supports four buttons. */
+
+#define GPIO_BUTTON1 (GPIO_INPUT | GPIO_PULLUP | GPIO_PORT0 | GPIO_PIN(26))
+
+/* Supported devices ********************************************************/
+
+/* ADXL372
+ *   INT1 - P0.06
+ *   CS   - P0.07
+ */
+
+#define GPIO_ADXL372_INT1 (GPIO_INPUT  | GPIO_PORT0 | GPIO_PIN(6))
+#define GPIO_ADXL372_CS   (GPIO_OUTPUT | GPIO_PORT0 | GPIO_PIN(7))
+#define ADXL372_SPI_DEVNO 0
+
+/* ADXL362
+ *   INT1 - P0.09
+ *   CS   - P0.08
+ */
+
+#define GPIO_ADXL362_INT1 (GPIO_INPUT  | GPIO_PORT0 | GPIO_PIN(9))
+#define GPIO_ADXL362_CS   (GPIO_OUTPUT | GPIO_PORT0 | GPIO_PIN(8))
+#define ADXL362_SPI_DEVNO 1
+
+/* BH1749NUC
+ *   INT  - P0.27
+ */
+
+#define GPIO_BH1749_INT (GPIO_INPUT  | GPIO_PORT0 | GPIO_PIN(27))
+
+/* ADP5360
+ *   INT  - P0.17
+ */
+
+#define GPIO_ADP5360_INT (GPIO_INPUT  | GPIO_PORT0 | GPIO_PIN(17))
+
+/****************************************************************************
+ * Public Types
+ ****************************************************************************/
+
+/****************************************************************************
+ * Public Data
+ ****************************************************************************/
+
+#ifndef __ASSEMBLY__
+
+/****************************************************************************
+ * Public Functions Prototypes
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: nrf91_bringup
+ *
+ * Description:
+ *   Perform architecture-specific initialization
+ *
+ *   CONFIG_BOARD_LATE_INITIALIZE=y :
+ *     Called from board_late_initialize().
+ *
+ ****************************************************************************/
+
+int nrf91_bringup(void);
+
+/****************************************************************************
+ * Name: nrf91_pmic_init
+ *
+ * Description:
+ *   Bring up the ADP5360 3.3 V buck-boost rail (powers the BH1749 colour
+ *   sensor and the RGB LEDs).  Disabled at POR, so required before using any
+ *   3.3 V peripheral.
+ *
+ ****************************************************************************/
+
+int nrf91_pmic_init(void);
+
+/****************************************************************************
+ * Name: nrf91_sensors_init
+ *
+ * Description:
+ *   Initialzie on-board sensors
+ *
+ ****************************************************************************/
+
+int nrf91_sensors_init(void);
+
+/****************************************************************************
+ * Name: nrf91_i2c_register
+ *
+ * Description:
+ *   Register one I2C drivers for the I2C tool.
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_I2C
+int nrf91_i2c_register(int bus);
+#endif
+
+/****************************************************************************
+ * Name: nrf91_i2ctool
+ *
+ * Description:
+ *   Register I2C drivers for the I2C tool.
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_SYSTEM_I2CTOOL
+int nrf91_i2ctool(void);
+#endif
+
+/****************************************************************************
+ * Name: nrf91_spidev_initialize
+ *
+ * Description:
+ *   Called to configure SPI chip select GPIO pins for the
+ *   thingy91 board.
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_NRF91_SPI_MASTER
+void nrf91_spidev_initialize(void);
+#endif
+
+#endif /* __ASSEMBLY__ */
+#endif /* __BOARDS_ARM_NRF91_THINGY91_SRC_THINGY91_H */

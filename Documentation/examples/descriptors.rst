@@ -72,6 +72,7 @@ Feature index
      - :ref:`NTFC Wakaama LwM2M <descriptor-ntfc-wakaama>`,
        :ref:`Wakaama Leshan Demo <descriptor-ntfc-wakaama-leshan>`,
        :ref:`nRF9160-DK Wakaama over LTE <descriptor-nrf9160dk-wakaama-lte>`,
+       :ref:`Thingy:91 Wakaama over LTE <descriptor-thingy91-wakaama-lte>`,
        :ref:`Blinky Wakaama <descriptor-blinky-wakaama-demo>`
    * - Modbus
      - :ref:`Blinky Modbus RTU Demo <descriptor-blinky-modbus-rtu-demo>`,
@@ -617,6 +618,28 @@ NTFC
   because LTE is hardware-only.
 
   Required resources: ``udp``, ``/tmp``
+
+.. _descriptor-thingy91-wakaama-lte:
+
+``descriptors/examples/thingy91_wakaama_lte.yaml``
+  **Thingy:91 Wakaama over LTE**
+
+  Used by ``boards/arm/nrf91/thingy91/configs/wakaama``. An LTE
+  :doc:`system object <../components/system/index>` (``system:`` section) brings
+  up the data connection, then the device registers with the public Eclipse
+  Leshan sandbox over Wakaama LwM2M.
+
+  Four ``sensor`` IOs (temperature, humidity, pressure, gas) feed a ``latest``
+  program that caches each newest sample into a virt IO; LwM2M binds the virts
+  to Temperature (3303), Humidity (3304), Barometer (3315), and Generic Sensor
+  (3300). One ``sensor`` IO produces a 3-element RGB vector that a ``vecsplit``
+  program splits into red/green/blue virts, mapped to a custom colour object
+  (id ``33001``) on resources 0/1/2.
+
+  Required resources:
+  ``udp``, ``/tmp``, ``/dev/uorb/sensor_ambient_temp0``,
+  ``/dev/uorb/sensor_humi0``, ``/dev/uorb/sensor_baro0``,
+  ``/dev/uorb/sensor_gas0``, ``/dev/uorb/sensor_rgb0``
 
 .. _descriptor-ntfc-nimble-all:
 
