@@ -1,0 +1,213 @@
+metadata:
+  title: nrf9160-dk Wakaama LwM2M over LTE
+  version: '1.0'
+  description: >
+    nrf9160-dk hardware demo: bring up LTE, then register with the public
+    Eclipse Leshan sandbox over Wakaama LwM2M.
+  os_required:
+  - udp
+  - /tmp
+system:
+- id: lte_main
+  type: lte
+  config:
+    # Empty APN: rely on network/SIM auto-attach. Set apn (and optionally
+    # username/password/auth_type/ip_type) to override the Kconfig defaults.
+    apn: ''
+    ip_type: 0
+ios:
+- &temperature
+  id: wakaama_temperature
+  type: dummy
+  dtype: float
+  config:
+    init_value: 23.5
+- &humidity
+  id: wakaama_humidity
+  type: dummy
+  dtype: float
+  config:
+    init_value: 48.0
+- &generic_sensor
+  id: wakaama_generic_sensor
+  type: dummy
+  dtype: float
+  config:
+    init_value: 12.25
+- &digital_input
+  id: wakaama_digital_input
+  type: dummy
+  dtype: bool
+  config:
+    init_value: true
+- &digital_output
+  id: wakaama_digital_output
+  type: dummy
+  dtype: bool
+  config:
+    init_value: false
+- &analog_input
+  id: wakaama_analog_input
+  type: dummy
+  dtype: float
+  config:
+    init_value: 0.25
+- &analog_output
+  id: wakaama_analog_output
+  type: dummy
+  dtype: float
+  config:
+    init_value: 0.75
+- &switch
+  id: wakaama_switch
+  type: dummy
+  dtype: bool
+  config:
+    init_value: false
+- &dimmer
+  id: wakaama_dimmer
+  type: dummy
+  dtype: uint8
+  config:
+    init_value: 33
+- &counter
+  id: wakaama_counter
+  type: dummy
+  dtype: uint32
+  config:
+    init_value: 1234
+- &blob
+  id: wakaama_blob
+  type: fileio
+  dtype: block
+  config:
+    path: "/tmp/dawn_wakaama_blob.bin"
+    perm: 2
+- &firmware_package
+  id: wakaama_firmware_package
+  type: fileio
+  dtype: block
+  config:
+    path: "/tmp/dawn_wakaama_firmware.bin"
+    perm: 2
+- &firmware_state
+  id: wakaama_firmware_state
+  type: dummy
+  dtype: uint8
+  config:
+    init_value: 0
+- &firmware_result
+  id: wakaama_firmware_result
+  type: dummy
+  dtype: uint8
+  config:
+    init_value: 0
+- &firmware_update_trigger
+  id: wakaama_firmware_update_trigger
+  type: trigger
+  config:
+    targets:
+    - wakaama_counter
+    allowed:
+    - reset
+protocols:
+- id: wakaama_main
+  type: wakaama
+  config:
+    endpoint: dawn-wakaama-leshan
+    server_host: 23.97.187.154
+    local_port: 56830
+    servers:
+      - host: 23.97.187.154
+        port: 5683
+        lifetime: 300
+        short_server_id: 123
+    device:
+      manufacturer: Dawn
+      serial_number: dawn-wakaama-leshan
+      firmware_version: '0.1'
+    objects:
+      - object: digital_input
+        instance: 0
+        resources:
+        - resource: digital_input_state
+          io: *digital_input
+          access: read
+      - object: digital_output
+        instance: 0
+        resources:
+        - resource: digital_output_state
+          io: *digital_output
+          access: rw
+      - object: analog_input
+        instance: 0
+        resources:
+        - resource: analog_input_current_value
+          io: *analog_input
+          access: read
+      - object: analog_output
+        instance: 0
+        resources:
+        - resource: analog_output_current_value
+          io: *analog_output
+          access: rw
+      - object: generic_sensor
+        instance: 0
+        resources:
+        - resource: sensor_value
+          io: *generic_sensor
+          access: read
+      - object: temperature
+        instance: 0
+        resources:
+        - resource: sensor_value
+          io: *temperature
+          access: read
+      - object: humidity
+        instance: 0
+        resources:
+        - resource: sensor_value
+          io: *humidity
+          access: read
+      - object: actuation
+        instance: 0
+        resources:
+        - resource: on_off
+          io: *switch
+          access: rw
+      - object: light_control
+        instance: 0
+        resources:
+        - resource: on_off
+          io: *switch
+          access: rw
+        - resource: dimmer
+          io: *dimmer
+          access: rw
+      - object: binary_app_data_container
+        instance: 0
+        resources:
+        - resource: binary_app_data
+          io: *blob
+          access: rw
+      - object: firmware_update
+        instance: 0
+        resources:
+        - resource: firmware_package
+          io: *firmware_package
+          access: rw
+        - resource: firmware_update
+          io: *firmware_update_trigger
+          access: execute
+        - resource: firmware_state
+          io: *firmware_state
+          access: read
+        - resource: firmware_update_result
+          io: *firmware_result
+          access: read
+      - object_id: 33000
+        instance: 0
+        resources:
+        - resource_id: 1
+          io: *counter
+          access: rw

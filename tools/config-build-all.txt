@@ -50,6 +50,8 @@ boards/arm/nrf53/nrf5340-dk/configs/nimble_ntfc_custom -D CMAKE_POLICY_VERSION_M
 boards/arm/nrf53/nrf5340-dk/configs/nimble_sensor_producer -D CMAKE_POLICY_VERSION_MINIMUM=3.5
 boards/arm/nrf53/nrf5340-dk/configs/rpmsghci_sdc_cpunet -D CMAKE_POLICY_VERSION_MINIMUM=3.5
 
+boards/arm/nrf91/nrf9160-dk/configs/wakaama -e CXX=g++-14 -e CC=gcc-14
+
 boards/arm/stm32f0l0g0/nucleo-c071rb/configs/blinky_modbus
 boards/arm/stm32f0l0g0/nucleo-c071rb/configs/blinky_shell
 boards/arm/stm32f0l0g0/nucleo-c071rb/configs/modbus
@@ -67,4 +69,3 @@ boards/arm/stm32h7/nucleo-h743zi/configs/blinky_modbus_tcp
 # Out-of-tree demo (C++ descriptor + YAML descriptor variants)
 examples/out-of-tree-demo/boards/sim/sim/sim/configs/nsh_user_shell -e CXX=g++-14 -e CC=gcc-14
 examples/out-of-tree-demo/boards/sim/sim/sim/configs/nsh_user_shell_yaml -e CXX=g++-14 -e CC=gcc-14
-
