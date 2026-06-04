@@ -1,0 +1,71 @@
+metadata:
+  title: Blinky Wakaama Demo (nrf9160-dk over LTE)
+  version: "1.0"
+  description: >
+    Sequencer-based LED blinky controlled over LwM2M (Wakaama). The sequencer
+    drives the board LED lower-half with a two-state 500 ms on/off cycle. A
+    custom LwM2M object (id 33000) exposes the LED state plus start/stop,
+    blink-phase reset, and on/off dwell times. LTE brings up connectivity
+    before registration.
+  os_required:
+    - /dev/leds0
+    - udp
+    - /tmp
+
+system:
+  - id: lte_main
+    type: lte
+    config:
+      # Empty APN: rely on network/SIM auto-attach.
+      apn: ''
+      ip_type: 0
+
+ios:
+  - id: led1
+    type: leds
+    dtype: uint32
+    config:
+      device: 0
+
+includes:
+  - id: blinky
+    path: include_blocks/blinky_common.yaml
+    inputs:
+      led: led1
+
+protocols:
+  - id: wakaama1
+    type: wakaama
+    config:
+      endpoint: dawn-nrf9160-blinky
+      server_host: 23.97.187.154
+      local_port: 56831
+      servers:
+        - host: 23.97.187.154
+          port: 5683
+          lifetime: 300
+          short_server_id: 123
+      device:
+        manufacturer: Dawn
+        serial_number: dawn-nrf9160-blinky
+        firmware_version: '0.1'
+      objects:
+        # Custom blinky object: state + start/stop + reset + dwell times.
+        - object_id: 33000
+          instance: 0
+          resources:
+            - resource_id: 0       # LED state (bitmask), read
+              io: led1
+              access: read
+            - resource_id: 1       # start (1) / stop (0) the blink
+              io: "@blinky.ctrl_blinky"
+              access: rw
+            - resource_id: 2       # reset blink phase
+              io: "@blinky.trig_blinky"
+              access: execute
+            - resource_id: 3       # on dwell time (us)
+              io: "@blinky.cfg_dwell_on"
+              access: rw
+            - resource_id: 4       # off dwell time (us)
+              io: "@blinky.cfg_dwell_off"
+              access: rw

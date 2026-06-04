@@ -52,7 +52,8 @@ Feature index
        :ref:`Blinky Modbus TCP <descriptor-blinky-modbus-tcp-demo>`,
        :ref:`Blinky Serial <descriptor-blinky-serial-demo>`,
        :ref:`Blinky Shell <descriptor-blinky-shell-demo>`,
-       :ref:`Blinky UDP <descriptor-blinky-udp-demo>`
+       :ref:`Blinky UDP <descriptor-blinky-udp-demo>`,
+       :ref:`Blinky Wakaama <descriptor-blinky-wakaama-demo>`
    * - CAN
      - :ref:`Blinky CAN <descriptor-blinky-can-demo>`,
        :ref:`CAN Button/LED <descriptor-can-button-led>`,
@@ -68,7 +69,10 @@ Feature index
    * - IPC
      - :ref:`Local IPC <descriptor-ipc-demo>`
    * - LwM2M
-     - :ref:`NTFC Wakaama LwM2M <descriptor-ntfc-wakaama>`
+     - :ref:`NTFC Wakaama LwM2M <descriptor-ntfc-wakaama>`,
+       :ref:`Wakaama Leshan Demo <descriptor-ntfc-wakaama-leshan>`,
+       :ref:`nRF9160-DK Wakaama over LTE <descriptor-nrf9160dk-wakaama-lte>`,
+       :ref:`Blinky Wakaama <descriptor-blinky-wakaama-demo>`
    * - Modbus
      - :ref:`Blinky Modbus RTU Demo <descriptor-blinky-modbus-rtu-demo>`,
        :ref:`Blinky Modbus TCP Demo <descriptor-blinky-modbus-tcp-demo>`,
@@ -215,6 +219,20 @@ Examples
   Required resources: ``/dev/leds0``, ``udp``
 
   Host helper: :file:`tools/examples/blinky/udp_blinky_cli.py`
+
+.. _descriptor-blinky-wakaama-demo:
+
+``descriptors/examples/blinky_wakaama_demo.yaml``
+  **Blinky Wakaama Demo (nrf9160-dk over LTE)**
+
+  LED blinky controlled over LwM2M (Wakaama). A sequencer drives the board LED
+  lower-half through the shared blinky core block. A custom LwM2M object (id
+  ``33000``) exposes the LED state plus start/stop, blink-phase reset, and the
+  on/off dwell times. An LTE :doc:`system object <../components/system/index>`
+  brings up connectivity before registration. Built by the
+  ``boards/arm/nrf91/nrf9160-dk/configs/blinky_wakaama`` config.
+
+  Required resources: ``/dev/leds0``, ``udp``, ``/tmp``
 
 .. _descriptor-blinky-modbus-tcp-demo:
 
@@ -566,6 +584,37 @@ NTFC
   ``ntfc-wakaama`` and exposes standard digital, analog, sensor, actuation,
   binary app data, and firmware package resources plus one custom object
   backed by dummy/file IO values.
+
+  Required resources: ``udp``, ``/tmp``
+
+.. _descriptor-ntfc-wakaama-leshan:
+
+``descriptors/ntfc/ntfc_wakaama_leshan.yaml``
+  **Wakaama LwM2M Leshan Demo**
+
+  Descriptor used by ``boards/sim/sim/sim/configs/nsh_wakaama_leshan``. It
+  registers as ``dawn-wakaama-leshan`` against the public Eclipse Leshan
+  sandbox and exposes the same mixed sensor, actuation, binary-data, and
+  firmware-update object set as the NTFC Wakaama demo. It carries no LTE: the
+  simulator already has host networking.
+
+  The descriptor intentionally leaves the Device model number to the board
+  config so simulator and real-board targets can report different model names
+  without forking the object map.
+
+  Required resources: ``udp``, ``/tmp``
+
+.. _descriptor-nrf9160dk-wakaama-lte:
+
+``descriptors/examples/nrf9160dk_wakaama_lte.yaml``
+  **nRF9160-DK Wakaama over LTE**
+
+  Real-board variant of the Wakaama Leshan demo used by
+  ``boards/arm/nrf91/nrf9160-dk/configs/wakaama``. Same Wakaama object set as
+  ``ntfc_wakaama_leshan.yaml``, plus an LTE :doc:`system object
+  <../components/system/index>` (``system:`` section) that brings up the data
+  connection before registration. Kept separate from the simulator descriptor
+  because LTE is hardware-only.
 
   Required resources: ``udp``, ``/tmp``
 
