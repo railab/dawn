@@ -91,9 +91,27 @@ int CDawn::load_descriptor(uint32_t *bin, size_t len)
       return ret;
     }
 
+  // Initialize SYSTEM handler
+
+  ret = system.init(desc, nullptr);
+  if (ret < 0)
+    {
+      DAWNERR("failed to initialize SYSTEM handler\n");
+      return ret;
+    }
+
+  // Initialize SYSTEM objects
+
+  ret = system.initAll();
+  if (ret < 0)
+    {
+      DAWNERR("failed to initialize SYSTEM objects\n");
+      return ret;
+    }
+
   // Bind special IO objects (Config, Control, Trigger) to their targets
 
-  ret = io.bindObjects(io, prog, proto);
+  ret = io.bindObjects(io, prog, proto, system);
   if (ret < 0)
     {
       DAWNERR("failed to bind special IO objects\n");
@@ -154,13 +172,25 @@ int CDawn::start(bool no_loop)
 #endif
         }
 
+      // Start SYSTEM objects (e.g. bring up LTE before protocols need the network)
+
+      ret = system.startAll();
+      if (ret < 0)
+        {
+#ifdef CONFIG_DAWN_LIFECYCLE_TEARDOWN
+          goto stop_io;
+#else
+          return ret;
+#endif
+        }
+
       // Start programs
 
       ret = prog.startAll();
       if (ret < 0)
         {
 #ifdef CONFIG_DAWN_LIFECYCLE_TEARDOWN
-          goto stop_io;
+          goto stop_sys;
 #else
           return ret;
 #endif
@@ -244,6 +274,17 @@ int CDawn::start(bool no_loop)
             }
         }
 
+    stop_sys:
+      tmp = system.stopAll();
+      if (tmp < 0)
+        {
+          DAWNERR("failed to stop SYSTEM objects %d\n", tmp);
+          if (ret == OK)
+            {
+              ret = tmp;
+            }
+        }
+
     stop_io:
       tmp = io.stopAll();
       if (tmp < 0)
@@ -270,6 +311,16 @@ int CDawn::start(bool no_loop)
       if (tmp < 0)
         {
           DAWNERR("failed to deinit programs %d\n", tmp);
+          if (ret == OK)
+            {
+              ret = tmp;
+            }
+        }
+
+      tmp = system.deinitAll();
+      if (tmp < 0)
+        {
+          DAWNERR("failed to deinit SYSTEM objects %d\n", tmp);
           if (ret == OK)
             {
               ret = tmp;

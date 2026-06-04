@@ -69,7 +69,7 @@ in memory that defines system objects and configuration payloads.
 Object model details are documented in :doc:`common/object`.
 
 Objects are created by factories from descriptor entries.
-Dawn uses three main object families:
+Dawn uses four object families:
 
 - :doc:`io/index`:
   IO objects read from or write to OS resources and Dawn resources.
@@ -77,6 +77,9 @@ Dawn uses three main object families:
   Program objects process IO data and manage virtual IO data flow.
 - :doc:`proto/index`:
   Protocol objects expose IO data to external systems.
+- :doc:`system/index`:
+  System objects configure and switch system facilities (LTE, ...); they have
+  no data path, only config and start/stop.
 
 Common runtime utilities and abstractions are in :doc:`common/index`.
 Porting interfaces are in :doc:`porting/index`.
@@ -192,5 +195,6 @@ All IO/PROG/PROTO component pages follow the standardized template in
    io/index.rst
    prog/index.rst
    proto/index.rst
+   system/index.rst
    porting/index.rst
    fake_devices.rst

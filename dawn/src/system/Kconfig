@@ -1,0 +1,43 @@
+#
+# Dawn OBJTYPE_ANY objects
+#
+
+config DAWN_SYSTEM_LTE
+	bool "LTE connectivity object"
+	default n
+	depends on LTE_LAPI
+	---help---
+		LTE connectivity as an OBJTYPE_ANY object. Holds the APN / auth /
+		IP-type parameters as config items reachable from a Config IO;
+		start()/stop() bring the data connection up/down through the
+		common NuttX LTE API (lapi).
+
+if DAWN_SYSTEM_LTE
+
+config DAWN_SYSTEM_LTE_APN
+	string "Default LTE APN (empty: network/SIM default)"
+	default ""
+
+config DAWN_SYSTEM_LTE_USERNAME
+	string "Default LTE APN username"
+	default ""
+
+config DAWN_SYSTEM_LTE_PASSWORD
+	string "Default LTE APN password"
+	default ""
+
+config DAWN_SYSTEM_LTE_AUTHTYPE
+	int "Default LTE auth type (0=none, 1=PAP, 2=CHAP)"
+	default 0
+	range 0 2
+
+config DAWN_SYSTEM_LTE_IPTYPE
+	int "Default LTE IP type (0=IPv4, 1=IPv6, 2=IPv4/IPv6)"
+	default 0
+	range 0 2
+
+config DAWN_SYSTEM_LTE_REG_TIMEOUT
+	int "Default LTE registration timeout (seconds)"
+	default 120
+
+endif # DAWN_SYSTEM_LTE

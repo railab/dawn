@@ -201,5 +201,6 @@ endmenu
 source "$APPSDIR/external/dawn/src/io/Kconfig"
 source "$APPSDIR/external/dawn/src/proto/Kconfig"
 source "$APPSDIR/external/dawn/src/prog/Kconfig"
+source "$APPSDIR/external/dawn/src/system/Kconfig"
 
 endif # DAWN

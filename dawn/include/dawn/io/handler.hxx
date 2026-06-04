@@ -165,10 +165,11 @@ public:
    * @param io I/O handler for resolving IO targets.
    * @param prog PROG handler for resolving program targets.
    * @param prot PROTO handler for resolving protocol targets.
+   * @param dev DEV handler for resolving OBJTYPE_ANY dev-object targets.
    * @return OK on success, negative error code on failure.
    */
 
-  int bindObjects(IHandler &io, IHandler &prog, IHandler &prot);
+  int bindObjects(IHandler &io, IHandler &prog, IHandler &prot, IHandler &dev);
 
 protected:
   /**

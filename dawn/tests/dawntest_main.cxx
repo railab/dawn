@@ -28,6 +28,7 @@ extern "C"
   extern int test_run_io();
   extern int test_run_prog();
   extern int test_run_proto();
+  extern int test_run_system();
   extern int test_run_dawn();
 }
 
@@ -43,6 +44,9 @@ static const test_registry_entry_s g_test_registry[] = {
 #endif
 #ifdef CONFIG_DAWN_PROTO
   {"proto.run", "proto", test_run_proto},
+#endif
+#ifdef CONFIG_DAWN_SYSTEM_LTE
+  {"system.run", "system", test_run_system},
 #endif
   {"dawn.run", "dawn", test_run_dawn},
 };
