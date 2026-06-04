@@ -82,9 +82,15 @@ int CThreadedObject::buildThreadAttr(pthread_attr_t &attr, bool &needsDestroy) c
       ret = pthread_attr_setstacksize(&attr, threadConfig.stackSize);
       if (ret != 0)
         {
-          DAWNERR(
-            "Failed to set worker thread stack size to %zu (%d)\n", threadConfig.stackSize, ret);
-          return -ret;
+          /* The requested size may be below the platform's
+           * PTHREAD_STACK_MIN (e.g. very large on some 64-bit targets).
+           * Keep the platform default stack (which is >= PTHREAD_STACK_MIN)
+           * instead of failing thread creation.
+           */
+
+          DAWNWARN("worker thread stack size %zu rejected (%d), using default\n",
+                   threadConfig.stackSize,
+                   ret);
         }
     }
 
