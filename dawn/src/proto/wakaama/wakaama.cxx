@@ -519,6 +519,13 @@ int CProtoWakaama::doStart()
 {
   int ret;
 
+  /* The Wakaama thread keeps a full RX_BUFFER_SIZE packet buffer on its
+   * stack and runs the LwM2M/CoAP step, so it needs more than the default
+   * pthread stack.
+   */
+
+  setThreadStackSize(CONFIG_DAWN_PROTO_WAKAAMA_STACKSIZE);
+
   ret = startWorkerThread([this]() { thread(); });
   if (ret < 0)
     {
