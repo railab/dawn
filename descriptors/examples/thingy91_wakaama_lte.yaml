@@ -1,0 +1,171 @@
+metadata:
+  title: Thingy:91 Wakaama LwM2M over LTE
+  version: '1.0'
+  description: >
+    Nordic Thingy:91 demo: bring up LTE, register with the public Eclipse Leshan
+    sandbox over Wakaama LwM2M, and expose the on-board sensors as standard
+    LwM2M objects. Currently the BME680 environmental sensor (I2C2) provides
+    temperature (3303), humidity (3304), barometer (3315) and gas resistance as
+    a generic sensor (3300). Additional sensors are added here over time.
+  os_required:
+  - udp
+  - /tmp
+  - /dev/uorb/sensor_ambient_temp0
+  - /dev/uorb/sensor_humi0
+  - /dev/uorb/sensor_baro0
+  - /dev/uorb/sensor_gas0
+  - /dev/uorb/sensor_rgb0
+system:
+- id: lte_main
+  type: lte
+  config:
+    apn: ''
+    ip_type: 0
+ios:
+- &temperature
+  id: bme680_temperature
+  type: sensor
+  dtype: float
+  config:
+    device: 0
+  subtype: atemp
+- &humidity
+  id: bme680_humidity
+  type: sensor
+  dtype: float
+  config:
+    device: 0
+  subtype: hum
+- &pressure
+  id: bme680_pressure
+  type: sensor
+  dtype: float
+  config:
+    device: 0
+  subtype: baro
+- &gas
+  id: bme680_gas
+  type: sensor
+  dtype: float
+  config:
+    device: 0
+  subtype: gas
+# uorb sensor reads are non-blocking and return -EAGAIN between samples, which
+# fails an on-demand LwM2M read. A 'latest' program subscribes to each sensor
+# (notify) and caches the most recent sample into a virt IO, so the server can
+# always fetch the last value. LwM2M binds to these virts, not the sensors.
+- &temperature_v
+  id: bme680_temperature_latest
+  type: virt
+  dtype: float
+- &humidity_v
+  id: bme680_humidity_latest
+  type: virt
+  dtype: float
+- &pressure_v
+  id: bme680_pressure_latest
+  type: virt
+  dtype: float
+- &gas_v
+  id: bme680_gas_latest
+  type: virt
+  dtype: float
+# BH1749NUC colour sensor (3.3 V rail, enabled by the ADP5360 PMIC at bring-up):
+# a single 3-element RGB vector split into per-channel scalars by a vecsplit
+# program (the sensor IO is not bound directly).
+- &rgb
+  id: bh1749_rgb
+  type: sensor
+  dtype: float
+  config:
+    device: 0
+  subtype: rgb
+- &color_r
+  id: bh1749_red
+  type: virt
+  dtype: float
+- &color_g
+  id: bh1749_green
+  type: virt
+  dtype: float
+- &color_b
+  id: bh1749_blue
+  type: virt
+  dtype: float
+programs:
+- id: bme680_latest
+  type: latest
+  config:
+    sources:
+    - *temperature
+    - *humidity
+    - *pressure
+    - *gas
+    outputs:
+    - *temperature_v
+    - *humidity_v
+    - *pressure_v
+    - *gas_v
+- id: bh1749_split
+  type: vecsplit
+  config:
+    source: *rgb
+    outputs:
+    - *color_r
+    - *color_g
+    - *color_b
+protocols:
+- id: wakaama_main
+  type: wakaama
+  config:
+    endpoint: dawn-thingy91-leshan
+    server_host: 23.97.187.154
+    local_port: 56832
+    servers:
+      - host: 23.97.187.154
+        port: 5683
+        lifetime: 300
+        short_server_id: 123
+    device:
+      manufacturer: Dawn
+      serial_number: dawn-thingy91-leshan
+      firmware_version: '0.1'
+    objects:
+      - object: temperature
+        instance: 0
+        resources:
+        - resource: sensor_value
+          io: *temperature_v
+          access: read
+      - object: humidity
+        instance: 0
+        resources:
+        - resource: sensor_value
+          io: *humidity_v
+          access: read
+      - object: barometer
+        instance: 0
+        resources:
+        - resource: sensor_value
+          io: *pressure_v
+          access: read
+      - object: generic_sensor
+        instance: 0
+        resources:
+        - resource: sensor_value
+          io: *gas_v
+          access: read
+      # Custom colour object (private id 33001): BH1749NUC red/green/blue counts
+      # on resources 0/1/2, fed by the vecsplit outputs.
+      - object_id: 33001
+        instance: 0
+        resources:
+        - resource_id: 0
+          io: *color_r
+          access: read
+        - resource_id: 1
+          io: *color_g
+          access: read
+        - resource_id: 2
+          io: *color_b
+          access: read

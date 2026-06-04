@@ -52,6 +52,10 @@ boards/arm/nrf53/nrf5340-dk/configs/rpmsghci_sdc_cpunet -D CMAKE_POLICY_VERSION_
 
 boards/arm/nrf91/nrf9160-dk/configs/wakaama -e CXX=g++-14 -e CC=gcc-14
 
+# TODO: changes to thingy91 not yet upstream
+# boards/arm/nrf91/thingy91/configs/miniboot_s -e CXX=g++-14 -e CC=gcc-14
+# boards/arm/nrf91/thingy91/configs/wakaama -e CXX=g++-14 -e CC=gcc-14
+
 boards/arm/stm32f0l0g0/nucleo-c071rb/configs/blinky_modbus
 boards/arm/stm32f0l0g0/nucleo-c071rb/configs/blinky_shell
 boards/arm/stm32f0l0g0/nucleo-c071rb/configs/modbus

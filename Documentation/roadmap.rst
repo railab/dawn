@@ -19,7 +19,6 @@ Tier 1
 
 #. Demo: Thingy:53
 
-   - [X] set RGB
    - [ ] battery state
    - [ ] read sensors over BLE
    - [ ] gas sensor demo
@@ -32,6 +31,16 @@ Tier 1
    - [ ] something with QSPI mem
    - [ ] something with USB
    - [ ] something with NFC
+
+
+#. Demo: Thingy:91
+
+   - [ ] battery state
+   - [ ] GNSS
+   - [ ] EEPROM support
+   - [ ] more sensors
+   - [ ] RGB led
+   - [ ] update FW
 
 #. release nxscope-gui
 
@@ -91,10 +100,6 @@ Tier 2
 
    - simple BLE demo
    - optimise for size
-
-#. Demo: Thingy:91
-
-   - wakaama demo
 
 #. Demo: Arduino Control
 

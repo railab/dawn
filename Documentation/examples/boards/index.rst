@@ -19,6 +19,7 @@ experimental, or placeholder configurations.
    Nordic nRF5340-DK <nrf5340-dk>
    Nordic nRF9160-DK <nrf9160-dk>
    Nordic Thingy:53 <thingy53>
+   Nordic Thingy:91 <thingy91>
    QEMU Intel64 <qemu-intel64>
 
 Ideas for later
@@ -26,7 +27,6 @@ Ideas for later
 
 - Waveshare modbus boards
 - Nordic Thingy:52
-- Nordic Thingy:91
 - nRF52840-dongle
 - SensorTile
 - Arduino Sense BLE Nano
