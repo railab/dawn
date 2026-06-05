@@ -102,7 +102,7 @@ nsh_wakaama_leshan
 ------------------
 
 Dawn Wakaama LwM2M profile for the public Eclipse Leshan sandbox. It uses
-``descriptors/ntfc/ntfc_wakaama_leshan.yaml`` and registers the endpoint
+``descriptors/examples/wakaama_leshan.yaml`` and registers the endpoint
 ``dawn-wakaama-leshan``.
 
 Build and run:

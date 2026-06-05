@@ -70,7 +70,7 @@ Feature index
      - :ref:`Local IPC <descriptor-ipc-demo>`
    * - LwM2M
      - :ref:`NTFC Wakaama LwM2M <descriptor-ntfc-wakaama>`,
-       :ref:`Wakaama Leshan Demo <descriptor-ntfc-wakaama-leshan>`,
+       :ref:`Wakaama Leshan Demo <descriptor-wakaama-leshan>`,
        :ref:`nRF9160-DK Wakaama over LTE <descriptor-nrf9160dk-wakaama-lte>`,
        :ref:`Thingy:91 Wakaama over LTE <descriptor-thingy91-wakaama-lte>`,
        :ref:`Blinky Wakaama <descriptor-blinky-wakaama-demo>`
@@ -588,9 +588,9 @@ NTFC
 
   Required resources: ``udp``, ``/tmp``
 
-.. _descriptor-ntfc-wakaama-leshan:
+.. _descriptor-wakaama-leshan:
 
-``descriptors/ntfc/ntfc_wakaama_leshan.yaml``
+``descriptors/examples/wakaama_leshan.yaml``
   **Wakaama LwM2M Leshan Demo**
 
   Descriptor used by ``boards/sim/sim/sim/configs/nsh_wakaama_leshan``. It
@@ -612,7 +612,7 @@ NTFC
 
   Real-board variant of the Wakaama Leshan demo used by
   ``boards/arm/nrf91/nrf9160-dk/configs/wakaama``. Same Wakaama object set as
-  ``ntfc_wakaama_leshan.yaml``, plus an LTE :doc:`system object
+  ``wakaama_leshan.yaml``, plus an LTE :doc:`system object
   <../components/system/index>` (``system:`` section) that brings up the data
   connection before registration. Kept separate from the simulator descriptor
   because LTE is hardware-only.
