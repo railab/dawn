@@ -89,6 +89,7 @@ bool encodeOpaque(const uint8_t *buffer, size_t len, lwm2m_data_t *data)
   return data->type == LWM2M_TYPE_OPAQUE;
 }
 
+#ifdef CONFIG_WAKAAMA_BOOTSTRAP
 bool bufferValue(const lwm2m_data_t &data, const uint8_t **buffer, size_t *length)
 {
   if (buffer == nullptr || length == nullptr)
@@ -111,6 +112,7 @@ bool bufferValue(const lwm2m_data_t &data, const uint8_t **buffer, size_t *lengt
   *length = data.value.asBuffer.length;
   return *length == 0 || *buffer != nullptr;
 }
+#endif
 
 bool allocateResourceList(const uint16_t *ids, int count, int *numData, lwm2m_data_t **dataArray)
 {
