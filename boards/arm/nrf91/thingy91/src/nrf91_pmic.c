@@ -29,6 +29,7 @@
 #include <debug.h>
 #include <errno.h>
 #include <stdint.h>
+#include <syslog.h>
 
 #include <nuttx/arch.h>
 #include <nuttx/i2c/i2c_master.h>
@@ -44,6 +45,10 @@
  * the 3.3 V rail (BH1749 colour sensor, RGB/sense LEDs, ...). The buck-boost
  * is disabled at power-on reset, so without this init the 3.3 V rail is dead
  * and those parts never respond (NCS enables it via its regulator driver).
+ *
+ * This init also configures and enables the battery charger (VBUS input
+ * current limit, charge current, over-charge protection, EN_CHG) and turns on
+ * the fuel gauge.
  */
 
 #define ADP5360_I2C_BUS         (2)
@@ -55,6 +60,32 @@
 
 #define ADP5360_BUCKBST_EN      (1 << 0) /* EN_BUCKBST bit in BUCKBST_CFG */
 #define ADP5360_BUCKBST_3V3     (0x13)   /* 2.95V + 7*50mV = 3.3V */
+
+/* Charger configuration registers */
+
+#define ADP5360_CHG_VBUS_ILIM   (0x02)  /* Charger VBUS input current limit */
+#define ADP5360_CHG_CURRENT_SET (0x04)  /* Charger current setting */
+#define ADP5360_CHG_FUNC        (0x07)  /* Charger functional settings */
+#define ADP5360_CHG_STATUS_1    (0x08)  /* Charger status 1 (charge state) */
+#define ADP5360_BAT_OC_CHG      (0x15)  /* Battery over-charge current */
+#define ADP5360_BAT_SOC         (0x21)  /* Battery state of charge (%) */
+#define ADP5360_VBAT_READ_H     (0x25)  /* Battery voltage MSB */
+#define ADP5360_VBAT_READ_L     (0x26)  /* Battery voltage LSB */
+#define ADP5360_FUEL_GAUGE_MODE (0x27)  /* Fuel gauge mode / enable */
+
+#define ADP5360_VBUS_ILIM_MSK   (0x07)        /* ILIM field, bits[2:0] */
+#define ADP5360_VBUS_ILIM_500MA (0x07)        /* 500 mA input current limit */
+
+#define ADP5360_CHG_ICHG_MSK    (0x1f)        /* ICHG field, bits[4:0] */
+#define ADP5360_CHG_ICHG_320MA  (0x1f)        /* 320 mA charge current */
+
+#define ADP5360_OC_CHG_MSK      (0x07 << 5)   /* OC_CHG field, bits[7:5] */
+#define ADP5360_OC_CHG_400MA    (0x07 << 5)   /* 400 mA over-charge threshold */
+
+#define ADP5360_CHG_FUNC_EN_CHG (1 << 0)      /* EN_CHG bit in CHG_FUNC */
+
+#define ADP5360_FG_EN           (1 << 0)      /* EN_FG bit in FUEL_GAUGE_MODE */
+#define ADP5360_FG_MODE_SLEEP   (1 << 1)      /* FG_MODE bit: 1 = sleep mode */
 
 /****************************************************************************
  * Private Functions
@@ -104,6 +135,124 @@ static int adp5360_putreg8(struct i2c_master_s *i2c, uint8_t reg,
   msg.length    = 2;
 
   return I2C_TRANSFER(i2c, &msg, 1);
+}
+
+/****************************************************************************
+ * Name: adp5360_modifyreg8
+ *
+ * Description:
+ *   Read-modify-write a single 8-bit register: clear the bits in 'clrbits'
+ *   then set the bits in 'setbits', preserving all other bits.
+ *
+ ****************************************************************************/
+
+static int adp5360_modifyreg8(struct i2c_master_s *i2c, uint8_t reg,
+                              uint8_t clrbits, uint8_t setbits)
+{
+  uint8_t regval;
+  int     ret;
+
+  ret = adp5360_getreg8(i2c, reg, &regval);
+  if (ret < 0)
+    {
+      return ret;
+    }
+
+  regval &= ~clrbits;
+  regval |= setbits;
+
+  return adp5360_putreg8(i2c, reg, regval);
+}
+
+/****************************************************************************
+ * Name: adp5360_charging_init
+ *
+ * Description:
+ *   Configure and enable the ADP5360 battery charger and fuel gauge:
+ *   VBUS input current limit 500 mA, charge current 320 mA,
+ *   over-charge protection 400 mA, EN_CHG, and fuel gauge enabled in sleep
+ *   mode.
+ *
+ ****************************************************************************/
+
+static int adp5360_charging_init(struct i2c_master_s *i2c)
+{
+  uint8_t func   = 0;
+  uint8_t status = 0;
+  uint8_t soc    = 0;
+  uint8_t vbat_h = 0;
+  uint8_t vbat_l = 0;
+  unsigned int mv = 0;
+  int ret;
+
+  /* VBUS input current limit -> 500 mA */
+
+  ret = adp5360_modifyreg8(i2c, ADP5360_CHG_VBUS_ILIM,
+                           ADP5360_VBUS_ILIM_MSK, ADP5360_VBUS_ILIM_500MA);
+  if (ret < 0)
+    {
+      snerr("ERROR: ADP5360 set VBUS ilim failed: %d\n", ret);
+      return ret;
+    }
+
+  /* Charge current -> 320 mA */
+
+  ret = adp5360_modifyreg8(i2c, ADP5360_CHG_CURRENT_SET,
+                           ADP5360_CHG_ICHG_MSK, ADP5360_CHG_ICHG_320MA);
+  if (ret < 0)
+    {
+      snerr("ERROR: ADP5360 set charge current failed: %d\n", ret);
+      return ret;
+    }
+
+  /* Over-charge protection threshold -> 400 mA */
+
+  ret = adp5360_modifyreg8(i2c, ADP5360_BAT_OC_CHG,
+                           ADP5360_OC_CHG_MSK, ADP5360_OC_CHG_400MA);
+  if (ret < 0)
+    {
+      snerr("ERROR: ADP5360 set OC charge failed: %d\n", ret);
+      return ret;
+    }
+
+  /* Enable the charger (EN_CHG) */
+
+  ret = adp5360_modifyreg8(i2c, ADP5360_CHG_FUNC,
+                           ADP5360_CHG_FUNC_EN_CHG, ADP5360_CHG_FUNC_EN_CHG);
+  if (ret < 0)
+    {
+      snerr("ERROR: ADP5360 enable charging failed: %d\n", ret);
+      return ret;
+    }
+
+  /* Enable the fuel gauge (sleep mode) so VBAT/SoC registers update */
+
+  ret = adp5360_modifyreg8(i2c, ADP5360_FUEL_GAUGE_MODE,
+                           ADP5360_FG_EN | ADP5360_FG_MODE_SLEEP,
+                           ADP5360_FG_EN | ADP5360_FG_MODE_SLEEP);
+  if (ret < 0)
+    {
+      snerr("ERROR: ADP5360 enable fuel gauge failed: %d\n", ret);
+      return ret;
+    }
+
+  /* Read the charger state back and log it. */
+
+  adp5360_getreg8(i2c, ADP5360_CHG_FUNC, &func);
+  adp5360_getreg8(i2c, ADP5360_CHG_STATUS_1, &status);
+  adp5360_getreg8(i2c, ADP5360_BAT_SOC, &soc);
+  adp5360_getreg8(i2c, ADP5360_VBAT_READ_H, &vbat_h);
+  adp5360_getreg8(i2c, ADP5360_VBAT_READ_L, &vbat_l);
+
+  mv = ((unsigned int)vbat_h << 5) | ((unsigned int)vbat_l >> 3);
+
+  syslog(LOG_INFO,
+         "ADP5360 charging: CHG_FUNC=0x%02x (EN_CHG=%d) STATUS1=0x%02x "
+         "(chg=%d) SoC=%u%% VBAT=%umV\n",
+         func, func & ADP5360_CHG_FUNC_EN_CHG, status, status & 0x07,
+         soc & 0x7f, mv);
+
+  return OK;
 }
 
 /****************************************************************************
@@ -163,5 +312,14 @@ int nrf91_pmic_init(void)
   up_mdelay(20);
 
   sninfo("ADP5360 3.3V buck-boost enabled (BUCKBST_CFG=0x%02x)\n", regval);
+
+  /* Configure and enable battery charging + fuel gauge */
+
+  ret = adp5360_charging_init(i2c);
+  if (ret < 0)
+    {
+      return ret;
+    }
+
   return OK;
 }
