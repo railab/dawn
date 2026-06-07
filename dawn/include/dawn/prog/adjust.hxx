@@ -77,6 +77,7 @@ public:
   int init() override;
   int deinit() override;
   int doStart() override;
+  int onSetObjConfig(SObjectCfg::ObjectCfgId objcfg, uint32_t *data, size_t len) override;
 
   constexpr static SObjectId::ObjectId objectId(uint16_t inst)
   {
@@ -95,9 +96,9 @@ public:
     return CProgAdjust::cfgId(false, 1 + i, PROG_ADJUST_CFG_IOBIND);
   }
 
-  constexpr static SObjectCfg::ObjectCfgId cfgParams()
+  constexpr static SObjectCfg::ObjectCfgId cfgParams(bool rw = false)
   {
-    return CProgAdjust::cfgId(false, 2, PROG_ADJUST_CFG_PARAMS);
+    return CProgAdjust::cfgId(rw, 2, PROG_ADJUST_CFG_PARAMS);
   }
 
 private:

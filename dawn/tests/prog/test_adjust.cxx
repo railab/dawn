@@ -3,6 +3,8 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 
+#include <errno.h>
+
 #include "dawn/io/dummy.hxx"
 #include "dawn/io/dummy_notify.hxx"
 #include "dawn/io/notifier.hxx"
@@ -182,6 +184,22 @@ uint32_t g_bin_adjust2[] = {
   CProgAdjust::cfgParams(),
   SObjectCfg::fToCfg(3.0f), // Offset
   SObjectCfg::fToCfg(2.0f)  // Scale
+};
+
+// prog adjust with runtime-writable params (cfgParams rw=true), float
+// output (fetch only, initial x = 2 * y + 3).
+
+static uint32_t g_bin_adjust_rwparams[] = {
+  CProgAdjust::objectId(8),
+  2,
+
+  CProgAdjust::cfgIdIOBind(),
+  ADJUST_DUMMYIO1,
+  ADJUST_VIRTIO2,
+
+  CProgAdjust::cfgParams(true), // rw -> writable at runtime
+  SObjectCfg::fToCfg(3.0f),     // Offset
+  SObjectCfg::fToCfg(2.0f)      // Scale
 };
 
 // prog adjust 3 - b16_t output (fetch only, x = 2 * y + 3)
@@ -777,6 +795,50 @@ static void test_prog_adjust_notify_b16_scale_offset()
   TEST_ASSERT_EQUAL(OK, adj.stop());
 }
 
+//***************************************************************************
+// Description: rw params (cfgParams rw=true) can be rewritten at runtime via
+// setObjConfig; onSetObjConfig refreshes the cached scale/offset so the next
+// computation uses them. A write to the read-only params id is rejected.
+//***************************************************************************
+
+static void test_prog_adjust_runtime_params_update()
+{
+  CDescObject descSrc(g_cfg_dummy1);
+  CIODummy src(descSrc);
+  CDescObject descVio(g_cfg_virt2);
+  CIOVirt vio(descVio);
+  CDescObject descAdj(g_bin_adjust_rwparams);
+  CProgAdjust adj(descAdj);
+  io_sdata_t<float, 10, 1> data;
+  uint32_t params[2];
+
+  adjust_setup_fetch_chain(src, ADJUST_DUMMYIO1, vio, ADJUST_VIRTIO2, adj);
+  TEST_ASSERT_EQUAL(OK, adj.start());
+
+  // Initial params give out = 2 * in + 3 (src is 0..9).
+  TEST_ASSERT_EQUAL(OK, vio.getData(data, 1));
+  TEST_ASSERT_EQUAL(3.0f, data(0));
+  TEST_ASSERT_EQUAL(5.0f, data(1));
+
+  params[0] = SObjectCfg::fToCfg(10.0f); // Offset
+  params[1] = SObjectCfg::fToCfg(1.0f);  // Scale
+
+  // A write to the read-only params id (rw=false) is denied.
+  TEST_ASSERT_EQUAL(-EACCES, adj.setObjConfig(CProgAdjust::cfgParams(false), params, 2));
+
+  // Writing the rw params id refreshes the cached scale/offset.
+  TEST_ASSERT_EQUAL(OK, adj.setObjConfig(CProgAdjust::cfgParams(true), params, 2));
+
+  // Recompute: the new params give out = 1 * in + 10.
+  TEST_ASSERT_EQUAL(OK, adj.stop());
+  TEST_ASSERT_EQUAL(OK, adj.start());
+  TEST_ASSERT_EQUAL(OK, vio.getData(data, 1));
+  TEST_ASSERT_EQUAL(10.0f, data(0));
+  TEST_ASSERT_EQUAL(11.0f, data(1));
+
+  TEST_ASSERT_EQUAL(OK, adj.stop());
+}
+
 extern "C"
 {
   int test_prog_adjust()
@@ -795,6 +857,8 @@ extern "C"
     DAWN_RUN_TEST(test_prog_adjust_notify_uint32_identity);
     DAWN_RUN_TEST(test_prog_adjust_notify_float_scale_offset);
     DAWN_RUN_TEST(test_prog_adjust_notify_b16_scale_offset);
+
+    DAWN_RUN_TEST(test_prog_adjust_runtime_params_update);
 
     return UNITY_END();
   }

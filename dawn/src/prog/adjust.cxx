@@ -343,6 +343,28 @@ int CProgAdjust::configureDesc(const CDescObject &desc)
   return OK;
 }
 
+int CProgAdjust::onSetObjConfig(SObjectCfg::ObjectCfgId objcfg, uint32_t *data, size_t len)
+{
+  // Only the adjustment params (scale/offset) are runtime-writable; refresh the
+  // cached values so the next handle() applies them immediately.
+
+  if (SObjectCfg::objectCfgGetId(objcfg) != PROG_ADJUST_CFG_PARAMS)
+    {
+      return OK;
+    }
+
+  if (data == nullptr || len != sizeof(SProgAdjustParams) / sizeof(uint32_t))
+    {
+      return -EINVAL;
+    }
+
+  const SProgAdjustParams *params = reinterpret_cast<const SProgAdjustParams *>(data);
+
+  ioscale = params->scale;
+  iooffset = params->offset;
+  return OK;
+}
+
 void CProgAdjust::handle(io_ddata_t *data)
 {
   if (data == nullptr)
