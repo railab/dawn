@@ -187,6 +187,10 @@ int ClientRuntime::buildDeviceObject()
   deviceObj->readFunc = deviceRead;
   deviceObj->discoverFunc = deviceDiscover;
 
+  // Resolve any battery IO bindings declared in the device: config block so the
+  // Device object can serve /3/0/7,9,20 from them.
+  deviceResolveBatteryBindings(&owner);
+
   return OK;
 }
 

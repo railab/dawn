@@ -243,5 +243,11 @@ uint8_t deviceDiscover(lwm2m_context_t *ctx,
                        lwm2m_data_t **dataArray,
                        lwm2m_object_t *object);
 
+/** @brief Resolve the Device object battery IO bindings (device: config) to
+ *  their IO objects and allocate read buffers. Called once at build time.
+ */
+
+void deviceResolveBatteryBindings(CProtoWakaama *proto);
+
 } // namespace wakaama_internal
 } // namespace dawn

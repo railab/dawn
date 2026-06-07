@@ -20,6 +20,10 @@ static constexpr uint32_t WAKAAMA_TEST_FLAG_BOOTSTRAP = (1 << 16);
 static constexpr uint32_t WAKAAMA_TEST_SECURITY_NONE = (3 << 8);
 static constexpr uint32_t WAKAAMA_TEST_SECURITY_PSK = (0 << 8);
 static constexpr auto WAKAAMA_TEST_DUMMYIO = CIODummy::objectId(SObjectId::DTYPE_INT32, false, 0);
+static constexpr auto WAKAAMA_TEST_BATT_VOLT = CIODummy::objectId(SObjectId::DTYPE_FLOAT, false, 1);
+static constexpr auto WAKAAMA_TEST_BATT_SOC = CIODummy::objectId(SObjectId::DTYPE_FLOAT, false, 2);
+static constexpr auto WAKAAMA_TEST_BATT_STATE =
+  CIODummy::objectId(SObjectId::DTYPE_FLOAT, false, 3);
 
 static constexpr uint32_t pack4(char a, char b = '\0', char c = '\0', char d = '\0')
 {
@@ -202,6 +206,27 @@ static uint32_t g_cfg_wakaama_coaps_no_dtls[] = {
   0,
 };
 #endif
+
+// Device object with battery telemetry bound to IOs (resources 7/9/20).
+
+static uint32_t g_cfg_wakaama_device_battery[] = {
+  CProtoWakaama::objectId(5),
+  4,
+
+  CProtoWakaama::cfgIdServer(3),
+  0,
+  (123 << 16) | 5683,
+  60,
+
+  CProtoWakaama::cfgIdDeviceBatteryVoltage(),
+  WAKAAMA_TEST_BATT_VOLT,
+
+  CProtoWakaama::cfgIdDeviceBatteryLevel(),
+  WAKAAMA_TEST_BATT_SOC,
+
+  CProtoWakaama::cfgIdDeviceBatteryStatus(),
+  WAKAAMA_TEST_BATT_STATE,
+};
 
 //***************************************************************************
 // Description: Wakaama accepts an empty descriptor and uses Kconfig defaults.
@@ -412,6 +437,31 @@ static void test_proto_wakaama_server_write_rejects_bad_values()
                     serverWrite(nullptr, 0, 1, &data, &object, LWM2M_WRITE_REPLACE_RESOURCES));
 }
 
+//***************************************************************************
+// Description: device-block battery bindings are resolved into the Device
+// object IO-bind table (resources 7/9/20) at configure().
+//***************************************************************************
+
+static void test_proto_wakaama_device_battery_binding()
+{
+  CDescObject desc(g_cfg_wakaama_device_battery);
+  CProtoWakaama wakaama(desc);
+
+  TEST_ASSERT_EQUAL(OK, wakaama.configure());
+
+  auto *vbind = wakaama.deviceBatteryBind(7); // Power Source Voltage
+  TEST_ASSERT_NOT_NULL(vbind);
+  TEST_ASSERT_EQUAL(WAKAAMA_TEST_BATT_VOLT, vbind->objid);
+
+  auto *lbind = wakaama.deviceBatteryBind(9); // Battery Level
+  TEST_ASSERT_NOT_NULL(lbind);
+  TEST_ASSERT_EQUAL(WAKAAMA_TEST_BATT_SOC, lbind->objid);
+
+  auto *sbind = wakaama.deviceBatteryBind(20); // Battery Status
+  TEST_ASSERT_NOT_NULL(sbind);
+  TEST_ASSERT_EQUAL(WAKAAMA_TEST_BATT_STATE, sbind->objid);
+}
+
 extern "C"
 {
   int test_proto_wakaama()
@@ -429,6 +479,8 @@ extern "C"
     DAWN_RUN_TEST(test_proto_wakaama_server_discover_includes_execute_resources);
     DAWN_RUN_TEST(test_proto_wakaama_server_write_updates_extended_resources);
     DAWN_RUN_TEST(test_proto_wakaama_server_write_rejects_bad_values);
+
+    DAWN_RUN_TEST(test_proto_wakaama_device_battery_binding);
 
     return UNITY_END();
   }

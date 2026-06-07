@@ -157,6 +157,24 @@ int CProtoWakaama::configureDesc(const CDescObject &desc)
               break;
             }
 
+          case PROTO_WAKAAMA_CFG_DEVICE_BATTERY_VOLTAGE:
+            {
+              setDeviceBatteryBind(WAKAAMA_DEVICE_RESOURCE_POWER_SOURCE_VOLTAGE, item->data[0]);
+              break;
+            }
+
+          case PROTO_WAKAAMA_CFG_DEVICE_BATTERY_LEVEL:
+            {
+              setDeviceBatteryBind(WAKAAMA_DEVICE_RESOURCE_BATTERY_LEVEL, item->data[0]);
+              break;
+            }
+
+          case PROTO_WAKAAMA_CFG_DEVICE_BATTERY_STATUS:
+            {
+              setDeviceBatteryBind(WAKAAMA_DEVICE_RESOURCE_BATTERY_STATUS, item->data[0]);
+              break;
+            }
+
           case PROTO_WAKAAMA_CFG_SERVER:
             {
               int ret = configureServer(item);
@@ -412,6 +430,33 @@ void CProtoWakaama::processChangedResources()
   changedResources.clear();
 }
 #endif
+
+CProtoWakaama::SDeviceIoBind *CProtoWakaama::deviceBatteryBind(uint16_t resourceId)
+{
+  switch (resourceId)
+    {
+      case WAKAAMA_DEVICE_RESOURCE_POWER_SOURCE_VOLTAGE:
+        return &devBattVoltage;
+      case WAKAAMA_DEVICE_RESOURCE_BATTERY_LEVEL:
+        return &devBattLevel;
+      case WAKAAMA_DEVICE_RESOURCE_BATTERY_STATUS:
+        return &devBattStatus;
+      default:
+        return nullptr;
+    }
+}
+
+void CProtoWakaama::setDeviceBatteryBind(uint16_t resourceId, SObjectId::ObjectId objid)
+{
+  SDeviceIoBind *bind = deviceBatteryBind(resourceId);
+  if (bind == nullptr)
+    {
+      return;
+    }
+
+  bind->objid = objid;
+  regObject(objid);
+}
 
 int CProtoWakaama::buildObjects()
 {
