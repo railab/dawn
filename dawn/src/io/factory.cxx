@@ -15,6 +15,9 @@
 #ifdef CONFIG_DAWN_IO_ADC_STREAM
 #  include "dawn/io/adc_stream.hxx"
 #endif
+#ifdef CONFIG_DAWN_IO_BATTERY
+#  include "dawn/io/battery.hxx"
+#endif
 #ifdef CONFIG_DAWN_IO_CONFIG
 #  include "dawn/io/config.hxx"
 #endif
@@ -223,6 +226,21 @@ CIOCommon *CIOFactory::create(CDescObject &desc)
 #ifdef CONFIG_DAWN_IO_ADC_STREAM
       case CIOCommon::IO_CLASS_ADC_STREAM:
         return new CIOAdcStream(desc);
+#endif
+
+#ifdef CONFIG_DAWN_IO_BATT_VOLT
+      case CIOCommon::IO_CLASS_BATTERY_VOLTAGE:
+        return new CIOBattVolt(desc);
+#endif
+
+#ifdef CONFIG_DAWN_IO_BATT_SOC
+      case CIOCommon::IO_CLASS_BATTERY_SOC:
+        return new CIOBattSoc(desc);
+#endif
+
+#ifdef CONFIG_DAWN_IO_BATT_STATE
+      case CIOCommon::IO_CLASS_BATTERY_STATE:
+        return new CIOBattState(desc);
 #endif
 
 #ifdef CONFIG_DAWN_IO_DAC

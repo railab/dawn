@@ -187,6 +187,7 @@ Supported IO
    gpo.rst
    sensor.rst
    sensor_producer.rst
+   battery.rst
    sysinfo.rst
    boardctl.rst
    uname.rst
