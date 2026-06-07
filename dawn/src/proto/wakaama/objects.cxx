@@ -1041,6 +1041,124 @@ uint8_t dawn::wakaama_internal::serverDelete(lwm2m_context_t *ctx,
 }
 #endif
 
+// Battery resources (7/9/20) the Device object can additionally expose when
+// bound to descriptor IOs via the device: config block. Kept here, next to the
+// static DEVICE_RESOURCE_IDS, so the Device object owns its resource set.
+
+constexpr uint16_t DEVICE_BATTERY_RESOURCE_IDS[] = {
+  CProtoWakaama::WAKAAMA_DEVICE_RESOURCE_POWER_SOURCE_VOLTAGE,
+  CProtoWakaama::WAKAAMA_DEVICE_RESOURCE_BATTERY_LEVEL,
+  CProtoWakaama::WAKAAMA_DEVICE_RESOURCE_BATTERY_STATUS,
+};
+
+// Build the Device instance resource id list: the static set plus any battery
+// resources currently bound to an IO. 'out' must hold DEVICE_RESOURCE_IDS +
+// DEVICE_BATTERY_RESOURCE_IDS entries.
+
+static int deviceResourceIds(CProtoWakaama *proto, uint16_t *out)
+{
+  int n = 0;
+
+  for (uint16_t id : DEVICE_RESOURCE_IDS)
+    {
+      out[n++] = id;
+    }
+
+  for (uint16_t id : DEVICE_BATTERY_RESOURCE_IDS)
+    {
+      CProtoWakaama::SDeviceIoBind *bind = proto->deviceBatteryBind(id);
+      if (bind != nullptr && bind->io != nullptr)
+        {
+          out[n++] = id;
+        }
+    }
+
+  return n;
+}
+
+// Map a dawn battery_state IO value (NuttX BATTERY_* code) to the LwM2M Device
+// /3/0/20 Battery Status enum (0 Normal, 1 Charging, 2 Charge Complete,
+// 3 Damaged, 4 Low Battery, 5 Not Installed, 6 Unknown).
+
+static int deviceBatteryStatusToLwm2m(int nuttxState)
+{
+  switch (nuttxState)
+    {
+      case 4:     /* BATTERY_CHARGING    */
+        return 1; /* Charging        */
+      case 3:     /* BATTERY_FULL        */
+        return 2; /* Charge Complete */
+      case 2:     /* BATTERY_IDLE        */
+        return 0; /* Normal          */
+      case 5:     /* BATTERY_DISCHARGING */
+        return 0; /* Normal          */
+      case 1:     /* BATTERY_FAULT       */
+        return 3; /* Damaged         */
+      default:    /* BATTERY_UNKNOWN     */
+        return 6; /* Unknown         */
+    }
+}
+
+// Read one bound battery Device resource from its IO and encode it with the
+// LwM2M Device-object type/units (voltage in mV, level in %, status enum).
+
+static bool deviceReadBattery(CProtoWakaama *proto, uint16_t resId, lwm2m_data_t *data)
+{
+  CProtoWakaama::SDeviceIoBind *bind = proto->deviceBatteryBind(resId);
+  uint32_t val;
+
+  if (bind == nullptr || bind->io == nullptr || bind->data == nullptr)
+    {
+      return false;
+    }
+
+  if (bind->io->getData(*bind->data, 1) < 0)
+    {
+      return false;
+    }
+
+  val = *static_cast<uint32_t *>(bind->data->getDataPtr());
+
+  switch (resId)
+    {
+      case CProtoWakaama::WAKAAMA_DEVICE_RESOURCE_POWER_SOURCE_VOLTAGE:
+        lwm2m_data_encode_int(static_cast<int>(val), data); /* mV */
+        break;
+
+      case CProtoWakaama::WAKAAMA_DEVICE_RESOURCE_BATTERY_LEVEL:
+        lwm2m_data_encode_int(static_cast<int>(val), data); /* percent */
+        break;
+
+      case CProtoWakaama::WAKAAMA_DEVICE_RESOURCE_BATTERY_STATUS:
+        lwm2m_data_encode_int(deviceBatteryStatusToLwm2m(static_cast<int>(val)), data);
+        break;
+
+      default:
+        return false;
+    }
+
+  return true;
+}
+
+void dawn::wakaama_internal::deviceResolveBatteryBindings(CProtoWakaama *proto)
+{
+  for (uint16_t id : DEVICE_BATTERY_RESOURCE_IDS)
+    {
+      CProtoWakaama::SDeviceIoBind *bind = proto->deviceBatteryBind(id);
+
+      if (bind == nullptr || bind->objid == 0)
+        {
+          continue;
+        }
+
+      bind->io = proto->getIOObject(bind->objid);
+      if (bind->io != nullptr)
+        {
+          bind->data = bind->io->ddata_alloc(1);
+        }
+    }
+}
+
 uint8_t dawn::wakaama_internal::deviceRead(lwm2m_context_t *ctx,
                                            uint16_t instanceId,
                                            int *numData,
@@ -1066,11 +1184,11 @@ uint8_t dawn::wakaama_internal::deviceRead(lwm2m_context_t *ctx,
 
   if (*numData == 0)
     {
-      if (!allocateResourceList(
-            DEVICE_RESOURCE_IDS,
-            static_cast<int>(sizeof(DEVICE_RESOURCE_IDS) / sizeof(DEVICE_RESOURCE_IDS[0])),
-            numData,
-            dataArray))
+      uint16_t ids[(sizeof(DEVICE_RESOURCE_IDS) / sizeof(DEVICE_RESOURCE_IDS[0])) +
+                   (sizeof(DEVICE_BATTERY_RESOURCE_IDS) / sizeof(DEVICE_BATTERY_RESOURCE_IDS[0]))];
+      int count = deviceResourceIds(proto, ids);
+
+      if (!allocateResourceList(ids, count, numData, dataArray))
         {
           return COAP_500_INTERNAL_SERVER_ERROR;
         }
@@ -1123,6 +1241,15 @@ uint8_t dawn::wakaama_internal::deviceRead(lwm2m_context_t *ctx,
               }
             break;
 
+          case CProtoWakaama::WAKAAMA_DEVICE_RESOURCE_POWER_SOURCE_VOLTAGE:
+          case CProtoWakaama::WAKAAMA_DEVICE_RESOURCE_BATTERY_LEVEL:
+          case CProtoWakaama::WAKAAMA_DEVICE_RESOURCE_BATTERY_STATUS:
+            if (!deviceReadBattery(proto, (*dataArray)[i].id, &(*dataArray)[i]))
+              {
+                return COAP_404_NOT_FOUND;
+              }
+            break;
+
           default:
             return COAP_404_NOT_FOUND;
         }
@@ -1154,11 +1281,19 @@ uint8_t dawn::wakaama_internal::deviceDiscover(lwm2m_context_t *ctx,
           return COAP_404_NOT_FOUND;
         }
 
-      if (!allocateResourceList(
-            DEVICE_RESOURCE_IDS,
-            static_cast<int>(sizeof(DEVICE_RESOURCE_IDS) / sizeof(DEVICE_RESOURCE_IDS[0])),
-            numData,
-            dataArray))
+      CProtoWakaama *proto = static_cast<CProtoWakaama *>(object->userData);
+      uint16_t ids[(sizeof(DEVICE_RESOURCE_IDS) / sizeof(DEVICE_RESOURCE_IDS[0])) +
+                   (sizeof(DEVICE_BATTERY_RESOURCE_IDS) / sizeof(DEVICE_BATTERY_RESOURCE_IDS[0]))];
+      int count;
+
+      if (proto == nullptr)
+        {
+          return COAP_500_INTERNAL_SERVER_ERROR;
+        }
+
+      count = deviceResourceIds(proto, ids);
+
+      if (!allocateResourceList(ids, count, numData, dataArray))
         {
           return COAP_500_INTERNAL_SERVER_ERROR;
         }

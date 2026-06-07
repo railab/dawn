@@ -97,9 +97,12 @@ public:
     WAKAAMA_DEVICE_RESOURCE_MODEL_NUMBER = 1,
     WAKAAMA_DEVICE_RESOURCE_SERIAL_NUMBER = 2,
     WAKAAMA_DEVICE_RESOURCE_FIRMWARE_VERSION = 3,
+    WAKAAMA_DEVICE_RESOURCE_POWER_SOURCE_VOLTAGE = 7,
+    WAKAAMA_DEVICE_RESOURCE_BATTERY_LEVEL = 9,
     WAKAAMA_DEVICE_RESOURCE_ERROR_CODE = 11,
     WAKAAMA_DEVICE_RESOURCE_CURRENT_TIME = 13,
     WAKAAMA_DEVICE_RESOURCE_BINDING_MODES = 16,
+    WAKAAMA_DEVICE_RESOURCE_BATTERY_STATUS = 20,
   };
 
   enum
@@ -179,6 +182,9 @@ public:
     PROTO_WAKAAMA_CFG_DEVICE_SERIAL_NUMBER = 9,
     PROTO_WAKAAMA_CFG_DEVICE_FIRMWARE_VERSION = 10,
     PROTO_WAKAAMA_CFG_SERVER = 11,
+    PROTO_WAKAAMA_CFG_DEVICE_BATTERY_VOLTAGE = 12,
+    PROTO_WAKAAMA_CFG_DEVICE_BATTERY_LEVEL = 13,
+    PROTO_WAKAAMA_CFG_DEVICE_BATTERY_STATUS = 14,
     PROTO_WAKAAMA_CFG_LAST = 31
   };
 
@@ -234,6 +240,23 @@ public:
   {
     return this->getIO(id);
   }
+
+  /** @brief Device-object resource backed by a descriptor IO */
+
+  struct SDeviceIoBind
+  {
+    SObjectId::ObjectId objid{0};
+    CIOCommon *io{nullptr};
+    io_ddata_t *data{nullptr};
+  };
+
+  /** @brief Record a battery IO binding for a Device resource (7/9/20). */
+
+  void setDeviceBatteryBind(uint16_t resourceId, SObjectId::ObjectId objid);
+
+  /** @brief Return the battery binding for a Device resource id, or nullptr. */
+
+  SDeviceIoBind *deviceBatteryBind(uint16_t resourceId);
 
 #ifdef CONFIG_DAWN_IO_NOTIFY
   void queueResourceChanged(uint16_t objectId, uint16_t instanceId, uint16_t resourceId);
@@ -306,6 +329,25 @@ public:
     return cfgId(false, SObjectId::DTYPE_ANY, size, PROTO_WAKAAMA_CFG_SERVER);
   }
 
+  /* Device object (3) battery resources backed by descriptor IOs. The value is
+   * one IO object-id word, mirroring nimble's services.bas.battery_level bind.
+   */
+
+  constexpr static SObjectCfg::ObjectCfgId cfgIdDeviceBatteryVoltage()
+  {
+    return cfgId(false, SObjectId::DTYPE_ANY, 1, PROTO_WAKAAMA_CFG_DEVICE_BATTERY_VOLTAGE);
+  }
+
+  constexpr static SObjectCfg::ObjectCfgId cfgIdDeviceBatteryLevel()
+  {
+    return cfgId(false, SObjectId::DTYPE_ANY, 1, PROTO_WAKAAMA_CFG_DEVICE_BATTERY_LEVEL);
+  }
+
+  constexpr static SObjectCfg::ObjectCfgId cfgIdDeviceBatteryStatus()
+  {
+    return cfgId(false, SObjectId::DTYPE_ANY, 1, PROTO_WAKAAMA_CFG_DEVICE_BATTERY_STATUS);
+  }
+
 private:
   friend class wakaama_internal::ClientRuntime;
   friend class wakaama_internal::ObjectBinding;
@@ -340,6 +382,9 @@ private:
   wakaama_internal::ClientRuntime *runtime;
   wakaama_internal::Transport *transport;
   std::vector<wakaama_internal::ObjectBinding *> objects;
+  SDeviceIoBind devBattVoltage;
+  SDeviceIoBind devBattLevel;
+  SDeviceIoBind devBattStatus;
   std::string endpoint;
   std::string serverHost;
   std::string manufacturer;

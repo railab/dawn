@@ -21,6 +21,13 @@ Implementation
 - Built-in Security, Server, and Device objects are created by the protocol
   instance. Descriptor bindings are created as internal Wakaama object bindings
   objects.
+- The built-in Device object (3) is firmware-owned, but selected resources may
+  be fed from descriptor IOs through the ``config.device`` block (the same
+  pattern as nimble's built-in services): ``battery_voltage``,
+  ``battery_level`` and ``battery_status`` bind IOs to resources 7 (Power
+  Source Voltage), 9 (Battery Level) and 20 (Battery Status), which the Device
+  object then serves through the generic IO read path, converting to the LwM2M
+  units/enum.
 - LwM2M server configuration is descriptor-owned. Kconfig values only provide
   defaults for descriptors that do not list ``config.servers``.
 - UDP no-security, UDP multi-server registration, bootstrap provisioning, and
