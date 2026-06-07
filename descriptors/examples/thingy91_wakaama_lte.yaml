@@ -15,6 +15,7 @@ metadata:
   - /dev/uorb/sensor_baro0
   - /dev/uorb/sensor_gas0
   - /dev/uorb/sensor_rgb0
+  - /dev/batt0
 system:
 - id: lte_main
   type: lte
@@ -58,6 +59,24 @@ ios:
   id: bme680_temperature_latest
   type: virt
   dtype: float
+# Self-heating-corrected temperature (see the adjust program below).
+- &temperature_adj
+  id: bme680_temperature_adj
+  type: virt
+  dtype: float
+# Runtime-writable calibration offset: a config IO onto the temperature adjust
+# program's offset word (params[0]). Bound rw to a private resource on object
+# 3303 so the offset can be read and written over LwM2M and applied live.
+- &temp_offset_cfg
+  id: temp_offset_cfg
+  type: config
+  dtype: float
+  rw: true
+  config:
+    objid_ref: bme680_temperature_adjust
+    objcfg_ref: params
+    offset: 0
+    size: 1
 - &humidity_v
   id: bme680_humidity_latest
   type: virt
@@ -92,6 +111,26 @@ ios:
   id: bh1749_blue
   type: virt
   dtype: float
+# ADP5360 fuel gauge (/dev/batt0). The battery_gauge ioctls read the PMIC
+# registers on demand, so these bind directly to LwM2M.
+- &battery_voltage
+  id: battery_voltage
+  type: batt_volt
+  dtype: uint32
+  config:
+    device: 0
+- &battery_soc
+  id: battery_soc
+  type: batt_soc
+  dtype: uint32
+  config:
+    device: 0
+- &battery_state
+  id: battery_state
+  type: batt_state
+  dtype: uint32
+  config:
+    device: 0
 programs:
 - id: bme680_latest
   type: latest
@@ -106,6 +145,20 @@ programs:
     - *humidity_v
     - *pressure_v
     - *gas_v
+# The BME680 reads several degrees high due to gas-heater self-heating and
+# enclosure/PCB heat (a known Thingy:91 characteristic). Subtract a fixed,
+# reference-calibrated offset before exposing temperature over LwM2M.
+- id: bme680_temperature_adjust
+  type: adjust
+  dtype: float
+  config:
+    inputs:
+    - *temperature_v
+    outputs:
+    - *temperature_adj
+    params:
+      offset: -3.5
+      scale: 1.0
 - id: bh1749_split
   type: vecsplit
   config:
@@ -130,13 +183,24 @@ protocols:
       manufacturer: Dawn
       serial_number: dawn-thingy91-leshan
       firmware_version: '0.1'
+      # ADP5360 battery telemetry on the standard LwM2M Device object (3):
+      # /3/0/7 Power Source Voltage, /3/0/9 Battery Level, /3/0/20 Battery
+      # Status.
+      battery_voltage: *battery_voltage
+      battery_level: *battery_soc
+      battery_status: *battery_state
     objects:
       - object: temperature
         instance: 0
         resources:
         - resource: sensor_value
-          io: *temperature_v
+          io: *temperature_adj
           access: read
+        # Private/manufacturer-specific resource: calibration offset (deg C),
+        # read/write over LwM2M to trim the self-heating correction at runtime.
+        - resource_id: 26241
+          io: *temp_offset_cfg
+          access: rw
       - object: humidity
         instance: 0
         resources:

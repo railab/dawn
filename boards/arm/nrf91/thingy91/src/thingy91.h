@@ -136,6 +136,18 @@ int nrf91_bringup(void);
 int nrf91_pmic_init(void);
 
 /****************************************************************************
+ * Name: nrf91_battery_init
+ *
+ * Description:
+ *   Register the ADP5360 fuel gauge as /dev/batt0 (battery_gauge framework).
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_BATTERY_GAUGE
+int nrf91_battery_init(void);
+#endif
+
+/****************************************************************************
  * Name: nrf91_sensors_init
  *
  * Description:

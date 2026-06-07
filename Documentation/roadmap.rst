@@ -35,7 +35,6 @@ Tier 1
 
 #. Demo: Thingy:91
 
-   - [ ] battery state
    - [ ] GNSS
    - [ ] EEPROM support
    - [ ] more sensors
