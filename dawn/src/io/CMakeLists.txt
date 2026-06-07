@@ -91,6 +91,10 @@ if(CONFIG_DAWN_IO_ADC_STREAM)
   list(APPEND SRCS adc_stream.cxx)
 endif()
 
+if(CONFIG_DAWN_IO_BATTERY)
+  list(APPEND SRCS battery.cxx)
+endif()
+
 if(CONFIG_DAWN_IO_DAC)
   list(APPEND SRCS dac.cxx)
 endif()

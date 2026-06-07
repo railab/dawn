@@ -184,6 +184,12 @@ public:
     IO_CLASS_ENCODER = 85,       ///< Quadrature encoder (position)
     IO_CLASS_ENCODER_INDEX = 86, ///< Quadrature encoder (position+index)
 
+    // Battery (fuel gauge)
+
+    IO_CLASS_BATTERY_VOLTAGE = 90, ///< Battery voltage (fuel gauge)
+    IO_CLASS_BATTERY_SOC = 91,     ///< Battery state of charge (%)
+    IO_CLASS_BATTERY_STATE = 92,   ///< Battery charge state
+
     // Virtual IO
 
     IO_CLASS_VIRT = 100, ///< Virtual I/O

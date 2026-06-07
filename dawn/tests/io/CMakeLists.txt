@@ -18,6 +18,10 @@ if(CONFIG_DAWN_IO_CONFIG)
   list(APPEND SRCS test_config.cxx)
 endif()
 
+if(CONFIG_DAWN_IO_BATT_VOLT)
+  list(APPEND SRCS test_battery.cxx)
+endif()
+
 if(CONFIG_DAWN_IO_CONTROL)
   list(APPEND SRCS test_control.cxx)
 endif()

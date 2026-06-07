@@ -176,6 +176,35 @@ config DAWN_IO_ADC_STREAM
 	---help---
 		Enable batch ADC stream IO objects.
 
+config DAWN_IO_BATTERY
+	bool
+	default n
+
+config DAWN_IO_BATT_VOLT
+	bool "Dawn battery voltage IO support"
+	default n
+	depends on DAWN_DTYPE_UINT32
+	select DAWN_IO_BATTERY
+	---help---
+		Enable the battery voltage IO (reads a NuttX battery_gauge device
+		/dev/battN via BATIOC_VOLTAGE).
+
+config DAWN_IO_BATT_SOC
+	bool "Dawn battery state-of-charge IO support"
+	default n
+	depends on DAWN_DTYPE_UINT32
+	select DAWN_IO_BATTERY
+	---help---
+		Enable the battery state-of-charge IO (BATIOC_CAPACITY).
+
+config DAWN_IO_BATT_STATE
+	bool "Dawn battery charge-state IO support"
+	default n
+	depends on DAWN_DTYPE_UINT32
+	select DAWN_IO_BATTERY
+	---help---
+		Enable the battery charge-state IO (BATIOC_STATE).
+
 config DAWN_IO_DAC
 	bool "Dawn DAC IO support"
 	default n
