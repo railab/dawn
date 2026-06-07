@@ -200,6 +200,16 @@ int nrf91_bringup(void)
     {
       syslog(LOG_ERR, "ERROR: Failed to initialize PMIC: %d\n", ret);
     }
+
+#ifdef CONFIG_BATTERY_GAUGE
+  /* Register the ADP5360 fuel gauge as /dev/batt0 */
+
+  ret = nrf91_battery_init();
+  if (ret < 0)
+    {
+      syslog(LOG_ERR, "ERROR: Failed to initialize battery gauge: %d\n", ret);
+    }
+#endif
 #endif
 
 #if defined(CONFIG_SENSORS_BME680) || defined(CONFIG_SENSORS_BH1749NUC) || \

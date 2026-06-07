@@ -29,10 +29,15 @@
 #include <debug.h>
 #include <errno.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <syslog.h>
 
 #include <nuttx/arch.h>
 #include <nuttx/i2c/i2c_master.h>
+#ifdef CONFIG_BATTERY_GAUGE
+#  include <nuttx/power/battery_gauge.h>
+#  include <nuttx/power/battery_ioctl.h>
+#endif
 
 #include "nrf91_i2c.h"
 #include "thingy91.h"
@@ -254,6 +259,175 @@ static int adp5360_charging_init(struct i2c_master_s *i2c)
 
   return OK;
 }
+
+#ifdef CONFIG_BATTERY_GAUGE
+
+/****************************************************************************
+ * ADP5360 battery_gauge lower-half (interim; to be extracted into
+ * drivers/power/battery/adp5360.c). Exposes VBAT, SoC and charge state via
+ * /dev/batt0 using the standard NuttX battery_gauge framework. Reads the
+ * ADP5360 registers directly over I2C on each ioctl (the PMIC fuel gauge
+ * refreshes them on its own), so no polling worker is needed for on-demand
+ * LwM2M reads.
+ ****************************************************************************/
+
+struct adp5360_gauge_dev_s
+{
+  struct battery_gauge_dev_s dev;  /* Upper-half visible part (must be first) */
+  struct i2c_master_s       *i2c;  /* I2C bus handle */
+};
+
+/****************************************************************************
+ * Name: adp5360_gauge_state
+ ****************************************************************************/
+
+static int adp5360_gauge_state(struct battery_gauge_dev_s *dev, int *status)
+{
+  struct adp5360_gauge_dev_s *priv = (struct adp5360_gauge_dev_s *)dev;
+  uint8_t regval;
+  int     ret;
+
+  ret = adp5360_getreg8(priv->i2c, ADP5360_CHG_STATUS_1, &regval);
+  if (ret < 0)
+    {
+      *status = BATTERY_UNKNOWN;
+      return ret;
+    }
+
+  /* CHG_STATUS_1 bits[2:0]: 0=off 1=trickle 2=fast-CC 3=fast-CV 4=complete */
+
+  switch (regval & 0x07)
+    {
+      case 1:
+      case 2:
+      case 3:
+        *status = BATTERY_CHARGING;
+        break;
+      case 4:
+        *status = BATTERY_FULL;
+        break;
+      default:
+        *status = BATTERY_IDLE;
+        break;
+    }
+
+  return OK;
+}
+
+/****************************************************************************
+ * Name: adp5360_gauge_online
+ ****************************************************************************/
+
+static int adp5360_gauge_online(struct battery_gauge_dev_s *dev, bool *status)
+{
+  *status = true;
+  return OK;
+}
+
+/****************************************************************************
+ * Name: adp5360_gauge_voltage
+ *
+ * Description:
+ *   Battery voltage in mV (BATIOC_VOLTAGE convention).
+ *
+ ****************************************************************************/
+
+static int adp5360_gauge_voltage(struct battery_gauge_dev_s *dev, int *value)
+{
+  struct adp5360_gauge_dev_s *priv = (struct adp5360_gauge_dev_s *)dev;
+  uint8_t      msb;
+  uint8_t      lsb;
+  unsigned int mv;
+  int          ret;
+
+  ret = adp5360_getreg8(priv->i2c, ADP5360_VBAT_READ_H, &msb);
+  if (ret < 0)
+    {
+      return ret;
+    }
+
+  ret = adp5360_getreg8(priv->i2c, ADP5360_VBAT_READ_L, &lsb);
+  if (ret < 0)
+    {
+      return ret;
+    }
+
+  /* 13-bit value, 1 LSB = 1 mV. BATIOC_VOLTAGE returns mV directly. */
+
+  mv = ((unsigned int)msb << 5) | ((unsigned int)lsb >> 3);
+
+  *value = (int)mv;
+  return OK;
+}
+
+/****************************************************************************
+ * Name: adp5360_gauge_capacity
+ *
+ * Description:
+ *   State of charge as an integer percentage (BATIOC_CAPACITY convention).
+ *
+ ****************************************************************************/
+
+static int adp5360_gauge_capacity(struct battery_gauge_dev_s *dev, int *value)
+{
+  struct adp5360_gauge_dev_s *priv = (struct adp5360_gauge_dev_s *)dev;
+  uint8_t regval;
+  int     ret;
+
+  ret = adp5360_getreg8(priv->i2c, ADP5360_BAT_SOC, &regval);
+  if (ret < 0)
+    {
+      return ret;
+    }
+
+  *value = (int)(regval & 0x7f);
+  return OK;
+}
+
+static const struct battery_gauge_operations_s g_adp5360_gauge_ops =
+{
+  adp5360_gauge_state,
+  adp5360_gauge_online,
+  adp5360_gauge_voltage,
+  adp5360_gauge_capacity,
+};
+
+static struct adp5360_gauge_dev_s g_adp5360_gauge;
+
+/****************************************************************************
+ * Name: nrf91_battery_init
+ *
+ * Description:
+ *   Register the ADP5360 fuel gauge as /dev/batt0.
+ *
+ ****************************************************************************/
+
+int nrf91_battery_init(void)
+{
+  struct i2c_master_s *i2c;
+  int                  ret;
+
+  i2c = nrf91_i2cbus_initialize(ADP5360_I2C_BUS);
+  if (i2c == NULL)
+    {
+      return -ENODEV;
+    }
+
+  g_adp5360_gauge.dev.ops = &g_adp5360_gauge_ops;
+  g_adp5360_gauge.i2c     = i2c;
+
+  ret = battery_gauge_register("/dev/batt0", &g_adp5360_gauge.dev);
+  if (ret < 0)
+    {
+      snerr("ERROR: battery_gauge_register failed: %d\n", ret);
+      return ret;
+    }
+
+  sninfo("ADP5360 fuel gauge registered as /dev/batt0\n");
+  return OK;
+}
+
+#endif /* CONFIG_BATTERY_GAUGE */
 
 /****************************************************************************
  * Public Functions
