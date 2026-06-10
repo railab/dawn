@@ -96,7 +96,7 @@ int nrf91_sensors_init(void)
 #ifdef CONFIG_SENSORS_BME680
   /* Initialize BME680 */
 
-  ret = nrf91_bme680_init(0, BME680_I2C_BUS, BME680_I2C_ADDR);
+  ret = nrf91_bme680_init(0, BME680_I2C_BUS);
   if (ret < 0)
     {
       syslog(LOG_ERR, "ERROR: nrf91_bme680_init failed: %d\n", ret);
@@ -108,7 +108,7 @@ int nrf91_sensors_init(void)
 
   /* Initialize ADXL372 */
 
-  ret = nrf91_adxl372_init(ADXL372_SPI_DEVNO, ADXL372_SPI_BUS, 0);
+  ret = nrf91_adxl372_init(ADXL372_SPI_DEVNO, ADXL372_SPI_BUS);
   if (ret < 0)
     {
       syslog(LOG_ERR, "ERROR: nrf91_adxl372_init failed: %d\n", ret);
@@ -120,7 +120,7 @@ int nrf91_sensors_init(void)
 
   /* Initialize ADXL362 */
 
-  ret = nrf91_adxl362_init(ADXL362_SPI_DEVNO, ADXL362_SPI_BUS, 0);
+  ret = nrf91_adxl362_init(ADXL362_SPI_DEVNO, ADXL362_SPI_BUS);
   if (ret < 0)
     {
       syslog(LOG_ERR, "ERROR: nrf91_adxl362_init failed: %d\n", ret);
