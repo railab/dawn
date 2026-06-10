@@ -2086,7 +2086,7 @@ static void test_proto_can_read_seg()
 
 static void test_proto_can_read_seg_seek()
 {
-  CDevDescriptor *inst = CDevDescriptor::getInst();
+  CDevDescriptor dev;
   CDevDescriptor::SDescriptorReg reg;
   CDescObject descio(g_cfg_descio1);
   CIODescriptor desc_io(descio);
@@ -2099,10 +2099,11 @@ static void test_proto_can_read_seg_seek()
 
   reg.ptr = (void *)g_dawn_desc_seek1;
   reg.len = sizeof(g_dawn_desc_seek1);
-  ret = inst->regDescriptor(0, reg);
+  ret = dev.regDescriptor(0, reg);
   TEST_ASSERT_EQUAL(OK, ret);
 
   TEST_ASSERT_EQUAL(OK, can.configure());
+  desc_io.setDevDescriptor(&dev);
   TEST_ASSERT_EQUAL(OK, desc_io.configure());
   TEST_ASSERT_EQUAL(OK, desc_io.init());
 
@@ -2174,8 +2175,6 @@ static void test_proto_can_read_seg_seek()
   ret = can.stop();
   TEST_ASSERT_EQUAL(OK, ret);
   TEST_ASSERT_EQUAL(false, can.hasThread());
-
-  CDevDescriptor::destroy();
 }
 
 //***************************************************************************

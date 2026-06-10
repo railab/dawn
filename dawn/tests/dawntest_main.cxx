@@ -30,6 +30,7 @@ extern "C"
   extern int test_run_proto();
   extern int test_run_system();
   extern int test_run_dawn();
+  extern int test_run_apps();
 }
 
 static const test_registry_entry_s g_test_registry[] = {
@@ -49,6 +50,7 @@ static const test_registry_entry_s g_test_registry[] = {
   {"system.run", "system", test_run_system},
 #endif
   {"dawn.run", "dawn", test_run_dawn},
+  {"apps.run", "apps", test_run_apps},
 };
 
 // make unity happy with setUp and tearDown

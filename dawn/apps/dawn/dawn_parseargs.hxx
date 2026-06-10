@@ -5,10 +5,12 @@
 
 #pragma once
 
+#include "dawn/porting/config.hxx"
+
 struct args_s
 {
-  int reserved;
+  const char *descPath; ///< Path to descriptor binary file (-f)
 };
 
-void parse_args(const struct args_s *args, int argc, char **argv);
+void parse_args(struct args_s *args, int argc, char **argv);
 int validate_args(const struct args_s *args);

@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include "dawn/dev/descriptor.hxx"
 #include "dawn/system/handler.hxx"
 #include "dawn/io/handler.hxx"
 #include "dawn/porting/config.hxx"
@@ -62,6 +63,19 @@ public:
   int load_descriptor(uint32_t *bin, size_t len);
 
   /**
+   * @brief Get the device descriptor registry.
+   *
+   * Used by dawn_main to register descriptors before load_descriptor().
+   *
+   * @return Pointer to the CDevDescriptor instance owned by this CDawn.
+   */
+
+  CDevDescriptor *getDevDescriptor()
+  {
+    return &devDesc;
+  }
+
+  /**
    * @brief Start Dawn framework.
    *
    * Transitions all components from initialized to running state.
@@ -72,6 +86,10 @@ public:
   int start(bool no_loop = false);
 
 private:
+  /** @brief Device descriptor registry (slot storage). */
+
+  CDevDescriptor devDesc;
+
   /** @brief Binary device descriptor parser and manager. */
 
   CDescriptor desc;

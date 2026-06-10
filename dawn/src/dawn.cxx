@@ -46,6 +46,15 @@ int CDawn::load_descriptor(uint32_t *bin, size_t len)
       return ret;
     }
 
+  // Wire descriptor registry into IO handler before initAll
+
+  io.setDevDescriptor(&devDesc);
+  if (ret < 0)
+    {
+      DAWNERR("failed to initialize IO handler\n");
+      return ret;
+    }
+
   // Initialize IOs
 
   ret = io.initAll();
@@ -127,7 +136,7 @@ int CDawn::load_descriptor_from_slot(uint8_t slot)
   CDevDescriptor::SDescriptorReg reg;
   int ret;
 
-  ret = CDevDescriptor::getInst()->getDescriptor(slot, reg);
+  ret = devDesc.getDescriptor(slot, reg);
   if (ret < 0)
     {
       return ret;

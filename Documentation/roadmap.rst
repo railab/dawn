@@ -56,10 +56,6 @@ Tier 1
 
 #. CAN FD support for simple CAN
 
-#. load descriptor from file
-
-   - configure descriptor file from CLI args
-
 Tier 2
 ======
 

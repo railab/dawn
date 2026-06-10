@@ -17,6 +17,33 @@ config DAWN_APPS_DAWN_STACKSIZE
 	---help---
 		Set the worker stack size for the Dawn application task.
 
+config DAWN_APPS_DESC_SOURCE_BUILTIN
+	bool "Built-in descriptor (compiled into app)"
+	default y
+	---help---
+		Compile the descriptor into the app binary via
+		g_dawn_desc[]. This is the default behaviour.
+		Can be used together with DAWN_APPS_DESC_SOURCE_FILE to
+		support both built-in and file-based descriptors.
+
+config DAWN_APPS_DESC_SOURCE_FILE
+	bool "File-based descriptor (-f <path>)"
+	default n
+	---help---
+		Enable loading a descriptor from a binary file at startup
+		via ``-f <path>``. Can be used together with
+		DAWN_APPS_DESC_SOURCE_BUILTIN to support both sources.
+		When both are enabled, ``-f`` overrides the built-in
+		descriptor; without ``-f`` the built-in is used.
+
+config DAWN_APPS_DESC_FILE_MAX_SIZE
+	int "Max descriptor file size (bytes)"
+	default 4096
+	depends on DAWN_APPS_DESC_SOURCE_FILE
+	---help---
+		Maximum size in bytes for a descriptor binary loaded from a
+		file. Files larger than this are rejected at startup.
+
 choice
 	prompt "Dawn descriptor source format"
 	default DAWN_APPS_EXAMPLE_DESC_FORMAT_CXX

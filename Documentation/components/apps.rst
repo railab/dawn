@@ -80,6 +80,38 @@ Required Kconfig options:
 This mode is still supported for compatibility, but YAML mode is the
 recommended default for board configurations.
 
+File-based descriptor
+^^^^^^^^^^^^^^^^^^^^^
+
+Load a pre-built binary descriptor from a file at runtime instead of
+compiling it into the firmware.
+
+Required Kconfig options:
+
+- ``CONFIG_DAWN_APPS_DESC_SOURCE_FILE=y``
+- ``CONFIG_DAWN_APPS_DESC_FILE_MAX_SIZE=4096`` (optional, default 4096)
+
+``CONFIG_DAWN_APPS_DESC_SOURCE_BUILTIN`` (default ``y``) can be enabled
+alongside ``FILE`` to support both sources:
+
+- With ``BUILTIN`` + ``FILE``: ``-f <path>`` loads the file and overrides
+  the built-in descriptor. If the file fails to load, a warning is logged
+  and the built-in descriptor is used. Without ``-f``, the built-in
+  descriptor is used.
+- With ``FILE`` only: ``-f <path>`` is required at startup.
+
+Producing a binary descriptor file::
+
+    python -m dawnpy desc-bin descriptor.yaml -o descriptor.bin
+
+For multi-descriptor YAML (``descriptor0:``, ``descriptor1:``, ...),
+``desc-bin`` produces one ``.bin`` per slot (``desc_slot0.bin``,
+``desc_slot1.bin``, ...).
+
+Starting Dawn with a file descriptor::
+
+    dawn -f /data/descriptor.bin
+
 dawn_static
 ===========
 

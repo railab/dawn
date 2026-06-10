@@ -136,6 +136,17 @@ int CIOHandler::initAll()
 {
   int ret;
 
+  // Wire descriptor registry into IO objects before configure() so
+  // that descriptor-IOs can access descriptor slots.
+
+  if (devDesc != nullptr)
+    {
+      for (CIOCommon *io : objects)
+        {
+          io->setDevDescriptor(devDesc);
+        }
+    }
+
   // Configure IO objects (descriptor parsing / validation)
   ret = CGenericHandler<CIOCommon>::configureAll();
   if (ret != OK)

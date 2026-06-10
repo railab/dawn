@@ -9,6 +9,10 @@ if(CONFIG_DAWN_APPS_DAWN)
 
   list(APPEND CSRCS dawn_parseargs.cxx dawn_descriptor.cxx)
 
+  if(CONFIG_DAWN_APPS_DESC_SOURCE_FILE)
+    list(APPEND CSRCS dawn_file_load.cxx)
+  endif()
+
   nuttx_add_application(
     NAME
     dawn

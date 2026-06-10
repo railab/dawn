@@ -68,6 +68,9 @@ Descriptor Management
   source file (``descriptor.cxx``).
 * ``desc-bin``: Serializes a YAML descriptor into raw
   little-endian binary (``.bin``) with Dawn-compatible CRC.
+  Multi-descriptor YAML (``descriptor0:``, ``descriptor1:``, ...)
+  produces one ``.bin`` file per slot (``desc_slot0.bin``,
+  ``desc_slot1.bin``, ...).
 * ``desc-decode-caps``: Decodes a capabilities IO binary
   blob into human-readable sections (enabled classes, dtypes, flags, slot
   info).
@@ -98,8 +101,12 @@ CLI usage examples::
     # Generate C++ descriptor from YAML
     python -m dawnpy desc-gen descriptor.yaml
 
-    # Generate raw descriptor binary from YAML
+    # Generate raw descriptor binary from YAML (single descriptor)
     python -m dawnpy desc-bin descriptor.yaml -o descriptor.bin
+
+    # Multi-descriptor YAML produces one .bin per slot
+    python -m dawnpy desc-bin multi_desc.yaml -o desc.bin
+    # -> desc_slot0.bin, desc_slot1.bin, ...
 
     # Decode capabilities blob from file
     python -m dawnpy desc-decode-caps capabilities.bin

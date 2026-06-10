@@ -10,8 +10,6 @@
 
 using namespace dawn;
 
-CDevDescriptor *CDevDescriptor::singleton = nullptr;
-
 int CDevDescriptor::regDescriptor(int inst, const CDevDescriptor::SDescriptorReg &reg)
 {
   if (inst < 0 || inst >= MAX_DESCRIPTORS)

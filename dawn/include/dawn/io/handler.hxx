@@ -22,8 +22,9 @@
 
 namespace dawn
 {
-// Forward declaration
+// Forward declarations
 
+class CDevDescriptor;
 class CIOCommon;
 
 /**
@@ -43,8 +44,23 @@ public:
    */
 
   explicit CIOHandler()
-    : userFactory(nullptr)
+    : devDesc(nullptr)
+    , userFactory(nullptr)
   {
+  }
+
+  /**
+   * @brief Set the device descriptor instance.
+   *
+   * Must be called before initAll() so that IO objects can access
+   * descriptor data through CIOCommon::getDevDescriptor().
+   *
+   * @param d Pointer to the CDevDescriptor instance.
+   */
+
+  void setDevDescriptor(CDevDescriptor *d)
+  {
+    devDesc = d;
   }
 
   /**
@@ -194,6 +210,14 @@ protected:
   }
 
 private:
+  /**
+   * @brief Device descriptor instance (non-owning pointer).
+   *
+   * Set by CDawn before initAll(); forwarded to each IO object.
+   */
+
+  CDevDescriptor *devDesc;
+
   /**
    * @brief Built-in I/O object factory.
    *

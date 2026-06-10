@@ -43,7 +43,7 @@ CIODescriptor::~CIODescriptor()
 
 int CIODescriptor::configure()
 {
-  CDevDescriptor *dev = CDevDescriptor::getInst();
+  CDevDescriptor *dev = getDevDescriptor();
   int ret;
 
   // Configure
@@ -56,10 +56,17 @@ int CIODescriptor::configure()
 
   // get descriptor data
 
-  ret = dev->getDescriptor(getCmnDevno(), regDesc);
-  if (ret < 0)
+  if (dev != nullptr)
     {
-      DAWNERR("Failed to get descriptor data\n");
+      ret = dev->getDescriptor(getCmnDevno(), regDesc);
+      if (ret < 0)
+        {
+          DAWNERR("Failed to get descriptor data\n");
+        }
+    }
+  else
+    {
+      ret = -ENODEV;
     }
 
   return ret;
@@ -95,8 +102,13 @@ int CIODescriptor::setDataImpl(IODataCmn &data)
 
 int CIODescriptor::setDataAtImpl(IODataCmn &data, size_t offset)
 {
-  CDevDescriptor *dev = CDevDescriptor::getInst();
+  CDevDescriptor *dev = getDevDescriptor();
   int ret;
+
+  if (dev == nullptr)
+    {
+      return -ENODEV;
+    }
 
   if (getCmnDevno() == 0)
     {
