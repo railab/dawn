@@ -70,10 +70,16 @@ int CIODescSelector::getDataImpl(IODataCmn &data, size_t len)
 
 int CIODescSelector::setDataImpl(IODataCmn &data)
 {
+  CDevDescriptor *dev = getDevDescriptor();
   CDevDescriptor::SDescriptorReg reg;
   const uint32_t *bin;
   uint32_t slot;
   int ret;
+
+  if (dev == nullptr)
+    {
+      return -ENODEV;
+    }
 
   slot = *reinterpret_cast<const uint32_t *>(data.getDataPtr());
 
@@ -87,7 +93,7 @@ int CIODescSelector::setDataImpl(IODataCmn &data)
       return OK;
     }
 
-  ret = CDevDescriptor::getInst()->getDescriptor(static_cast<int>(slot), reg);
+  ret = dev->getDescriptor(static_cast<int>(slot), reg);
   if (ret < 0)
     {
       return ret;

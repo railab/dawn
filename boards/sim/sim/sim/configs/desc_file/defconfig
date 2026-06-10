@@ -1,0 +1,10 @@
+# boards/sim/sim/sim/configs/desc_file/defconfig
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+# Extends nsh_shell with file-based descriptor loading support.
+
+#include "../nsh_shell/defconfig"
+
+CONFIG_DAWN_APPS_DESC_SOURCE_FILE=y
+CONFIG_FS_TMPFS=y

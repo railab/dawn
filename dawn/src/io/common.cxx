@@ -115,6 +115,8 @@ CIOCommon::CIOCommon(CDescObject &desc)
 
   // Reset state
 
+  devDescriptor = nullptr;
+
 #ifdef CONFIG_DAWN_IO_NOTIFY
   notifier = nullptr;
   notifyType = IO_NOTIFY_POLL;

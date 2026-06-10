@@ -149,6 +149,7 @@ static void test_io_descselector_write_same_slot()
 
 static void test_io_descselector_write_empty_slot()
 {
+  CDevDescriptor dev;
   CDescObject desc(g_cfg_descselector0);
   CIODescSelector io(desc);
   io_ddata_t *data;
@@ -156,9 +157,8 @@ static void test_io_descselector_write_empty_slot()
 
   CDescSwitch::clear();
   CDescSwitch::setActiveSlot(0);
-  CDevDescriptor::destroy();
-  CDevDescriptor::getInst();
 
+  io.setDevDescriptor(&dev);
   ret = io.configure();
   TEST_ASSERT_EQUAL(OK, ret);
 
@@ -171,7 +171,6 @@ static void test_io_descselector_write_empty_slot()
   TEST_ASSERT_EQUAL(false, CDescSwitch::isSwitchRequested());
 
   free(data);
-  CDevDescriptor::destroy();
 }
 
 //***************************************************************************
@@ -180,6 +179,7 @@ static void test_io_descselector_write_empty_slot()
 
 static void test_io_descselector_write_bad_crc()
 {
+  CDevDescriptor dev;
   CDescObject desc(g_cfg_descselector0);
   CIODescSelector io(desc);
   CDevDescriptor::SDescriptorReg reg;
@@ -189,16 +189,16 @@ static void test_io_descselector_write_bad_crc()
 
   CDescSwitch::clear();
   CDescSwitch::setActiveSlot(0);
-  CDevDescriptor::destroy();
 
   build_valid_bin(bin, sizeof(bin), 11);
   bin[5] ^= 0x1u;
 
   reg.ptr = bin;
   reg.len = sizeof(bin);
-  ret = CDevDescriptor::getInst()->regDescriptor(1, reg);
+  ret = dev.regDescriptor(1, reg);
   TEST_ASSERT_EQUAL(OK, ret);
 
+  io.setDevDescriptor(&dev);
   ret = io.configure();
   TEST_ASSERT_EQUAL(OK, ret);
 
@@ -211,7 +211,6 @@ static void test_io_descselector_write_bad_crc()
   TEST_ASSERT_EQUAL(false, CDescSwitch::isSwitchRequested());
 
   free(data);
-  CDevDescriptor::destroy();
 }
 
 //***************************************************************************
@@ -220,6 +219,7 @@ static void test_io_descselector_write_bad_crc()
 
 static void test_io_descselector_write_valid()
 {
+  CDevDescriptor dev;
   CDescObject desc(g_cfg_descselector0);
   CIODescSelector io(desc);
   CDevDescriptor::SDescriptorReg reg;
@@ -229,14 +229,14 @@ static void test_io_descselector_write_valid()
 
   CDescSwitch::clear();
   CDescSwitch::setActiveSlot(0);
-  CDevDescriptor::destroy();
 
   build_valid_bin(bin, sizeof(bin), 12);
   reg.ptr = bin;
   reg.len = sizeof(bin);
-  ret = CDevDescriptor::getInst()->regDescriptor(1, reg);
+  ret = dev.regDescriptor(1, reg);
   TEST_ASSERT_EQUAL(OK, ret);
 
+  io.setDevDescriptor(&dev);
   ret = io.configure();
   TEST_ASSERT_EQUAL(OK, ret);
 
@@ -250,7 +250,6 @@ static void test_io_descselector_write_valid()
   TEST_ASSERT_EQUAL(1u, CDescSwitch::getSwitchSlot());
 
   free(data);
-  CDevDescriptor::destroy();
 }
 
 //***************************************************************************
@@ -259,6 +258,7 @@ static void test_io_descselector_write_valid()
 
 static void test_io_descselector_write_slot0_rollback()
 {
+  CDevDescriptor dev;
   CDescObject desc(g_cfg_descselector0);
   CIODescSelector io(desc);
   CDevDescriptor::SDescriptorReg reg;
@@ -268,14 +268,14 @@ static void test_io_descselector_write_slot0_rollback()
 
   CDescSwitch::clear();
   CDescSwitch::setActiveSlot(1);
-  CDevDescriptor::destroy();
 
   build_valid_bin(bin0, sizeof(bin0), 13);
   reg.ptr = bin0;
   reg.len = sizeof(bin0);
-  ret = CDevDescriptor::getInst()->regDescriptor(0, reg);
+  ret = dev.regDescriptor(0, reg);
   TEST_ASSERT_EQUAL(OK, ret);
 
+  io.setDevDescriptor(&dev);
   ret = io.configure();
   TEST_ASSERT_EQUAL(OK, ret);
 
@@ -289,7 +289,6 @@ static void test_io_descselector_write_slot0_rollback()
   TEST_ASSERT_EQUAL(0u, CDescSwitch::getSwitchSlot());
 
   free(data);
-  CDevDescriptor::destroy();
 }
 #endif
 

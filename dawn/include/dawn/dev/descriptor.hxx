@@ -36,30 +36,6 @@ public:
   } typedef SDescriptorReg;
 
   /**
-   * @brief Get singleton instance.
-   *
-   * @return Pointer to CDevDescriptor instance.
-   */
-
-  static CDevDescriptor *getInst()
-  {
-    if (CDevDescriptor::singleton == nullptr)
-      {
-        CDevDescriptor::singleton = new CDevDescriptor();
-      }
-
-    return CDevDescriptor::singleton;
-  }
-
-  /** @brief Destroy singleton instance. */
-
-  static void destroy()
-  {
-    delete CDevDescriptor::singleton;
-    CDevDescriptor::singleton = nullptr;
-  }
-
-  /**
    * @brief Register descriptor data for an instance.
    *
    * @param inst Instance number.
@@ -112,10 +88,6 @@ public:
   int resetSlot(int inst);
 
 private:
-  /** @brief Singleton instance pointer. */
-
-  static CDevDescriptor *singleton;
-
   /** @brief Registered descriptors storage. */
 
   SDescriptorReg regDesc[MAX_DESCRIPTORS] = {};
@@ -129,10 +101,6 @@ private:
 
   std::array<size_t, CONFIG_DAWN_DESC_SLOTS - 1> slotWritten = {};
 #endif
-
-  /** @brief Private constructor. */
-
-  CDevDescriptor() = default;
 };
 
 } // Namespace dawn

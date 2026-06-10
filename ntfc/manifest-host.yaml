@@ -12,6 +12,10 @@ sessions:
     confpath: ntfc/configs/sim/shell/config.yaml
     testpath: ntfc/tests/shell
 
+  - name: "sim-desc-file"
+    confpath: ntfc/configs/sim/desc_file/config.yaml
+    testpath: ntfc/tests/desc_file
+
   - name: "sim-blinky-shell"
     confpath: ntfc/configs/sim/blinky_shell/config.yaml
     testpath: ntfc/tests/blinky_shell

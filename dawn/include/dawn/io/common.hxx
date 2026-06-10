@@ -16,6 +16,9 @@
 
 namespace dawn
 {
+// Forward declaration
+class CDevDescriptor;
+
 /**
  * @brief Base class for all I/O objects.
  *
@@ -530,6 +533,30 @@ public:
     return false;
   }
 
+  /**
+   * @brief Set the device descriptor instance for this IO.
+   *
+   * Called by CIOHandler during initAll() to wire the owning
+   * CDevDescriptor into IO objects that need it (e.g. CIODescriptor,
+   * CIODescSelector).
+   */
+
+  void setDevDescriptor(CDevDescriptor *d)
+  {
+    devDescriptor = d;
+  }
+
+  /**
+   * @brief Get the device descriptor instance for this IO.
+   *
+   * @return Pointer to CDevDescriptor, or nullptr if not set.
+   */
+
+  CDevDescriptor *getDevDescriptor() const
+  {
+    return devDescriptor;
+  }
+
 #ifdef CONFIG_DAWN_IO_NOTIFY
   /**
    * @brief Bind notifier interface for this I/O.
@@ -896,15 +923,16 @@ protected:
   uint64_t getTimestamp();
 
 private:
-  int devno;          ///< Device number for underlying hardware device
-  CIOLimits limits;   ///< Common IO limits container
+  CDevDescriptor *devDescriptor; ///< Owning device descriptor instance
+  int devno;                     ///< Device number for underlying hardware device
+  CIOLimits limits;              ///< Common IO limits container
 #ifdef CONFIG_DAWN_IO_NOTIFY
-  uint8_t notifyType; ///< Configured notifier type (IO_NOTIFY_POLL or IO_NOTIFY_STREAM)
-  int notifyPrio;     ///< Configured notifier thread priority (0 = default)
-  size_t notifyBatch; ///< Configured notifier batch count (1 = single sample)
+  uint8_t notifyType;            ///< Configured notifier type (IO_NOTIFY_POLL or IO_NOTIFY_STREAM)
+  int notifyPrio;                ///< Configured notifier thread priority (0 = default)
+  size_t notifyBatch;            ///< Configured notifier batch count (1 = single sample)
 #endif
 #ifdef CONFIG_DAWN_IO_HAS_STATS
-  IOStats stats;      ///< Runtime statistics
+  IOStats stats;                 ///< Runtime statistics
 #endif
 
   /**

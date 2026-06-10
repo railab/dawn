@@ -13,6 +13,7 @@
 #include "dawn/debug.hxx"
 
 #include "dawn_debug.hxx"
+#include "dawn_file_load.hxx"
 #include "dawn_parseargs.hxx"
 
 using namespace dawn;
@@ -39,9 +40,7 @@ extern const size_t g_dawn_flash_desc_count __attribute__((weak));
 
 // Default args
 
-static struct args_s g_args = {
-  // for future usage
-};
+static struct args_s g_args = {};
 
 // dawn_main
 
@@ -54,6 +53,8 @@ extern "C" int main(int argc, char *argv[])
   size_t boot_desc_len = 0;
   uint32_t *desc_bin = nullptr;
   size_t desc_len = 0;
+  uint32_t *file_buf = nullptr;
+  bool file_loaded = false;
   size_t flash_desc_count = 0;
   size_t desc_slot = 0;
   int ret = OK;
@@ -66,8 +67,6 @@ extern "C" int main(int argc, char *argv[])
   // Parse command-line arguments
 
 #ifdef CONFIG_BUILTIN
-  // Parse the command line
-
   parse_args(&g_args, argc, argv);
 #endif
 
@@ -98,10 +97,43 @@ extern "C" int main(int argc, char *argv[])
       goto errout;
     }
 
-  // Initialize descriptor slot 0 (boot descriptor)
-
+#ifdef CONFIG_DAWN_APPS_DESC_SOURCE_FILE
+  if (g_args.descPath != nullptr)
+    {
+      ret = dawn_file_load_descriptor(
+        g_args.descPath, CONFIG_DAWN_APPS_DESC_FILE_MAX_SIZE, &boot_desc_bin, &boot_desc_len);
+      if (ret < 0)
+        {
+#  ifdef CONFIG_DAWN_APPS_DESC_SOURCE_BUILTIN
+          DAWNWARN("loading descriptor from file '%s' failed (%d), "
+                   "falling back to built-in\n",
+                   g_args.descPath,
+                   ret);
+          boot_desc_bin = g_dawn_desc;
+          boot_desc_len = g_dawn_desc_size;
+#  else
+          DAWNERR("ERROR: failed to load descriptor from '%s': %d\n", g_args.descPath, ret);
+          goto errout;
+#  endif
+        }
+      else
+        {
+          file_buf = boot_desc_bin;
+          file_loaded = true;
+        }
+    }
+  else
+    {
+#  ifdef CONFIG_DAWN_APPS_DESC_SOURCE_BUILTIN
+      boot_desc_bin = g_dawn_desc;
+      boot_desc_len = g_dawn_desc_size;
+#  endif
+    }
+#else
   boot_desc_bin = g_dawn_desc;
   boot_desc_len = g_dawn_desc_size;
+#endif
+
   desc_bin = boot_desc_bin;
   desc_len = boot_desc_len;
 
@@ -115,7 +147,7 @@ extern "C" int main(int argc, char *argv[])
     }
 #endif
 
-  devdesc = CDevDescriptor::getInst();
+  devdesc = pDawn->getDevDescriptor();
   dreg.ptr = desc_bin;
   dreg.len = desc_len;
   ret = devdesc->regDescriptor(0, dreg);
@@ -191,5 +223,11 @@ extern "C" int main(int argc, char *argv[])
 
 errout:
   delete pDawn;
+
+  if (file_loaded && file_buf != nullptr)
+    {
+      delete[] file_buf;
+    }
+
   return 0;
 }

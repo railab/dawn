@@ -47,15 +47,15 @@ static uint32_t g_dawn_desc2[] = {
 
 // Register g_dawn_desc1 in slot 0 and configure+init the supplied IO.
 
-static void descriptor_setup_slot0(CIODescriptor &io)
+static void descriptor_setup_slot0(CDevDescriptor &dev, CIODescriptor &io)
 {
-  CDevDescriptor *inst = CDevDescriptor::getInst();
   CDevDescriptor::SDescriptorReg reg;
 
   reg.ptr = (void *)g_dawn_desc1;
   reg.len = sizeof(g_dawn_desc1);
-  TEST_ASSERT_EQUAL(OK, inst->regDescriptor(0, reg));
+  TEST_ASSERT_EQUAL(OK, dev.regDescriptor(0, reg));
 
+  io.setDevDescriptor(&dev);
   TEST_ASSERT_EQUAL(OK, io.configure());
   TEST_ASSERT_EQUAL(OK, io.init());
 }
@@ -66,13 +66,14 @@ static void descriptor_setup_slot0(CIODescriptor &io)
 
 static void test_io_descriptor_read_full_slot0()
 {
+  CDevDescriptor dev;
   CDescObject desc0(g_cfg_descriptor1);
   CIODescriptor io0(desc0);
   io_ddata_t *data;
   uint32_t *ptr;
   size_t desc_size;
 
-  descriptor_setup_slot0(io0);
+  descriptor_setup_slot0(dev, io0);
 
   desc_size = io0.getDataSize();
   data = io0.ddata_alloc(1, desc_size);
@@ -87,7 +88,6 @@ static void test_io_descriptor_read_full_slot0()
   TEST_ASSERT_EQUAL(5, ptr[4]);
 
   free(data);
-  CDevDescriptor::destroy();
 }
 
 //***************************************************************************
@@ -96,20 +96,19 @@ static void test_io_descriptor_read_full_slot0()
 
 static void test_io_descriptor_configure_idempotent()
 {
-  CDevDescriptor *inst = CDevDescriptor::getInst();
+  CDevDescriptor dev;
   CDevDescriptor::SDescriptorReg reg;
   CDescObject desc0(g_cfg_descriptor1);
   CIODescriptor io0(desc0);
 
   reg.ptr = (void *)g_dawn_desc1;
   reg.len = sizeof(g_dawn_desc1);
-  TEST_ASSERT_EQUAL(OK, inst->regDescriptor(0, reg));
+  TEST_ASSERT_EQUAL(OK, dev.regDescriptor(0, reg));
 
+  io0.setDevDescriptor(&dev);
   TEST_ASSERT_EQUAL(OK, io0.configure());
   TEST_ASSERT_EQUAL(OK, io0.configure());
   TEST_ASSERT_EQUAL(OK, io0.init());
-
-  CDevDescriptor::destroy();
 }
 
 //***************************************************************************
@@ -119,14 +118,13 @@ static void test_io_descriptor_configure_idempotent()
 
 static void test_io_descriptor_alloc_no_chunk_returns_null()
 {
+  CDevDescriptor dev;
   CDescObject desc0(g_cfg_descriptor1);
   CIODescriptor io0(desc0);
 
-  descriptor_setup_slot0(io0);
+  descriptor_setup_slot0(dev, io0);
 
   TEST_ASSERT_EQUAL(nullptr, io0.ddata_alloc(1));
-
-  CDevDescriptor::destroy();
 }
 
 #if CONFIG_DAWN_DESC_SLOTS > 1
@@ -151,7 +149,7 @@ static void test_io_descriptor_unregistered_alloc_null()
 
 static void test_io_descriptor_read_full_slot1()
 {
-  CDevDescriptor *inst = CDevDescriptor::getInst();
+  CDevDescriptor dev;
   CDevDescriptor::SDescriptorReg reg;
   CDescObject desc1(g_cfg_descriptor2);
   CIODescriptor io1(desc1);
@@ -161,8 +159,9 @@ static void test_io_descriptor_read_full_slot1()
 
   reg.ptr = (void *)g_dawn_desc2;
   reg.len = sizeof(g_dawn_desc2);
-  TEST_ASSERT_EQUAL(OK, inst->regDescriptor(1, reg));
+  TEST_ASSERT_EQUAL(OK, dev.regDescriptor(1, reg));
 
+  io1.setDevDescriptor(&dev);
   TEST_ASSERT_EQUAL(OK, io1.configure());
   TEST_ASSERT_EQUAL(OK, io1.init());
 
@@ -178,7 +177,6 @@ static void test_io_descriptor_read_full_slot1()
   TEST_ASSERT_EQUAL(0xef, ptr[3]);
 
   free(data);
-  CDevDescriptor::destroy();
 }
 #endif
 
@@ -188,12 +186,12 @@ static void test_io_descriptor_read_full_slot1()
 
 static void test_io_descriptor_is_seekable()
 {
+  CDevDescriptor dev;
   CDescObject desc0(g_cfg_descriptor1);
   CIODescriptor io0(desc0);
 
-  descriptor_setup_slot0(io0);
+  descriptor_setup_slot0(dev, io0);
   TEST_ASSERT_EQUAL(true, io0.isSeekable());
-  CDevDescriptor::destroy();
 }
 
 //***************************************************************************
@@ -203,12 +201,13 @@ static void test_io_descriptor_is_seekable()
 
 static void test_io_descriptor_seek_read_aligned_chunks()
 {
+  CDevDescriptor dev;
   CDescObject desc0(g_cfg_descriptor1);
   CIODescriptor io0(desc0);
   io_ddata_t *chunk;
   uint8_t *ptr;
 
-  descriptor_setup_slot0(io0);
+  descriptor_setup_slot0(dev, io0);
 
   chunk = io0.ddata_alloc(1, 8);
   TEST_ASSERT(chunk != nullptr);
@@ -225,7 +224,6 @@ static void test_io_descriptor_seek_read_aligned_chunks()
   TEST_ASSERT_EQUAL(4, reinterpret_cast<uint32_t *>(ptr)[1]);
 
   free(chunk);
-  CDevDescriptor::destroy();
 }
 
 //***************************************************************************
@@ -235,12 +233,13 @@ static void test_io_descriptor_seek_read_aligned_chunks()
 
 static void test_io_descriptor_seek_read_tail()
 {
+  CDevDescriptor dev;
   CDescObject desc0(g_cfg_descriptor1);
   CIODescriptor io0(desc0);
   io_ddata_t *chunk;
   uint8_t *ptr;
 
-  descriptor_setup_slot0(io0);
+  descriptor_setup_slot0(dev, io0);
 
   chunk = io0.ddata_alloc(1, 8);
   TEST_ASSERT(chunk != nullptr);
@@ -250,7 +249,6 @@ static void test_io_descriptor_seek_read_tail()
   TEST_ASSERT_EQUAL(5, reinterpret_cast<uint32_t *>(ptr)[0]);
 
   free(chunk);
-  CDevDescriptor::destroy();
 }
 
 //***************************************************************************
@@ -260,11 +258,12 @@ static void test_io_descriptor_seek_read_tail()
 
 static void test_io_descriptor_seek_read_past_end()
 {
+  CDevDescriptor dev;
   CDescObject desc0(g_cfg_descriptor1);
   CIODescriptor io0(desc0);
   io_ddata_t *chunk;
 
-  descriptor_setup_slot0(io0);
+  descriptor_setup_slot0(dev, io0);
 
   chunk = io0.ddata_alloc(1, 8);
   TEST_ASSERT(chunk != nullptr);
@@ -273,7 +272,6 @@ static void test_io_descriptor_seek_read_past_end()
   TEST_ASSERT_EQUAL(-EINVAL, io0.getData(*chunk, 1, 100));
 
   free(chunk);
-  CDevDescriptor::destroy();
 }
 
 //***************************************************************************
@@ -283,11 +281,12 @@ static void test_io_descriptor_seek_read_past_end()
 
 static void test_io_descriptor_seek_read_len_invalid()
 {
+  CDevDescriptor dev;
   CDescObject desc0(g_cfg_descriptor1);
   CIODescriptor io0(desc0);
   io_ddata_t *chunk;
 
-  descriptor_setup_slot0(io0);
+  descriptor_setup_slot0(dev, io0);
 
   chunk = io0.ddata_alloc(1, 8);
   TEST_ASSERT(chunk != nullptr);
@@ -295,7 +294,6 @@ static void test_io_descriptor_seek_read_len_invalid()
   TEST_ASSERT_EQUAL(-EINVAL, io0.getData(*chunk, 2, 4));
 
   free(chunk);
-  CDevDescriptor::destroy();
 }
 
 //***************************************************************************
@@ -304,7 +302,7 @@ static void test_io_descriptor_seek_read_len_invalid()
 
 static void test_io_descriptor_slot0_readonly()
 {
-  CDevDescriptor *inst = CDevDescriptor::getInst();
+  CDevDescriptor dev;
   CDevDescriptor::SDescriptorReg reg;
   CDescObject desc0(g_cfg_descriptor1);
   CIODescriptor io0(desc0);
@@ -313,9 +311,10 @@ static void test_io_descriptor_slot0_readonly()
 
   reg.ptr = (void *)g_dawn_desc1;
   reg.len = sizeof(g_dawn_desc1);
-  ret = inst->regDescriptor(0, reg);
+  ret = dev.regDescriptor(0, reg);
   TEST_ASSERT_EQUAL(OK, ret);
 
+  io0.setDevDescriptor(&dev);
   ret = io0.configure();
   TEST_ASSERT_EQUAL(OK, ret);
 
@@ -328,7 +327,6 @@ static void test_io_descriptor_slot0_readonly()
   TEST_ASSERT_EQUAL(-EROFS, ret);
 
   free(chunk);
-  CDevDescriptor::destroy();
 }
 
 #if CONFIG_DAWN_DESC_SLOTS > 1
@@ -338,7 +336,7 @@ static void test_io_descriptor_slot0_readonly()
 
 static void test_io_descriptor_slot1_write_seek()
 {
-  CDevDescriptor *inst = CDevDescriptor::getInst();
+  CDevDescriptor dev;
   CDevDescriptor::SDescriptorReg reg;
   CDescObject desc1(g_cfg_descriptor2);
   CIODescriptor io1(desc1);
@@ -346,6 +344,7 @@ static void test_io_descriptor_slot1_write_seek()
   int ret;
   uint8_t *ptr;
 
+  io1.setDevDescriptor(&dev);
   ret = io1.configure();
   TEST_ASSERT_EQUAL(OK, ret);
 
@@ -361,7 +360,7 @@ static void test_io_descriptor_slot1_write_seek()
   ret = io1.setData(*chunk, 3);
   TEST_ASSERT_EQUAL(OK, ret);
 
-  ret = inst->getDescriptor(1, reg);
+  ret = dev.getDescriptor(1, reg);
   TEST_ASSERT_EQUAL(OK, ret);
   TEST_ASSERT(reg.ptr != nullptr);
   TEST_ASSERT_EQUAL(7, reg.len);
@@ -371,7 +370,6 @@ static void test_io_descriptor_slot1_write_seek()
   TEST_ASSERT_EQUAL(0x44, ((uint8_t *)reg.ptr)[6]);
 
   free(chunk);
-  CDevDescriptor::destroy();
 }
 
 //***************************************************************************
@@ -380,7 +378,7 @@ static void test_io_descriptor_slot1_write_seek()
 
 static void test_io_descriptor_chunked_write()
 {
-  CDevDescriptor *inst = CDevDescriptor::getInst();
+  CDevDescriptor dev;
   CDevDescriptor::SDescriptorReg reg;
   CDescObject desc1(g_cfg_descriptor2);
   CIODescriptor io1(desc1);
@@ -388,6 +386,7 @@ static void test_io_descriptor_chunked_write()
   int ret;
   uint8_t *ptr;
 
+  io1.setDevDescriptor(&dev);
   ret = io1.configure();
   TEST_ASSERT_EQUAL(OK, ret);
 
@@ -406,7 +405,7 @@ static void test_io_descriptor_chunked_write()
   ret = io1.setData(*chunk, 2);
   TEST_ASSERT_EQUAL(OK, ret);
 
-  ret = inst->getDescriptor(1, reg);
+  ret = dev.getDescriptor(1, reg);
   TEST_ASSERT_EQUAL(OK, ret);
   TEST_ASSERT(reg.ptr != nullptr);
   TEST_ASSERT_EQUAL(4, reg.len);
@@ -416,7 +415,6 @@ static void test_io_descriptor_chunked_write()
   TEST_ASSERT_EQUAL(0xD4, ((uint8_t *)reg.ptr)[3]);
 
   free(chunk);
-  CDevDescriptor::destroy();
 }
 
 //***************************************************************************
@@ -425,11 +423,13 @@ static void test_io_descriptor_chunked_write()
 
 static void test_io_descriptor_write_overflow()
 {
+  CDevDescriptor dev;
   CDescObject desc1(g_cfg_descriptor2);
   CIODescriptor io1(desc1);
   io_ddata_t *chunk;
   int ret;
 
+  io1.setDevDescriptor(&dev);
   ret = io1.configure();
   TEST_ASSERT_EQUAL(OK, ret);
 
@@ -440,7 +440,6 @@ static void test_io_descriptor_write_overflow()
   TEST_ASSERT_EQUAL(-ENOSPC, ret);
 
   free(chunk);
-  CDevDescriptor::destroy();
 }
 #endif
 
