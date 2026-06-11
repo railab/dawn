@@ -68,10 +68,9 @@ CIOSensor::~CIOSensor()
   deinit();
 }
 
-int CIOSensor::configure()
+int CIOSensor::validateDtype()
 {
   int dtypeSize;
-  int ret;
 
 #ifdef CONFIG_SENSORS_USE_B16
   if (getDtype() != SObjectId::DTYPE_B16)
@@ -97,6 +96,19 @@ int CIOSensor::configure()
     }
 
   dsize = dtypeSize;
+
+  return OK;
+}
+
+int CIOSensor::configure()
+{
+  int ret;
+
+  ret = validateDtype();
+  if (ret != OK)
+    {
+      return ret;
+    }
 
   if (info == nullptr)
     {

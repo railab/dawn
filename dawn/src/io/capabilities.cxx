@@ -111,6 +111,10 @@ void CIOCapabilities::buildIoBitmap()
   setBitmapBit(ioBitmap, CIOCommon::IO_CLASS_SENSOR_IR);
   setBitmapBit(ioBitmap, CIOCommon::IO_CLASS_SENSOR_UV);
   setBitmapBit(ioBitmap, CIOCommon::IO_CLASS_SENSOR_GAS);
+  setBitmapBit(ioBitmap, CIOCommon::IO_CLASS_SENSOR_GNSS);
+  setBitmapBit(ioBitmap, CIOCommon::IO_CLASS_SENSOR_GNSS_TIME);
+  setBitmapBit(ioBitmap, CIOCommon::IO_CLASS_SENSOR_GNSS_INFO);
+  setBitmapBit(ioBitmap, CIOCommon::IO_CLASS_SENSOR_GNSS_SATELLITES);
 #endif
 #ifdef CONFIG_DAWN_IO_SENSOR_PRODUCER
   setBitmapBit(ioBitmap, CIOCommon::IO_CLASS_SENSOR_PRODUCER_ACCELEROMETER);

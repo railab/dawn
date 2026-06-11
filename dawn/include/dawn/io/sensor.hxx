@@ -86,6 +86,14 @@ public:
           return "uv";
         case IO_CLASS_SENSOR_GAS:
           return "gas";
+        case IO_CLASS_SENSOR_GNSS:
+          return "gnss";
+        case IO_CLASS_SENSOR_GNSS_TIME:
+          return "gnss_time";
+        case IO_CLASS_SENSOR_GNSS_INFO:
+          return "gnss_info";
+        case IO_CLASS_SENSOR_GNSS_SATELLITES:
+          return "gnss_sats";
         default:
           return "sensor";
       }
@@ -204,6 +212,26 @@ public:
     return CIOSensor::objectId(CIOCommon::IO_CLASS_SENSOR_GAS, dtype, ts, inst);
   }
 
+  constexpr static SObjectId::ObjectId objectIdGnss(uint8_t dtype, bool ts, uint16_t inst)
+  {
+    return CIOSensor::objectId(CIOCommon::IO_CLASS_SENSOR_GNSS, dtype, ts, inst);
+  }
+
+  constexpr static SObjectId::ObjectId objectIdGnssTime(uint8_t dtype, bool ts, uint16_t inst)
+  {
+    return CIOSensor::objectId(CIOCommon::IO_CLASS_SENSOR_GNSS_TIME, dtype, ts, inst);
+  }
+
+  constexpr static SObjectId::ObjectId objectIdGnssInfo(uint8_t dtype, bool ts, uint16_t inst)
+  {
+    return CIOSensor::objectId(CIOCommon::IO_CLASS_SENSOR_GNSS_INFO, dtype, ts, inst);
+  }
+
+  constexpr static SObjectId::ObjectId objectIdGnssSats(uint8_t dtype, bool ts, uint16_t inst)
+  {
+    return CIOSensor::objectId(CIOCommon::IO_CLASS_SENSOR_GNSS_SATELLITES, dtype, ts, inst);
+  }
+
   constexpr static SObjectCfg::ObjectCfgId cfgIdUpdateInterval()
   {
     return SObjectCfg::objectCfg(SObjectId::OBJTYPE_IO,
@@ -224,8 +252,10 @@ public:
                                  IO_SENSOR_CFG_MEASPERIOD);
   }
 
-private:
-  constexpr static const size_t DATA_BUFFER_SIZE = 32;
+protected:
+  // Must fit the largest NuttX sensor event struct read in one go. The GNSS
+  // event (struct sensor_gnss) is the largest at ~72 bytes; keep headroom.
+  constexpr static const size_t DATA_BUFFER_SIZE = 96;
 
   const SIOSensorMapInfo *info; ///< Sensor metadata.
   size_t dsize;                 ///< Sensor data size in bytes.
@@ -233,6 +263,11 @@ private:
   uint32_t measurementPeriod;   ///< Sensor measurement period in milliseconds.
   char path[PATH_MAX] = {};     ///< Sensor device file path.
   int fd;                       ///< File descriptor for sensor device.
+
+  // Validate the configured dtype and set dsize (bytes per element). The base
+  // accepts only the NuttX float sensor_data_t; GNSS subclasses override this
+  // to also accept integer time/satellite fields.
+  virtual int validateDtype();
 
   int configureDesc(const CDescObject &desc);
 };

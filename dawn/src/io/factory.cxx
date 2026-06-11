@@ -79,6 +79,7 @@
 #  include "dawn/io/virt.hxx"
 #endif
 #ifdef CONFIG_DAWN_IO_SENSOR
+#  include "dawn/io/gnss.hxx"
 #  include "dawn/io/sensor.hxx"
 #endif
 #ifdef CONFIG_DAWN_IO_SENSOR_PRODUCER
@@ -194,6 +195,11 @@ CIOCommon *CIOFactory::create(CDescObject &desc)
       case CIOCommon::IO_CLASS_SENSOR_UV:
       case CIOCommon::IO_CLASS_SENSOR_GAS:
         return new CIOSensor(desc);
+      case CIOCommon::IO_CLASS_SENSOR_GNSS:
+      case CIOCommon::IO_CLASS_SENSOR_GNSS_TIME:
+      case CIOCommon::IO_CLASS_SENSOR_GNSS_INFO:
+      case CIOCommon::IO_CLASS_SENSOR_GNSS_SATELLITES:
+        return new CIOSensorGnss(desc);
 #endif
 
 #ifdef CONFIG_DAWN_IO_SENSOR_PRODUCER
