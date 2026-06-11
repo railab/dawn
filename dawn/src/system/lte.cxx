@@ -27,6 +27,7 @@ CSystemLte::CSystemLte(CDescObject &desc)
   : CSystemCommon(desc)
   , auth_type(0)
   , ip_type(0)
+  , psave_mode(0)
   , reg_timeout(0)
 {
   apn[0] = '\0';
@@ -52,6 +53,7 @@ void CSystemLte::loadParams()
   password[sizeof(password) - 1] = '\0';
   auth_type = CONFIG_DAWN_SYSTEM_LTE_AUTHTYPE;
   ip_type = CONFIG_DAWN_SYSTEM_LTE_IPTYPE;
+  psave_mode = CONFIG_DAWN_SYSTEM_LTE_PSAVE;
   reg_timeout = CONFIG_DAWN_SYSTEM_LTE_REG_TIMEOUT;
 
   // Override from descriptor config items
@@ -126,6 +128,7 @@ int CSystemLte::doStart()
   params.password = password[0] ? password : nullptr;
   params.auth_type = auth_type;
   params.ip_type = ip_type;
+  params.psave_mode = psave_mode;
   params.reg_timeout = reg_timeout;
 
   ret = lte_port_connect(&params);
