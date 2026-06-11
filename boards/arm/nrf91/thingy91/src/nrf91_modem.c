@@ -67,26 +67,6 @@ int nrf91_modem_board_init(void)
       goto errout;
     }
 
-  /* Disable power-saving mode (PSM) and eDRX so the device stays reachable
-   * for server-initiated LwM2M reads/observes.  Without this the modem sleeps
-   * after attach and on-demand reads time out.  Sent in offline mode (CFUN=0)
-   * during board init, before the LTE attach.
-   */
-
-  ret = nrf_modem_at_printf("AT+CPSMS=0");
-  if (ret < 0)
-    {
-      nerr("AT+CPSMS disable failed %d", ret);
-      goto errout;
-    }
-
-  ret = nrf_modem_at_printf("AT+CEDRXS=3");
-  if (ret < 0)
-    {
-      nerr("AT+CEDRXS disable failed %d", ret);
-      goto errout;
-    }
-
 errout:
   return ret;
 }

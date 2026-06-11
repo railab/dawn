@@ -15,13 +15,46 @@ metadata:
   - /dev/uorb/sensor_baro0
   - /dev/uorb/sensor_gas0
   - /dev/uorb/sensor_rgb0
+  - /dev/uorb/sensor_gnss0
   - /dev/batt0
+  - /dev/rgbled0
+  - /dev/rgbled1
+  - /dev/buttons0
 system:
 - id: lte_main
   type: lte
   config:
     apn: ''
     ip_type: 0
+# GNSS/LTE coexistence manager. mode 0 = off: don't touch the radio knobs.
+# GNSS gets its sustained window from LTE PSM (set on the lte system), which is
+# what lets a cold fix complete; the manager does not interfere.
+- id: gnss_manager
+  type: gnss
+  config:
+    # 0=off (LTE only), 1=hybrid (LTE first, then bounded GNSS windows that
+    # always hand the radio back so LTE stays reachable indoors).
+    mode: 1
+    # LTE-first grace: wait up to this long for LTE to connect before the
+    # first GNSS attempt (seconds).
+    settle: 60
+    # Bounded fix-acquisition window; on expiry the radio returns to LTE
+    # whether or not a fix landed (seconds). Must exceed a typical cold TTFF -
+    # measured ~208s open-sky on this board - so a single window can land a
+    # cold fix; the receiver goes cold during the retry cooldown otherwise.
+    acquire: 360
+    # LTE-reachable cooldown after a failed attempt before retrying (seconds).
+    retry: 300
+    # Consecutive no-fix windows before giving up. 0 = never give up (keep
+    # retrying forever, registration-safe). >0 = after N failures, park on LTE
+    # only and re-arm after 'rearm' seconds (good for mostly-indoor devices).
+    max_attempts: 0
+    # Re-arm delay after giving up (seconds); LTE stays fully reachable.
+    rearm: 3600
+    # Runtime on/off switch. false = boot LTE-only (GNSS idle); a server turns
+    # GNSS on/off live via the custom GNSS control object 33006/0 (bound to this
+    # item through the gnss_enable config IO below). mode must be != 0 to enable.
+    enabled: false
 ios:
 - &temperature
   id: bme680_temperature
@@ -111,6 +144,100 @@ ios:
   id: bh1749_blue
   type: virt
   dtype: float
+# Modem GNSS (/dev/uorb/sensor_gnss0). The nRF9160 reports a rich fix (struct
+# sensor_gnss). Rather than the generic float-vector sensor IO, GNSS uses
+# dedicated sensor sub-IOs (CIOSensorGnss) that each assemble a logical group
+# of fields, so non-float values (time, satellites) get their proper dtype:
+#   gnss      -> position+velocity (lat, lon, alt, speed, course) float[5]
+#   gnss_time -> UTC time, seconds since epoch                    uint64
+#   gnss_info -> accuracy + DOP (eph, epv, hdop, pdop, vdop)      float[5]
+#   gnss_sats -> satellites used in the fix                       uint32
+# The float groups are fanned out to scalars by vecsplit. The scalars hold
+# their init value until the modem acquires a fix. GNSS shares the modem with
+# LTE (XSYSTEMMODE=LTE-M+GNSS); the nRF91 driver defers starting the engine
+# until the LTE stack has powered the modem.
+- &gnss
+  id: gnss
+  type: sensor
+  dtype: float
+  config:
+    device: 0
+  subtype: gnss
+- &gnss_time
+  id: gnss_time
+  type: sensor
+  dtype: uint64
+  config:
+    device: 0
+  subtype: gnss_time
+- &gnss_info
+  id: gnss_info
+  type: sensor
+  dtype: float
+  config:
+    device: 0
+  subtype: gnss_info
+- &gnss_sats
+  id: gnss_sats
+  type: sensor
+  dtype: uint32
+  config:
+    device: 0
+  subtype: gnss_sats
+# Position+velocity scalars (split from &gnss, in field order).
+- &gnss_lat
+  id: gnss_latitude
+  type: virt
+  dtype: float
+- &gnss_lon
+  id: gnss_longitude
+  type: virt
+  dtype: float
+- &gnss_alt
+  id: gnss_altitude
+  type: virt
+  dtype: float
+- &gnss_speed
+  id: gnss_speed
+  type: virt
+  dtype: float
+- &gnss_course
+  id: gnss_course
+  type: virt
+  dtype: float
+# Accuracy + DOP scalars (split from &gnss_info, in field order).
+- &gnss_eph
+  id: gnss_eph
+  type: virt
+  dtype: float
+- &gnss_epv
+  id: gnss_epv
+  type: virt
+  dtype: float
+- &gnss_hdop
+  id: gnss_hdop
+  type: virt
+  dtype: float
+- &gnss_pdop
+  id: gnss_pdop
+  type: virt
+  dtype: float
+- &gnss_vdop
+  id: gnss_vdop
+  type: virt
+  dtype: float
+# Scalar GNSS values (time, satellites) are read on demand by the server, but
+# the uorb device returns -ENODATA between fixes. A 'latest' program caches the
+# most recent sample into a virt (holding the init value until the first fix),
+# so the LwM2M read never errors - mirroring the sensor 'latest' pattern.
+- &gnss_time_v
+  id: gnss_time_latest
+  type: virt
+  dtype: uint64
+- &gnss_sats_v
+  id: gnss_sats_latest
+  type: virt
+  dtype: uint32
 # ADP5360 fuel gauge (/dev/batt0). The battery_gauge ioctls read the PMIC
 # registers on demand, so these bind directly to LwM2M.
 - &battery_voltage
@@ -128,6 +255,46 @@ ios:
 - &battery_state
   id: battery_state
   type: batt_state
+  dtype: uint32
+  config:
+    device: 0
+# The Thingy:91 has two RGB LEDs behind the 3.3 V rail the ADP5360 PMIC
+# enables at bring-up. Each value is a packed 0xRRGGBB colour; binding it rw
+# to LwM2M lets the colour be set from the server.
+#
+# Lightwell LED: the large LED in the enclosure light pipe (PWM0, P0.29/30/31)
+# -> /dev/rgbled0.
+- &rgb_led
+  id: rgbled0
+  type: rgb_led
+  dtype: uint32
+  config:
+    device: 0
+    init_val: 0x000000
+# Sense LED: the small LED next to the sensors (PWM1, P0.0/1/2) -> /dev/rgbled1.
+- &rgb_led_sense
+  id: rgbled1
+  type: rgb_led
+  dtype: uint32
+  config:
+    device: 1
+    init_val: 0x000000
+# GNSS enable switch: a writable config IO bound to the GNSS manager's 'enabled'
+# item. Exposed over LwM2M as the custom GNSS control object 33006/0 (Boolean)
+# so the server can turn GNSS on/off at runtime; boots LTE-only (enabled: false).
+- &gnss_enable
+  id: gnss_enable
+  type: config
+  dtype: bool
+  rw: true
+  config:
+    objid_ref: gnss_manager
+    objcfg_ref: enabled
+# User button (SW3, P0.26), interrupt-driven via GPIOTE (/dev/buttons0). The
+# value is a bitmask of pressed buttons; bit 0 is the single Thingy:91 button.
+- &button
+  id: buttons0
+  type: buttons
   dtype: uint32
   config:
     device: 0
@@ -167,6 +334,35 @@ programs:
     - *color_r
     - *color_g
     - *color_b
+- id: gnss_split
+  type: vecsplit
+  config:
+    source: *gnss
+    outputs:
+    - *gnss_lat
+    - *gnss_lon
+    - *gnss_alt
+    - *gnss_speed
+    - *gnss_course
+- id: gnss_info_split
+  type: vecsplit
+  config:
+    source: *gnss_info
+    outputs:
+    - *gnss_eph
+    - *gnss_epv
+    - *gnss_hdop
+    - *gnss_pdop
+    - *gnss_vdop
+- id: gnss_latest
+  type: latest
+  config:
+    sources:
+    - *gnss_time
+    - *gnss_sats
+    outputs:
+    - *gnss_time_v
+    - *gnss_sats_v
 protocols:
 - id: wakaama_main
   type: wakaama
@@ -175,9 +371,14 @@ protocols:
     server_host: 23.97.187.154
     local_port: 56832
     servers:
+        # Registration lifetime (seconds). On cellular this doubles as the NAT
+        # keepalive: each registration update is an uplink that refreshes the
+        # operator's UDP binding, so the lifetime must stay below the network's
+        # NAT timeout (~150-300s here) or the device becomes unreachable between
+        # updates. With Queue Mode a longer lifetime is fine (downlinks queue).
       - host: 23.97.187.154
         port: 5683
-        lifetime: 300
+        lifetime: 120
         short_server_id: 123
     device:
       manufacturer: Dawn
@@ -232,4 +433,90 @@ protocols:
           access: read
         - resource_id: 2
           io: *color_b
+          access: read
+      # Standard LwM2M Location object (6), fed from the modem GNSS:
+      #   /6/0/0 Latitude, /6/0/1 Longitude, /6/0/2 Altitude,
+      #   /6/0/3 Radius (horizontal accuracy, eph), /6/0/5 Timestamp (UTC
+      #   seconds, gnss_time), /6/0/6 Speed (ground speed).
+      - object_id: 6
+        instance: 0
+        resources:
+        - resource_id: 0
+          io: *gnss_lat
+          access: read
+        - resource_id: 1
+          io: *gnss_lon
+          access: read
+        - resource_id: 2
+          io: *gnss_alt
+          access: read
+        - resource_id: 3
+          io: *gnss_eph
+          access: read
+        - resource_id: 5
+          io: *gnss_time_v
+          access: read
+        - resource_id: 6
+          io: *gnss_speed
+          access: read
+      # Custom GNSS-info object (private id 33005): the remaining fix quality
+      # data that has no standard Location resource. 0=satellites used,
+      # 1=course (deg), 2=vertical accuracy epv (m), 3=HDOP, 4=PDOP, 5=VDOP.
+      - object_id: 33005
+        instance: 0
+        resources:
+        - resource_id: 0
+          io: *gnss_sats_v
+          access: read
+        - resource_id: 1
+          io: *gnss_course
+          access: read
+        - resource_id: 2
+          io: *gnss_epv
+          access: read
+        - resource_id: 3
+          io: *gnss_hdop
+          access: read
+        - resource_id: 4
+          io: *gnss_pdop
+          access: read
+        - resource_id: 5
+          io: *gnss_vdop
+          access: read
+      # Custom RGB LED objects: resource 0 is the packed 0xRRGGBB colour,
+      # writable (and readable) over LwM2M so the LED can be controlled from
+      # the server. Encoded as an integer; write e.g. 0xFF0000 (16711680) for
+      # red. 33002 = lightwell LED (/dev/rgbled0), 33003 = sense LED
+      # (/dev/rgbled1).
+      - object_id: 33002
+        instance: 0
+        resources:
+        - resource_id: 0
+          io: *rgb_led
+          access: rw
+      - object_id: 33003
+        instance: 0
+        resources:
+        - resource_id: 0
+          io: *rgb_led_sense
+          access: rw
+      # Manufacturer-specific GNSS control object (private id 33006): resource 0
+      # is the runtime GNSS enable switch (Boolean, rw). No standard LwM2M object
+      # describes "enable a GNSS subsystem", so a custom object is used (in line
+      # with 33001-33005). Write true to start GNSS, false to stop and return to
+      # LTE-only. Bound to the GNSS manager's 'enabled' item via gnss_enable.
+      - object_id: 33006
+        instance: 0
+        resources:
+        - resource_id: 0
+          io: *gnss_enable
+          access: rw
+      # Standard IPSO Push button object (3347): resource 5500 "Digital Input
+      # State" reflects /dev/buttons0 (the user button, bit 0). Observe it from
+      # the server to be notified on press/release.
+      - object_id: 3347
+        instance: 0
+        resources:
+        - resource_id: 5500
+          io: *button
           access: read
