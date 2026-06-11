@@ -49,6 +49,7 @@ endif()
 
 if(CONFIG_DAWN_IO_SENSOR)
   list(APPEND SRCS sensor.cxx)
+  list(APPEND SRCS gnss.cxx)
 endif()
 
 if(CONFIG_DAWN_IO_SENSOR_PRODUCER)

@@ -141,6 +141,14 @@ public:
     IO_CLASS_SENSOR_PRODUCER_GAS = 35,           ///< Gas publisher
     IO_CLASS_SENSOR_PRODUCER_CONFIG = 36,        ///< Sensor producer configuration IDs
 
+    // GNSS sensor (uORB sensor_gnss). Read-only, so it has no producer
+    // counterpart and lives outside the aligned sensor/producer ranges above.
+
+    IO_CLASS_SENSOR_GNSS = 37, ///< GNSS position+velocity (lat/lon/alt/speed/course)
+    IO_CLASS_SENSOR_GNSS_TIME = 38, ///< GNSS UTC time (seconds since epoch)
+    IO_CLASS_SENSOR_GNSS_INFO = 39, ///< GNSS accuracy + DOP (eph/epv/hdop/pdop/vdop)
+    IO_CLASS_SENSOR_GNSS_SATELLITES = 40, ///< GNSS satellites used in fix
+
     // there is 59 sensor types in Nuttx now, most likely it grows later
     // we still have many free slots, but in the future, it there are no free IO slots
     // we can thing about combining sensor and sensor producer

@@ -104,6 +104,30 @@ public:
        sizeof(struct sensor_gas),
        1,
        offsetof(struct sensor_gas, gas_resistance)},
+      // GNSS variants (handled by CIOSensorGnss). All read the same
+      // /dev/uorb/sensor_gnss device; the payload offset is unused because
+      // CIOSensorGnss::getDataImpl assembles the specific fields itself. Only
+      // the element count (dim) matters here, for getDataSize().
+      {CIOCommon::IO_CLASS_SENSOR_GNSS, // position+velocity: lat/lon/alt/speed/course
+       "gnss",
+       sizeof(struct sensor_gnss),
+       5,
+       0},
+      {CIOCommon::IO_CLASS_SENSOR_GNSS_TIME, // UTC seconds (uint64)
+       "gnss",
+       sizeof(struct sensor_gnss),
+       1,
+       0},
+      {CIOCommon::IO_CLASS_SENSOR_GNSS_INFO, // eph/epv/hdop/pdop/vdop
+       "gnss",
+       sizeof(struct sensor_gnss),
+       5,
+       0},
+      {CIOCommon::IO_CLASS_SENSOR_GNSS_SATELLITES, // satellites used (uint32)
+       "gnss",
+       sizeof(struct sensor_gnss),
+       1,
+       0},
     };
 
     for (size_t i = 0; i < sizeof(map) / sizeof(map[0]); i++)
