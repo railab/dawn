@@ -194,5 +194,30 @@ int nrf91_i2ctool(void);
 void nrf91_spidev_initialize(void);
 #endif
 
+/****************************************************************************
+ * Name: nrf91_rgbled_initialize
+ *
+ * Description:
+ *   Register the on-board RGB LED (PWM0 channels 0-2, P0.29/30/31) as
+ *   /dev/rgbled0.  Requires the 3.3 V rail enabled by nrf91_pmic_init().
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_RGBLED
+int nrf91_rgbled_initialize(void);
+#endif
+
+/****************************************************************************
+ * Name: nrf91_eeprom_init
+ *
+ * Description:
+ *   Register the on-board 24CW160 I2C EEPROM (I2C2, 0x50) as /dev/eeprom0.
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_I2C_EE_24XX
+int nrf91_eeprom_init(void);
+#endif
+
 #endif /* __ASSEMBLY__ */
 #endif /* __BOARDS_ARM_NRF91_THINGY91_SRC_THINGY91_H */

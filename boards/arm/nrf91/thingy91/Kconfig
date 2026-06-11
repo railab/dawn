@@ -6,3 +6,16 @@
 if ARCH_BOARD_THINGY91
 
 endif
+
+# The Thingy:91 has one user button (P0.26) with interrupt support via
+# GPIOTE.  This board is normally built as a custom board (ARCH_BOARD_CUSTOM),
+# so advertise the button capability here rather than via the in-tree
+# boards/Kconfig entry.
+
+config ARCH_HAVE_BUTTONS
+	bool
+	default y
+
+config ARCH_HAVE_IRQBUTTONS
+	bool
+	default y

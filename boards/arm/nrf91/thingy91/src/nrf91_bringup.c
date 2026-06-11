@@ -212,6 +212,28 @@ int nrf91_bringup(void)
 #endif
 #endif
 
+#ifdef CONFIG_RGBLED
+  /* Register the RGB LED (PWM0). The 3.3 V rail that powers it is enabled by
+   * nrf91_pmic_init() above.
+   */
+
+  ret = nrf91_rgbled_initialize();
+  if (ret < 0)
+    {
+      syslog(LOG_ERR, "ERROR: Failed to initialize RGB LED: %d\n", ret);
+    }
+#endif
+
+#ifdef CONFIG_I2C_EE_24XX
+  /* Register the on-board 24CW160 I2C EEPROM (I2C2) as /dev/eeprom0 */
+
+  ret = nrf91_eeprom_init();
+  if (ret < 0)
+    {
+      syslog(LOG_ERR, "ERROR: Failed to initialize EEPROM: %d\n", ret);
+    }
+#endif
+
 #if defined(CONFIG_SENSORS_BME680) || defined(CONFIG_SENSORS_BH1749NUC) || \
     defined(CONFIG_SENSORS_ADXL362) || defined(CONFIG_SENSORS_ADXL372)
   /* Initialize on-board sensors */
