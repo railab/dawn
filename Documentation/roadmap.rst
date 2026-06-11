@@ -35,11 +35,9 @@ Tier 1
 
 #. Demo: Thingy:91
 
-   - [ ] GNSS
-   - [ ] EEPROM support
    - [ ] more sensors
-   - [ ] RGB led
    - [ ] update FW
+   - [ ] nrf52 support
 
 #. release nxscope-gui
 

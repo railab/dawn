@@ -54,7 +54,31 @@ Dawn Type           Default Dawn Unit
 ``ir``              ``float`` or ``b16``, lux
 ``uv``              ``float`` or ``b16``, UV index
 ``gas``             ``float`` or ``b16``, kilohms
+``gnss``            ``float``, 5-vector: latitude, longitude (degrees), altitude (metres), ground speed (m/s), course (degrees)
+``gnss_time``       ``uint64``, UTC time in seconds since the Unix epoch
+``gnss_info``       ``float``, 5-vector: horizontal/vertical accuracy (metres), HDOP, PDOP, VDOP
+``gnss_sats``       ``uint32``, number of satellites used in the fix
 =================== ======================================
+
+GNSS does not fit the generic float-vector sensor model (it carries non-float
+fields and the useful values are not contiguous), so the four ``gnss*``
+subtypes are handled by a dedicated class, :cpp:class:`dawn::CIOSensorGnss`,
+which overloads the sensor IO. They all read the same ``sensor_gnss`` device,
+and each assembles a logical group of fields from the NuttX ``sensor_gnss``
+event with the proper data type:
+
+- ``gnss`` -- position and velocity, as ``[latitude, longitude, altitude,
+  ground_speed, course]``;
+- ``gnss_time`` -- the modem UTC time (the kernel value is microseconds; it is
+  converted to seconds since the epoch, suitable for an LwM2M Time resource);
+- ``gnss_info`` -- fix quality, as ``[eph, epv, hdop, pdop, vdop]``;
+- ``gnss_sats`` -- the satellite count.
+
+Use a ``vecsplit`` program to break the multi-element ``gnss`` / ``gnss_info``
+vectors into per-field scalars (for example to feed an LwM2M Location object).
+The scalar ``gnss_time`` / ``gnss_sats`` IOs read ``-ENODATA`` between fixes;
+pair them with a ``latest`` program so a fetch-only protocol always reads the
+last value (the init value until the first fix) instead of an error.
 
 Implementation
 ==============
@@ -83,6 +107,10 @@ underlying NuttX sensor structures:
    "ir", "sensor_ir", "struct sensor_ir"
    "uv", "sensor_uv", "struct sensor_uv"
    "gas", "sensor_gas", "struct sensor_gas"
+   "gnss", "sensor_gnss", "struct sensor_gnss"
+   "gnss_time", "sensor_gnss", "struct sensor_gnss"
+   "gnss_info", "sensor_gnss", "struct sensor_gnss"
+   "gnss_sats", "sensor_gnss", "struct sensor_gnss"
 
 Configuration
 =============
