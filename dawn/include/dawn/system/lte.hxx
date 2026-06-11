@@ -105,6 +105,7 @@ private:
   char password[LTE_PASS_SIZE];
   uint8_t auth_type;
   uint8_t ip_type;
+  uint8_t psave_mode;
   uint32_t reg_timeout;
 
   /** @brief Load parameters from descriptor config items over Kconfig defaults. */

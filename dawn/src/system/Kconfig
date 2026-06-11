@@ -40,4 +40,18 @@ config DAWN_SYSTEM_LTE_REG_TIMEOUT
 	int "Default LTE registration timeout (seconds)"
 	default 120
 
+config DAWN_SYSTEM_LTE_PSAVE
+	int "Default LTE power-save mode (0=none, 1=PSM, 2=eDRX)"
+	default 0
+	range 0 2
+	---help---
+		Power-save mode requested at attach, applied through the NuttX LTE
+		API (lapi):
+		  0 = none  - PSM and eDRX disabled; the device stays reachable for
+		              server-initiated requests (highest power).
+		  1 = PSM   - Power Saving Mode; lowest power, the device is reachable
+		              only in brief windows (store-and-forward / queue mode).
+		  2 = eDRX  - extended DRX; balanced reachability and power.
+		The network must grant the requested mode.
+
 endif # DAWN_SYSTEM_LTE

@@ -32,6 +32,17 @@ enum
 };
 
 /**
+ * @brief LTE power-save mode.
+ */
+
+enum
+{
+  DAWN_LTE_PSAVE_NONE = 0, ///< PSM and eDRX disabled (always reachable)
+  DAWN_LTE_PSAVE_PSM = 1,  ///< Power Saving Mode
+  DAWN_LTE_PSAVE_EDRX = 2, ///< extended DRX
+};
+
+/**
  * @brief LTE connection status.
  */
 
@@ -56,6 +67,7 @@ struct SLteParams
   const char *password; ///< APN password (empty/null: none)
   uint8_t auth_type;    ///< DAWN_LTE_AUTH_*
   uint8_t ip_type;      ///< DAWN_LTE_IPTYPE_*
+  uint8_t psave_mode;   ///< DAWN_LTE_PSAVE_*
   uint32_t reg_timeout; ///< Registration/activation timeout (seconds)
 };
 } // Namespace dawn
@@ -89,3 +101,15 @@ int lte_port_disconnect(void);
  */
 
 int lte_port_status(uint32_t *status);
+
+/**
+ * @brief Set the LTE power-save mode at runtime.
+ *
+ * Lets a userspace policy retune reachability vs. power (and free the radio
+ * for GNSS) after the connection is up.
+ *
+ * @param mode One of DAWN_LTE_PSAVE_* (none / PSM / eDRX).
+ * @return OK on success, negative errno on failure.
+ */
+
+int lte_port_set_psave(uint8_t mode);
