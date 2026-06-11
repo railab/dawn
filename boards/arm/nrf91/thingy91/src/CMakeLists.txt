@@ -34,6 +34,14 @@ if(CONFIG_NRF91_I2C2_MASTER)
   list(APPEND SRCS nrf91_pmic.c)
 endif()
 
+if(CONFIG_RGBLED)
+  list(APPEND SRCS nrf91_rgbled.c)
+endif()
+
+if(CONFIG_I2C_EE_24XX)
+  list(APPEND SRCS nrf91_eeprom.c)
+endif()
+
 if(CONFIG_SENSORS_BME680
    OR CONFIG_SENSORS_BH1749NUC
    OR CONFIG_SENSORS_ADXL362
