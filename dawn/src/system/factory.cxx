@@ -9,6 +9,10 @@
 #  include "dawn/system/lte.hxx"
 #endif
 
+#ifdef CONFIG_DAWN_SYSTEM_GNSS
+#  include "dawn/system/gnss.hxx"
+#endif
+
 using namespace dawn;
 
 CSystemCommon *CSystemFactory::create(CDescObject &desc)
@@ -18,6 +22,11 @@ CSystemCommon *CSystemFactory::create(CDescObject &desc)
 #ifdef CONFIG_DAWN_SYSTEM_LTE
       case CSystemCommon::SYSTEM_CLASS_LTE:
         return new CSystemLte(desc);
+#endif
+
+#ifdef CONFIG_DAWN_SYSTEM_GNSS
+      case CSystemCommon::SYSTEM_CLASS_GNSS:
+        return new CSystemGnss(desc);
 #endif
 
       default:

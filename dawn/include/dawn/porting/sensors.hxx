@@ -29,6 +29,20 @@ int sensor_open(const char *path);
 int sensor_set_interval(int fd, uint32_t interval_us);
 
 /**
+ * @brief Give GNSS priority over other radio activity (e.g. LTE idle), or
+ *        release it.
+ *
+ * Pure mechanism: the caller (a userspace coexistence policy) decides when to
+ * use it. Maps to the SNIOC_GNSS_SET_PRIORITY control ioctl.
+ *
+ * @param fd File descriptor of the GNSS sensor device.
+ * @param on True to give GNSS priority, false to release it.
+ * @return Zero on success or a negative error code.
+ */
+
+int sensor_gnss_set_priority(int fd, bool on);
+
+/**
  * @brief Close sensor device.
  *
  * @param fd File descriptor.

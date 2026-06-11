@@ -28,6 +28,7 @@ public:
   {
     SYSTEM_CLASS_FIRST = 1,
     SYSTEM_CLASS_LTE = 1,   ///< LTE / cellular connectivity settings
+    SYSTEM_CLASS_GNSS = 2,  ///< GNSS coexistence manager (policy)
     SYSTEM_CLASS_LAST = 511 ///< 9-bit class field
   };
 
