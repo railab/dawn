@@ -67,6 +67,24 @@ int sensor_read(int fd, void *data, size_t len)
   return static_cast<int>(ret);
 }
 
+//***************************************************************************
+// Name: sensor_set_interval
+//***************************************************************************
+
+int sensor_set_interval(int fd, uint32_t interval_us)
+{
+  int ret;
+
+  ret = ioctl(fd, SNIOC_SET_INTERVAL, static_cast<unsigned long>(interval_us));
+  if (ret < 0)
+    {
+      DAWNERR("SNIOC_SET_INTERVAL failed %d\n", -errno);
+      return -errno;
+    }
+
+  return OK;
+}
+
 #ifdef CONFIG_USENSOR
 //***************************************************************************
 // Name: sensor_user_register
