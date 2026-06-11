@@ -17,6 +17,18 @@
 int sensor_open(const char *path);
 
 /**
+ * @brief Set the sensor output/measurement interval.
+ *
+ * @param fd File descriptor.
+ * @param interval_us Interval between samples in microseconds. For GNSS this
+ *                    maps to the fix interval (0 = single fix, otherwise the
+ *                    periodic/continuous fix rate).
+ * @return Zero on success or a negative error code.
+ */
+
+int sensor_set_interval(int fd, uint32_t interval_us);
+
+/**
  * @brief Close sensor device.
  *
  * @param fd File descriptor.

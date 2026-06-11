@@ -150,6 +150,20 @@ int CIOSensor::configure()
       return -errno;
     }
 
+  // Apply the configured update interval (sample rate). For GNSS this selects
+  // the fix cadence: single (on-demand), continuous (1 s), or periodic. When
+  // not configured (0) the sensor keeps its default rate.
+
+  if (updateInterval > 0)
+    {
+      ret = sensor_set_interval(fd, updateInterval * 1000);
+      if (ret < 0)
+        {
+          DAWNERR("failed to set sensor interval %d\n", ret);
+          return ret;
+        }
+    }
+
   return OK;
 }
 
