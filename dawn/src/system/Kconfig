@@ -55,3 +55,91 @@ config DAWN_SYSTEM_LTE_PSAVE
 		The network must grant the requested mode.
 
 endif # DAWN_SYSTEM_LTE
+
+config DAWN_SYSTEM_GNSS
+	bool "GNSS coexistence manager"
+	default n
+	depends on DAWN_IO_SENSOR && LTE_LAPI
+	---help---
+		Userspace GNSS/LTE coexistence policy as an OBJTYPE_ANY object. A
+		monitor thread watches GNSS for a fix and drives the radio knobs the
+		kernel exposes (GNSS priority via SNIOC_GNSS_SET_PRIORITY, LTE
+		power-save via the LTE API). The kernel provides only the mechanisms;
+		this object owns the policy.
+
+if DAWN_SYSTEM_GNSS
+
+config DAWN_SYSTEM_GNSS_ENABLED
+	bool "Start with GNSS enabled"
+	default n
+	---help---
+		Runtime on/off default for the GNSS manager. When n (default) the
+		device boots LTE-only and GNSS stays idle until a server enables it
+		over LwM2M (IPSO Actuation 3306/5850 bound to the manager's 'enabled'
+		config item). When y, GNSS runs from boot. The descriptor 'enabled'
+		field overrides this.
+
+config DAWN_SYSTEM_GNSS_MODE
+	int "Default GNSS coexistence mode (0=off, 1=hybrid)"
+	default 1
+	range 0 1
+	---help---
+		Coexistence policy applied at start:
+		  0 = off    - the manager does not touch the radio knobs; LTE only.
+		  1 = hybrid - LTE first: once LTE is up, the manager borrows the radio
+		               in bounded windows (LTE PSM + GNSS priority) to land a
+		               cold fix, and always hands it back afterwards so LTE
+		               stays reachable even when no fix is possible (indoors).
+
+config DAWN_SYSTEM_GNSS_SETTLE
+	int "Seconds to wait for LTE before the first GNSS attempt"
+	default 60
+	range 0 600
+	---help---
+		LTE-first grace period. The manager waits up to this long for LTE to
+		report CONNECTED before borrowing the radio for GNSS, so the device
+		registers and becomes reachable first. Capped so a permanently-down
+		LTE never blocks GNSS forever.
+
+config DAWN_SYSTEM_GNSS_ACQUIRE
+	int "Bounded GNSS acquisition window (seconds)"
+	default 360
+	range 30 1200
+	---help---
+		Maximum time a single fix attempt holds the radio (LTE asleep in PSM,
+		GNSS priority). On expiry the radio is handed back to LTE whether or
+		not a fix landed, so LTE is never starved indefinitely. Must exceed a
+		typical cold TTFF (~208s open-sky, no assistance) so a single window
+		can complete a cold fix - the receiver goes cold during the cooldown
+		between windows, so a too-short window never converges.
+
+config DAWN_SYSTEM_GNSS_RETRY
+	int "LTE-reachable cooldown between GNSS attempts (seconds)"
+	default 300
+	range 0 7200
+	---help---
+		After a failed (no-fix) acquisition window the manager stays out of the
+		radio for this long, keeping LTE reachable, before trying again. A
+		successful fix ends the loop entirely.
+
+config DAWN_SYSTEM_GNSS_MAXATTEMPTS
+	int "Consecutive no-fix windows before giving up"
+	default 0
+	range 0 1000
+	---help---
+		0 = never give up: keep retrying forever (registration-safe loop;
+		ensure the LwM2M lifetime exceeds acquire+retry). >0 = after this many
+		failed windows, stop borrowing the radio and park fully on LTE, then
+		re-arm after GNSS_REARM seconds. Useful for mostly-indoor devices that
+		must stay reachable.
+
+config DAWN_SYSTEM_GNSS_REARM
+	int "Re-arm delay after giving up (seconds)"
+	default 3600
+	range 0 86400
+	---help---
+		When GNSS_MAXATTEMPTS is reached the manager waits this long - LTE fully
+		reachable, no PSM, no GNSS priority - before re-arming and trying GNSS
+		again. Only used when GNSS_MAXATTEMPTS > 0.
+
+endif # DAWN_SYSTEM_GNSS

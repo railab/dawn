@@ -85,6 +85,24 @@ int sensor_set_interval(int fd, uint32_t interval_us)
   return OK;
 }
 
+//***************************************************************************
+// Name: sensor_gnss_set_priority
+//***************************************************************************
+
+int sensor_gnss_set_priority(int fd, bool on)
+{
+  int ret;
+
+  ret = ioctl(fd, SNIOC_GNSS_SET_PRIORITY, static_cast<unsigned long>(on));
+  if (ret < 0)
+    {
+      DAWNERR("SNIOC_GNSS_SET_PRIORITY failed %d\n", -errno);
+      return -errno;
+    }
+
+  return OK;
+}
+
 #ifdef CONFIG_USENSOR
 //***************************************************************************
 // Name: sensor_user_register
