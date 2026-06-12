@@ -58,7 +58,7 @@ int lte_port_set_psave(uint8_t mode)
 
       psm.enable = LTE_ENABLE;
       psm.req_active_time.unit = LTE_PSM_T3324_UNIT_2SEC;
-      psm.req_active_time.time_val = 3; // 3 x 2 s = 6 s active time
+      psm.req_active_time.time_val = 3;       // 3 x 2 s = 6 s active time
       psm.ext_periodic_tau_time.unit = LTE_PSM_T3412_UNIT_10MIN;
       psm.ext_periodic_tau_time.time_val = 6; // 6 x 10 min = 60 min TAU
       edrx.act_type = LTE_EDRX_ACTTYPE_NOTUSE;
@@ -200,5 +200,56 @@ int lte_port_disconnect(void)
 int lte_port_status(uint32_t *status)
 {
   *status = g_lte_status;
+  return OK;
+}
+
+//***************************************************************************
+// Name: lte_port_get_quality
+//***************************************************************************
+
+int lte_port_get_quality(struct dawn::SLteQuality *quality)
+{
+  lte_quality_t q;
+  int ret;
+
+  ret = lte_get_quality_sync(&q);
+  if (ret < 0)
+    {
+      return ret;
+    }
+
+  quality->valid = q.valid;
+  quality->rsrp = q.rsrp;
+  quality->rsrq = q.rsrq;
+  quality->sinr = q.sinr;
+  quality->rssi = q.rssi;
+
+  return OK;
+}
+
+//***************************************************************************
+// Name: lte_port_get_cellinfo
+//***************************************************************************
+
+int lte_port_get_cellinfo(struct dawn::SLteCellinfo *info)
+{
+  lte_cellinfo_t cell;
+  int ret;
+
+  // No neighbor-cell list requested.
+
+  std::memset(&cell, 0, sizeof(cell));
+  cell.nr_neighbor = 0;
+  cell.neighbors = nullptr;
+
+  ret = lte_get_cellinfo_sync(&cell);
+  if (ret < 0)
+    {
+      return ret;
+    }
+
+  info->valid = cell.valid;
+  info->band = static_cast<uint16_t>(cell.earfcn);
+
   return OK;
 }

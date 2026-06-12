@@ -60,6 +60,21 @@ enum
  * common (target-independent) NuttX LTE API.
  */
 
+struct SLteQuality
+{
+  bool valid;   ///< Values are meaningful only when true (RF on, camped).
+  int16_t rsrp; ///< Reference Signal Received Power, dBm (-140..0).
+  int16_t rsrq; ///< Reference Signal Received Quality, dB (-60..0).
+  int16_t sinr; ///< Signal to Interference + Noise Ratio, dB (-128..40).
+  int16_t rssi; ///< Received Signal Strength Indicator, dBm.
+};
+
+struct SLteCellinfo
+{
+  bool valid;    ///< Values are meaningful only when true (RF on, camped).
+  uint16_t band; ///< Serving E-UTRA band number.
+};
+
 struct SLteParams
 {
   const char *apn;      ///< APN name (empty/null: use network default)
@@ -101,6 +116,30 @@ int lte_port_disconnect(void);
  */
 
 int lte_port_status(uint32_t *status);
+
+/**
+ * @brief Read the current LTE signal quality (RSRP/RSRQ/SINR/RSSI).
+ *
+ * Synchronous query of the modem via the common NuttX LTE API. Values are
+ * only meaningful when @p quality->valid is true (RF on and camped on a cell).
+ *
+ * @param quality Filled with the current signal metrics.
+ * @return OK on success, negative errno on failure.
+ */
+
+int lte_port_get_quality(struct dawn::SLteQuality *quality);
+
+/**
+ * @brief Read serving-cell info (currently the E-UTRA band).
+ *
+ * Synchronous query of the modem via the common NuttX LTE API. Values are only
+ * meaningful when @p info->valid is true (RF on and camped on a cell).
+ *
+ * @param info Filled with the current cell info.
+ * @return OK on success, negative errno on failure.
+ */
+
+int lte_port_get_cellinfo(struct dawn::SLteCellinfo *info);
 
 /**
  * @brief Set the LTE power-save mode at runtime.

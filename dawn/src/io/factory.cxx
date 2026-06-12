@@ -69,6 +69,9 @@
 #ifdef CONFIG_DAWN_IO_BUTTONS
 #  include "dawn/io/buttons.hxx"
 #endif
+#ifdef CONFIG_DAWN_IO_LTE_SIGNAL
+#  include "dawn/io/lte_signal.hxx"
+#endif
 #ifdef CONFIG_DAWN_IO_LEDS
 #  include "dawn/io/leds.hxx"
 #endif
@@ -307,6 +310,11 @@ CIOCommon *CIOFactory::create(CDescObject &desc)
 #ifdef CONFIG_DAWN_IO_BUTTONS
       case CIOCommon::IO_CLASS_BUTTONS:
         return new CIOButtons(desc);
+#endif
+
+#ifdef CONFIG_DAWN_IO_LTE_SIGNAL
+      case CIOCommon::IO_CLASS_LTE_SIGNAL:
+        return new CIOLteSignal(desc);
 #endif
 
 #ifdef CONFIG_DAWN_IO_LEDS
