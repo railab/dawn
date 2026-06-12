@@ -132,6 +132,10 @@ if(CONFIG_DAWN_IO_BUTTONS)
   list(APPEND SRCS buttons.cxx)
 endif()
 
+if(CONFIG_DAWN_IO_LTE_SIGNAL)
+  list(APPEND SRCS lte_signal.cxx)
+endif()
+
 if(CONFIG_DAWN_IO_LEDS)
   list(APPEND SRCS leds.cxx)
 endif()

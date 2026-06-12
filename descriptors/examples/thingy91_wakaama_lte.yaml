@@ -298,6 +298,32 @@ ios:
   dtype: uint32
   config:
     device: 0
+# LTE modem signal quality. ONE IO polls the NuttX LTE API every 30s and
+# returns the whole metric vector [RSRP, RSRQ, SINR, band] (signed dBm/dB ->
+# int16); the lte_signal_split vecsplit fans it out into the scalars below,
+# which are exposed over LwM2M (Connectivity Monitoring 4 + private 33007).
+- &lte_signal
+  id: lte_signal
+  type: lte_signal
+  dtype: int16
+  config:
+    interval: 30000000
+- &lte_rsrp
+  id: lte_rsrp
+  type: virt
+  dtype: int16
+- &lte_rsrq
+  id: lte_rsrq
+  type: virt
+  dtype: int16
+- &lte_snr
+  id: lte_snr
+  type: virt
+  dtype: int16
+- &lte_band
+  id: lte_band
+  type: virt
+  dtype: int16
 programs:
 - id: bme680_latest
   type: latest
@@ -354,6 +380,16 @@ programs:
     - *gnss_hdop
     - *gnss_pdop
     - *gnss_vdop
+# Fan the LTE signal vector [RSRP, RSRQ, SINR, band] out to scalars.
+- id: lte_signal_split
+  type: vecsplit
+  config:
+    source: *lte_signal
+    outputs:
+    - *lte_rsrp
+    - *lte_rsrq
+    - *lte_snr
+    - *lte_band
 - id: gnss_latest
   type: latest
   config:
@@ -519,4 +555,28 @@ protocols:
         resources:
         - resource_id: 5500
           io: *button
+          access: read
+      # Standard LwM2M Connectivity Monitoring object (4): 4/0/2 Radio Signal
+      # Strength (RSRP, dBm) and 4/0/3 Link Quality (RSRQ, dB), read live from
+      # the modem. Use these to monitor LTE-M coverage from the server.
+      - object_id: 4
+        instance: 0
+        resources:
+        - resource_id: 2
+          io: *lte_rsrp
+          access: read
+        - resource_id: 3
+          io: *lte_rsrq
+          access: read
+      # Manufacturer-specific LTE diagnostics object (private id 33007): metrics
+      # with no standard Connectivity Monitoring resource. 0 = SNR (dB),
+      # 1 = serving E-UTRA band number. Read-only.
+      - object_id: 33007
+        instance: 0
+        resources:
+        - resource_id: 0
+          io: *lte_snr
+          access: read
+        - resource_id: 1
+          io: *lte_band
           access: read

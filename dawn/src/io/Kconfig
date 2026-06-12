@@ -288,6 +288,19 @@ config DAWN_IO_BUTTONS
 	---help---
 		Enable button input IO objects backed by board button drivers.
 
+config DAWN_IO_LTE_SIGNAL
+	bool "Dawn LTE signal-quality IO support"
+	default n
+	depends on LTE_LAPI
+	select DAWN_DTYPE_INT16
+	select DAWN_IO_TIMERFD
+	---help---
+		Enable read-only IO objects that report modem signal metrics
+		(RSRP/RSRQ/SINR/RSSI) via the common NuttX LTE API. Each instance
+		selects one metric via its 'metric' config item; map them onto the
+		LwM2M Connectivity Monitoring object (4) to watch coverage from the
+		server.
+
 config DAWN_IO_LEDS
 	bool "Dawn Leds IO support"
 	default n
