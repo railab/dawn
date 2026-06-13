@@ -1,6 +1,7 @@
 /build*
 /result*
 /external
+/projects
 *~
 .gdb_history
 cppcheck-build-dir
