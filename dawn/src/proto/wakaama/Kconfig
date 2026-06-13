@@ -38,6 +38,17 @@ config DAWN_PROTO_WAKAAMA_LIFETIME
 	default 300
 	range 1 2147483647
 
+config DAWN_PROTO_WAKAAMA_QUEUE_MODE
+	bool "Register in LwM2M Queue Mode (UQ binding) by default"
+	default n
+	---help---
+		Default registration binding for all servers. n = "U" (always
+		reachable; the server pushes downlinks immediately and relies on the
+		registration lifetime staying below the network's NAT timeout). y =
+		"UQ" LwM2M Queue Mode: the server queues downlinks and delivers them
+		when the device next sends an uplink, so a long lifetime and sleepy
+		(PSM/eDRX) operation are fine. Overridable per descriptor (queue_mode).
+
 config DAWN_PROTO_WAKAAMA_SHORT_SERVER_ID
 	int "Default LwM2M short server ID"
 	default 123

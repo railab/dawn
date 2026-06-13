@@ -406,6 +406,10 @@ protocols:
     endpoint: dawn-thingy91-leshan
     server_host: 23.97.187.154
     local_port: 56832
+    # Binding mode: U = always reachable (server pushes downlinks immediately);
+    # UQ = LwM2M Queue Mode (server queues downlinks, delivers when the device
+    # next sends an uplink). Use UQ for sleepy/PSM operation; U for interactive.
+    queue_mode: false
     servers:
         # Registration lifetime (seconds). On cellular this doubles as the NAT
         # keepalive: each registration update is an uplink that refreshes the

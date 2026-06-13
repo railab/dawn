@@ -185,6 +185,7 @@ public:
     PROTO_WAKAAMA_CFG_DEVICE_BATTERY_VOLTAGE = 12,
     PROTO_WAKAAMA_CFG_DEVICE_BATTERY_LEVEL = 13,
     PROTO_WAKAAMA_CFG_DEVICE_BATTERY_STATUS = 14,
+    PROTO_WAKAAMA_CFG_QUEUE_MODE = 15,
     PROTO_WAKAAMA_CFG_LAST = 31
   };
 
@@ -299,6 +300,11 @@ public:
     return cfgId(false, SObjectId::DTYPE_UINT32, 1, PROTO_WAKAAMA_CFG_LIFETIME);
   }
 
+  constexpr static SObjectCfg::ObjectCfgId cfgIdQueueMode()
+  {
+    return cfgId(false, SObjectId::DTYPE_UINT16, 1, PROTO_WAKAAMA_CFG_QUEUE_MODE);
+  }
+
   constexpr static SObjectCfg::ObjectCfgId cfgIdIOBind(uint16_t size)
   {
     return cfgId(false, SObjectId::DTYPE_ANY, size, PROTO_WAKAAMA_CFG_IOBIND);
@@ -367,6 +373,7 @@ private:
     uint32_t bootstrapTimeout;
     uint8_t scheme;
     uint8_t securityMode;
+    uint8_t binding; ///< wakaama BINDING_* mask (U or UQ for Queue Mode).
     bool bootstrap;
   };
 
@@ -395,6 +402,7 @@ private:
   uint16_t localPort;
   uint32_t lifetime;
   uint16_t shortServerId;
+  bool queueMode; ///< Register all servers in LwM2M Queue Mode (UQ) when set.
   std::vector<ServerConfig> servers;
 #ifdef CONFIG_DAWN_IO_NOTIFY
   std::mutex changedResourcesMutex;
