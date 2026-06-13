@@ -187,7 +187,6 @@ private:
   static uint32_t resolveRingIndex(const SBufferBind *bind, uint32_t sel, uint32_t depth);
 
   static int srcNotifyCb(void *priv, io_ddata_t *data);
-  static void outGetCb(CIOVirt *io, void *priv);
   static void selSetCb(CIOVirt *io, void *priv);
   static void statGetCb(CIOVirt *io, void *priv);
 };
