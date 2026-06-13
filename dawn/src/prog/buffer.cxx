@@ -35,22 +35,6 @@ int CProgBuffer::srcNotifyCb(void *priv, io_ddata_t *data)
   return self->captureBind(data);
 }
 
-void CProgBuffer::outGetCb(CIOVirt *io, void *priv)
-{
-  (void)io;
-  CProgBuffer *self = static_cast<CProgBuffer *>(priv);
-  if (self == nullptr)
-    {
-      return;
-    }
-
-  int ret = self->updateSelected();
-  if (ret != OK)
-    {
-      DAWNERR("buffer: out get update failed: %d\n", ret);
-    }
-}
-
 void CProgBuffer::selSetCb(CIOVirt *io, void *priv)
 {
   CProgBuffer *self = static_cast<CProgBuffer *>(priv);
@@ -578,7 +562,11 @@ int CProgBuffer::doStart()
       bind->captureActive = false;
     }
 
-  bind->out->setCallbackGet(outGetCb, this);
+  // NOTE: deliberately no get-callback on `out`. The out value is already kept
+  // current by captureBind() and selSetCb(), so a get-callback would only
+  // re-run updateSelected()->setVal(), which emits a notification. A read must
+  // not generate a notification; worse, a transport that reads the value in
+  // order to send a notification would then self-trigger an unbounded loop.
   bind->sel->setCallbackSet(selSetCb, this);
   bind->stat->setCallbackGet(statGetCb, this);
   updateStat();
@@ -596,11 +584,6 @@ int CProgBuffer::doStop()
     }
 
   bind->captureActive = false;
-
-  if (bind->out != nullptr)
-    {
-      bind->out->setCallbackGet(nullptr, nullptr);
-    }
 
   if (bind->sel != nullptr)
     {
