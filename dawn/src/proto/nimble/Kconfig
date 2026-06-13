@@ -35,6 +35,24 @@ config DAWN_PROTO_NIMBLE_GAPNAME_MAX
 		maximum complete name that fits in the current advertising packet is
 		26 bytes.
 
+config DAWN_PROTO_NIMBLE_CONN_ITVL_MIN
+	int "Dawn NimBLE preferred connection interval minimum (x1.25ms)"
+	default 0
+	range 0 3200
+	---help---
+		On connection, request this minimum connection interval from the
+		central, in units of 1.25 ms (e.g. 6 = 7.5 ms, 12 = 15 ms). A shorter
+		interval raises notification throughput at the cost of power. 0 leaves
+		the negotiated interval untouched (no parameter-update request).
+
+config DAWN_PROTO_NIMBLE_CONN_ITVL_MAX
+	int "Dawn NimBLE preferred connection interval maximum (x1.25ms)"
+	default 0
+	range 0 3200
+	---help---
+		Maximum connection interval (units of 1.25 ms) paired with
+		DAWN_PROTO_NIMBLE_CONN_ITVL_MIN. Ignored when the minimum is 0.
+
 config DAWN_PROTO_NIMBLE_TPS
 	bool "Dawn NimBLE enable Tx Power Service"
 	default n

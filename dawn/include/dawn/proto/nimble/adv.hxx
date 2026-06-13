@@ -24,6 +24,11 @@ public:
   static constexpr size_t GAPNAME_MAX =
     CONFIG_DAWN_PROTO_NIMBLE_GAPNAME_MAX; ///< Max GAP device name length (excluding null).
   static_assert(GAPNAME_MAX <= 26, "GAP name must fit in legacy advertising data");
+
+  /// Preferred connection interval (units of 1.25ms); 0 leaves it untouched.
+  static constexpr uint16_t CONN_ITVL_MIN = CONFIG_DAWN_PROTO_NIMBLE_CONN_ITVL_MIN;
+  static constexpr uint16_t CONN_ITVL_MAX = CONFIG_DAWN_PROTO_NIMBLE_CONN_ITVL_MAX;
+
   static uint8_t ownAddrType;             ///< BLE device address type (random/static/public).
   static char gapName[GAPNAME_MAX + 1];   ///< GAP device name visible during BLE discovery.
 
@@ -37,6 +42,7 @@ private:
   static void putAd(uint8_t ad_type, uint8_t ad_len, const void *ad, uint8_t *buf, uint8_t *len);
 
   static void updateAd();
+  static void requestConnParams(uint16_t conn_handle);
   static int gapEventCb(struct ble_gap_event *event, void *arg);
 };
 

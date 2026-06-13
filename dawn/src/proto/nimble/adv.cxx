@@ -78,6 +78,28 @@ void CProtoNimbleAdv::updateAd()
   ble_gap_adv_set_data(ad, ad_len);
 }
 
+void CProtoNimbleAdv::requestConnParams(uint16_t conn_handle)
+{
+  // Opt-in: CONN_ITVL_MIN == 0 leaves the negotiated interval untouched.
+  if (CONN_ITVL_MIN == 0)
+    {
+      return;
+    }
+
+  struct ble_gap_upd_params params;
+  std::memset(&params, 0, sizeof params);
+  params.itvl_min = CONN_ITVL_MIN;
+  params.itvl_max = (CONN_ITVL_MAX >= CONN_ITVL_MIN) ? CONN_ITVL_MAX : CONN_ITVL_MIN;
+  params.latency = 0;
+  params.supervision_timeout = 400; // 4 s (units of 10 ms)
+
+  int ret = ble_gap_update_params(conn_handle, &params);
+  if (ret != 0)
+    {
+      DAWNERR("ble_gap_update_params failed: %d\n", ret);
+    }
+}
+
 int CProtoNimbleAdv::gapEventCb(struct ble_gap_event *event, void *arg)
 {
   switch (event->type)
@@ -87,6 +109,10 @@ int CProtoNimbleAdv::gapEventCb(struct ble_gap_event *event, void *arg)
           if (event->connect.status)
             {
               CProtoNimbleAdv::startAdvertise();
+            }
+          else
+            {
+              CProtoNimbleAdv::requestConnParams(event->connect.conn_handle);
             }
           break;
         }
