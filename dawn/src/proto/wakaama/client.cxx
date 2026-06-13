@@ -142,6 +142,9 @@ int ClientRuntime::buildSecurityAndServerObjects()
           srvInst->id = server.serverInstanceId;
           srvInst->shortServerId = server.shortServerId;
           srvInst->lifetime = server.lifetime;
+          strncpy(srvInst->binding,
+                  (server.binding & BINDING_Q) ? "UQ" : "U",
+                  sizeof(srvInst->binding));
           srvInst->storing = false;
 
           serverObj->instanceList = LWM2M_LIST_ADD(serverObj->instanceList, srvInst);

@@ -28,6 +28,12 @@ int hexNibble(char ch);
 bool parseHexKey(const char *hex, size_t len, std::vector<uint8_t> &key);
 } // namespace
 
+#ifdef CONFIG_DAWN_PROTO_WAKAAMA_QUEUE_MODE
+#  define WAKAAMA_QUEUE_MODE_DEFAULT (true)
+#else
+#  define WAKAAMA_QUEUE_MODE_DEFAULT (false)
+#endif
+
 CProtoWakaama::CProtoWakaama(CDescObject &desc)
   : CProtoCommon(desc)
   , runtime(nullptr)
@@ -42,6 +48,7 @@ CProtoWakaama::CProtoWakaama(CDescObject &desc)
   , localPort(CONFIG_DAWN_PROTO_WAKAAMA_LOCAL_PORT)
   , lifetime(CONFIG_DAWN_PROTO_WAKAAMA_LIFETIME)
   , shortServerId(CONFIG_DAWN_PROTO_WAKAAMA_SHORT_SERVER_ID)
+  , queueMode(WAKAAMA_QUEUE_MODE_DEFAULT)
 #ifdef CONFIG_DAWN_IO_NOTIFY
   , changedResourcesCapacity(0)
   , acceptChangedResources(false)
@@ -105,6 +112,12 @@ int CProtoWakaama::configureDesc(const CDescObject &desc)
           case PROTO_WAKAAMA_CFG_LIFETIME:
             {
               lifetime = item->data[0];
+              break;
+            }
+
+          case PROTO_WAKAAMA_CFG_QUEUE_MODE:
+            {
+              queueMode = (item->data[0] != 0);
               break;
             }
 
@@ -259,6 +272,7 @@ int CProtoWakaama::configureServer(const SObjectCfg::SObjectCfgItem *item)
   server.bootstrapTimeout = 0;
   server.scheme = WAKAAMA_SERVER_SCHEME_COAP;
   server.securityMode = LWM2M_SECURITY_MODE_NONE;
+  server.binding = queueMode ? BINDING_UQ : BINDING_U;
   server.bootstrap = false;
 
   if (item->cfgid.s.size > 3 && item->data[3] == WAKAAMA_SERVER_EXT_MAGIC)
@@ -340,6 +354,7 @@ void CProtoWakaama::addDefaultServer()
   server.bootstrapTimeout = 0;
   server.scheme = WAKAAMA_SERVER_SCHEME_COAP;
   server.securityMode = LWM2M_SECURITY_MODE_NONE;
+  server.binding = queueMode ? BINDING_UQ : BINDING_U;
   server.bootstrap = false;
   servers.push_back(server);
 }
