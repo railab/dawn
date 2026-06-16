@@ -440,11 +440,25 @@ void Transport::thread()
       owner.processChangedResources();
 #endif
 
-      ret = owner.runtime == nullptr ? -ENODEV : owner.runtime->step(&timeout);
+      if (owner.runtime == nullptr)
+        {
+          DAWNERR("Wakaama runtime gone; stopping client thread\n");
+          break;
+        }
+
+      ret = owner.runtime->step(&timeout);
       if (ret != 0)
         {
-          DAWNERR("lwm2m_step failed: %d\n", ret);
-          break;
+          /* Keep the client alive on transient step errors; breaking here
+           * would drop the registration until reboot. */
+
+          DAWNERR("lwm2m_step failed: %d (continuing)\n", ret);
+          timeout = 1;
+
+          if (owner.runtime->recoverFromBootstrapWedge())
+            {
+              DAWNINFO("Wakaama: re-registering after registration failure\n");
+            }
         }
 
 #ifdef DAWN_WAKAAMA_POLL_RECV
