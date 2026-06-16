@@ -50,6 +50,14 @@ public:
 
   int step(time_t *timeout);
 
+  /**
+   * @brief Nudge a registration-failed client (parked in
+   * STATE_BOOTSTRAP_REQUIRED with no bootstrap server) back to
+   * re-registration. Allocation-free. Returns true if it kicked the client.
+   */
+
+  bool recoverFromBootstrapWedge();
+
   /** @brief Return true when the Wakaama client has completed registration. */
 
   bool ready() const;

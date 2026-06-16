@@ -142,9 +142,8 @@ int ClientRuntime::buildSecurityAndServerObjects()
           srvInst->id = server.serverInstanceId;
           srvInst->shortServerId = server.shortServerId;
           srvInst->lifetime = server.lifetime;
-          strncpy(srvInst->binding,
-                  (server.binding & BINDING_Q) ? "UQ" : "U",
-                  sizeof(srvInst->binding));
+          strncpy(
+            srvInst->binding, (server.binding & BINDING_Q) ? "UQ" : "U", sizeof(srvInst->binding));
           srvInst->storing = false;
 
           serverObj->instanceList = LWM2M_LIST_ADD(serverObj->instanceList, srvInst);
@@ -270,6 +269,18 @@ int ClientRuntime::configure(const char *endpoint)
 int ClientRuntime::step(time_t *timeout)
 {
   return ctx == nullptr ? -ENODEV : lwm2m_step(ctx, timeout);
+}
+
+bool ClientRuntime::recoverFromBootstrapWedge()
+{
+  if (ctx != nullptr && ctx->state == STATE_BOOTSTRAP_REQUIRED &&
+      ctx->bootstrapServerList == nullptr && ctx->serverList != nullptr)
+    {
+      ctx->state = STATE_REGISTER_REQUIRED;
+      return true;
+    }
+
+  return false;
 }
 
 bool ClientRuntime::ready() const
