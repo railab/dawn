@@ -100,6 +100,9 @@ extern "C"
 #ifdef CONFIG_DAWN_PROG_MANYTOONE
   int test_prog_manytoone();
 #endif
+#ifdef CONFIG_DAWN_PROG_AHRS
+  int test_prog_ahrs();
+#endif
 #ifdef CONFIG_DAWN_PROG_ONETOMANY
   int test_prog_onetomany();
 #endif
@@ -197,6 +200,9 @@ static int (*test_array[])(void) = {
 #endif
 #ifdef CONFIG_DAWN_PROG_MANYTOONE
   test_prog_manytoone,
+#endif
+#ifdef CONFIG_DAWN_PROG_AHRS
+  test_prog_ahrs,
 #endif
 #ifdef CONFIG_DAWN_PROG_ONETOMANY
   test_prog_onetomany,

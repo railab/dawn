@@ -120,6 +120,7 @@ public:
     PROG_CLASS_ONETOMANY = 31,
     PROG_CLASS_IOMUX = 32,
     PROG_CLASS_IODEMUX = 33,
+    PROG_CLASS_AHRS = 34,
 
     /** @brief User-defined PROG types start here. */
 
