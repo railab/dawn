@@ -313,5 +313,16 @@ config DAWN_PROG_IODEMUX
 		Enable a scalar-control IO demultiplexer that routes one input IO
 		to one selected output IO.
 
+config DAWN_PROG_AHRS
+	bool "Dawn program AHRS sensor fusion"
+	default n
+	depends on LIB_MADGWICK && DAWN_IO_VIRT && DAWN_IO_NOTIFY
+	depends on DAWN_DTYPE_FLOAT
+	---help---
+		Enable an AHRS sensor-fusion program (x-io Fusion library):
+		fuses an accelerometer IO and a gyroscope IO into world-frame
+		linear acceleration (gravity removed). Filter parameters are
+		runtime-writable via a config IO.
+
 
 endif # DAWN_PROG

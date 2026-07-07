@@ -79,6 +79,11 @@ if(CONFIG_DAWN_PROG_MANYTOONE)
   list(APPEND SRCS manytoone.cxx)
 endif()
 
+if(CONFIG_DAWN_PROG_AHRS)
+  list(APPEND SRCS ahrs.cxx)
+  target_link_libraries(dawn PUBLIC madgwick)
+endif()
+
 if(CONFIG_DAWN_PROG_ONETOMANY)
   list(APPEND SRCS onetomany.cxx)
 endif()

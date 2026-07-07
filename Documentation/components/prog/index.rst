@@ -133,3 +133,4 @@ Supported Programs
    onetomany.rst
    iomux.rst
    iodemux.rst
+   ahrs.rst

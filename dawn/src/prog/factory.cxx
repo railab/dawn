@@ -115,6 +115,10 @@
 #  include "dawn/prog/manytoone.hxx"
 #endif
 
+#ifdef CONFIG_DAWN_PROG_AHRS
+#  include "dawn/prog/ahrs.hxx"
+#endif
+
 #ifdef CONFIG_DAWN_PROG_ONETOMANY
 #  include "dawn/prog/onetomany.hxx"
 #endif
@@ -277,6 +281,11 @@ CProgCommon *CProgFactory::create(CDescObject &desc)
 #ifdef CONFIG_DAWN_PROG_MANYTOONE
       case CProgCommon::PROG_CLASS_MANYTOONE:
         return new CProgManyToOne(desc);
+#endif
+
+#ifdef CONFIG_DAWN_PROG_AHRS
+      case CProgCommon::PROG_CLASS_AHRS:
+        return new CProgAhrs(desc);
 #endif
 
 #ifdef CONFIG_DAWN_PROG_ONETOMANY

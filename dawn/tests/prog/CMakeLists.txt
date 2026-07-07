@@ -114,6 +114,10 @@ if(CONFIG_DAWN_PROG_MANYTOONE)
   list(APPEND SRCS test_manytoone.cxx)
 endif()
 
+if(CONFIG_DAWN_PROG_AHRS)
+  list(APPEND SRCS test_ahrs.cxx)
+endif()
+
 if(CONFIG_DAWN_PROG_ONETOMANY)
   list(APPEND SRCS test_onetomany.cxx)
 endif()
