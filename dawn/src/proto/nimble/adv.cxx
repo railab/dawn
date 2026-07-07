@@ -7,10 +7,39 @@
 
 #include <cstring>
 
+#include "nimble/nimble_port.h"
+
 using namespace dawn;
 
 uint8_t CProtoNimbleAdv::ownAddrType = 0;
 char CProtoNimbleAdv::gapName[CProtoNimbleAdv::GAPNAME_MAX + 1] = "DAWN NimBLE";
+
+static struct ble_npl_callout g_adv_retry_callout;
+static bool g_adv_retry_inited = false;
+
+void CProtoNimbleAdv::advRetryCb(struct ble_npl_event *ev)
+{
+  (void)ev;
+
+  if (ble_gap_adv_active())
+    {
+      return;
+    }
+
+  CProtoNimbleAdv::startAdvertise();
+}
+
+void CProtoNimbleAdv::scheduleAdvRetry()
+{
+  if (!g_adv_retry_inited)
+    {
+      ble_npl_callout_init(
+        &g_adv_retry_callout, nimble_port_get_dflt_eventq(), CProtoNimbleAdv::advRetryCb, nullptr);
+      g_adv_retry_inited = true;
+    }
+
+  ble_npl_callout_reset(&g_adv_retry_callout, ble_npl_time_ms_to_ticks32(ADV_RETRY_MS));
+}
 
 void CProtoNimbleAdv::startAdvertise()
 {
@@ -32,7 +61,13 @@ void CProtoNimbleAdv::startAdvertise()
                           nullptr);
   if (ret != 0)
     {
-      DAWNERR("ble_gap_adv_start failed: %d\n", ret);
+      // A failure here can be transient (e.g. a disconnect racing in-flight
+      // notification traffic, with connection resources not yet reclaimed).
+      // Giving up would leave the device unreachable until reboot, so keep
+      // retrying until advertising is up again.
+      DAWNERR(
+        "ble_gap_adv_start failed: %d, retry in %u ms\n", ret, static_cast<unsigned>(ADV_RETRY_MS));
+      CProtoNimbleAdv::scheduleAdvRetry();
     }
 }
 
