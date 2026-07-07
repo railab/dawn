@@ -29,8 +29,8 @@ public:
   static constexpr uint16_t CONN_ITVL_MIN = CONFIG_DAWN_PROTO_NIMBLE_CONN_ITVL_MIN;
   static constexpr uint16_t CONN_ITVL_MAX = CONFIG_DAWN_PROTO_NIMBLE_CONN_ITVL_MAX;
 
-  static uint8_t ownAddrType;             ///< BLE device address type (random/static/public).
-  static char gapName[GAPNAME_MAX + 1];   ///< GAP device name visible during BLE discovery.
+  static uint8_t ownAddrType;           ///< BLE device address type (random/static/public).
+  static char gapName[GAPNAME_MAX + 1]; ///< GAP device name visible during BLE discovery.
 
   CProtoNimbleAdv() = default;
   ~CProtoNimbleAdv() = default;
@@ -39,11 +39,16 @@ public:
   static void setGapName(const char *name, uint8_t len);
 
 private:
+  /// Retry delay after a failed ble_gap_adv_start (ms).
+  static constexpr uint32_t ADV_RETRY_MS = 100;
+
   static void putAd(uint8_t ad_type, uint8_t ad_len, const void *ad, uint8_t *buf, uint8_t *len);
 
   static void updateAd();
   static void requestConnParams(uint16_t conn_handle);
   static int gapEventCb(struct ble_gap_event *event, void *arg);
+  static void advRetryCb(struct ble_npl_event *ev);
+  static void scheduleAdvRetry();
 };
 
 } // Namespace dawn
