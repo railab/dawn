@@ -7,7 +7,7 @@ metadata:
   os_required:
   - /dev/adc0
   - /dev/uorb/sensor_humi0
-  - /dev/uorb/sensor_temp0
+  - /dev/uorb/sensor_ambient_temp0
   - /dev/uorb/sensor_baro0
   - /dev/uorb/sensor_gas0
   - ble
@@ -54,7 +54,7 @@ ios:
   dtype: float
   config:
     device: 0
-  subtype: temp
+  subtype: atemp
 - &id005
   id: barometer1
   type: sensor
