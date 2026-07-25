@@ -206,6 +206,7 @@ Supported IO
    pwm.rst
    pulsecount.rst
    dac.rst
+   pot.rst
    descriptor.rst
    descselector.rst
    capabilities.rst

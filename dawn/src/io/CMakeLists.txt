@@ -100,6 +100,10 @@ if(CONFIG_DAWN_IO_DAC)
   list(APPEND SRCS dac.cxx)
 endif()
 
+if(CONFIG_DAWN_IO_POT)
+  list(APPEND SRCS pot.cxx)
+endif()
+
 if(CONFIG_DAWN_IO_ENCODER)
   list(APPEND SRCS encoder.cxx)
 endif()
