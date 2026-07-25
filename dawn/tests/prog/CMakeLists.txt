@@ -106,6 +106,10 @@ if(CONFIG_DAWN_PROG_SATURATE)
   list(APPEND SRCS test_saturate.cxx)
 endif()
 
+if(CONFIG_DAWN_PROG_BITMERGE)
+  list(APPEND SRCS test_bitmerge.cxx)
+endif()
+
 if(CONFIG_DAWN_PROG_VECPACK)
   list(APPEND SRCS test_vecpack.cxx)
 endif()
