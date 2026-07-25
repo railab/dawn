@@ -17,6 +17,7 @@ using namespace dawn;
 
 static const char g_prefix_data[] = "/data/";
 static const char g_prefix_tmp[] = "/tmp/";
+static const char g_prefix_eeprom[] = "/dev/eeprom";
 
 int CIOFile::configureDesc(const CDescObject &desc)
 {
@@ -63,7 +64,8 @@ int CIOFile::configureDesc(const CDescObject &desc)
                 }
 
               if (std::strncmp(path, g_prefix_data, sizeof(g_prefix_data) - 1) != 0 &&
-                  std::strncmp(path, g_prefix_tmp, sizeof(g_prefix_tmp) - 1) != 0)
+                  std::strncmp(path, g_prefix_tmp, sizeof(g_prefix_tmp) - 1) != 0 &&
+                  std::strncmp(path, g_prefix_eeprom, sizeof(g_prefix_eeprom) - 1) != 0)
                 {
                   DAWNERR("path not in allowed directory: %s\n", path);
                   return -EACCES;
@@ -158,6 +160,20 @@ int CIOFile::configure()
         }
 
       fsize = (size_t)st.st_size;
+
+      if (fsize == 0)
+        {
+          // Device-backed nodes (e.g. EEPROM character devices) report a
+          // zero st_size - probe the size with SEEK_END instead.
+
+          off_t end = lseek(fd, 0, SEEK_END);
+          if (end > 0)
+            {
+              fsize = (size_t)end;
+            }
+
+          lseek(fd, 0, SEEK_SET);
+        }
     }
   else if (perm == IO_FILE_PERM_WRITE_ONCE)
     {
