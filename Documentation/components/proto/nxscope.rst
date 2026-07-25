@@ -12,51 +12,64 @@ Overview
 ``CProtoNxscope`` is an NxScope protocol object for data streaming and
 inspection.
 
-User Extension (Set-IO)
-=======================
+User Extension (Set/Get IO)
+===========================
 
-Dawn extends NxScope via ``nxscope_callbacks_s.userid`` to handle
-user-defined frame IDs for runtime IO write operations.
+Dawn extends NxScope via ``nxscope_callbacks_s.userid`` with user frame IDs
+for on-demand IO access. The commands ride in standard NxScope frames, so
+they work with every Dawn transport (``nxscope_dummy``, ``nxscope_serial``,
+``nxscope_udp``).
 
-This extension works with all Dawn NxScope transports
-(``nxscope_dummy``, ``nxscope_serial``, ``nxscope_udp``), because the
-command payload is carried inside the standard NxScope serial protocol
-frame format.
+Requests (little-endian, ``USER`` = ``NXSCOPE_HDRID_USER`` = 8):
 
-Implemented user IDs:
+.. list-table::
+   :widths: 20 20 60
+   :header-rows: 1
 
-1. ``NXSCOPE_HDRID_USER``: simple set IO
-2. ``NXSCOPE_HDRID_USER + 1``: seekable set IO
+   * - ID
+     - Name
+     - Payload
+   * - ``USER``
+     - SET_IO
+     - ``[objid:4][size:2][data:size]``
+   * - ``USER+1``
+     - SET_IO_SEEK
+     - ``[objid:4][offset:4][size:2][data:size]``
+   * - ``USER+2``
+     - GET_IO
+     - ``[objid:4]``
+   * - ``USER+3``
+     - GET_IO_SEEK
+     - ``[objid:4][offset:4][size:2]``
 
-Callback path:
-
-- ``struct nxscope_callbacks_s.userid``
-- ``CProtoNxscope::userIdCb()``
-- ``CProtoNxscope::handleUserCommand()``
-
-Payload formats (little-endian):
-
-- Simple set IO:
-  ``[objid:4][size:2][data:size]``
-- Seekable set IO:
-  ``[objid:4][offset:4][size:2][data:size]``
+Response: both GET requests answer with one frame ``id=USER+2`` carrying
+``[objid:4][size:2][data:size]``. It is sent **before** the ACK (when
+``CONFIG_LOGGING_NXSCOPE_ACKFRAMES`` is enabled), so a client must consume
+the data frame first and then the ACK carrying the handler return code.
+Set requests get only the ACK.
 
 Behavior notes:
 
-- The target IO must be writable (``isWrite() == true``).
-- Seek request requires seekable IO (``isSeekable() == true``).
-- This extension is only for ``set`` operations.
-- ``get`` over user-extension IDs is not supported.
-- Streaming/get data stays on standard NxScope notify/stream path.
+- SET requires ``isWrite()``, GET requires ``isRead()``; the ``*_SEEK`` forms
+  require ``isSeekable()`` and the plain forms reject seekable IOs.
+- GET_IO returns the whole IO (``getDataSize()`` bytes). GET_IO_SEEK
+  returns ``size`` bytes, at most ``CONFIG_DAWN_PROTO_NXSCOPE_RXBUF_LEN``.
+- The response buffer is sized at ``init()`` for the largest bound
+  readable IO, so large reads never fail with ``-ENOBUFS``.
+- GET_IO_SEEK rejects a window past the end of the IO
+  (``offset + size > getDataSize()``) with ``-EINVAL``.
+- Get-only channels: a readable IO without notify support stays bound and
+  answers GET_IO instead of failing init; it is not an NxScope stream
+  channel. Writable IOs fall back to set-only the same way. Both log a
+  warning. A notify-capable channel whose notifier cannot be bound fails
+  ``start()`` - it was already advertised as a stream channel.
+- Stream channel types: UINT8, INT8, UINT16, INT16, INT32, UINT32, UINT64
+  and FLOAT map to the matching ``NXSCOPE_TYPE_*``.
+- A SET_IO to a stream channel may notify the stream path synchronously;
+  the stream lock is recursive for that reason.
 
-ACK semantics:
-
-- ACK for set/user requests is optional and controlled by
-  ``CONFIG_LOGGING_NXSCOPE_ACKFRAMES`` in NxScope.
-- When ACK frames are enabled, Dawn returns ACK with the set handler
-  return code.
-- When ACK frames are disabled, the operation still executes, but no ACK
-  frame is sent.
+Callback path: ``nxscope_callbacks_s.userid`` ->
+``CProtoNxscope::userIdCb()`` -> ``CProtoNxscope::handleUserCommand()``.
 
 Implementation
 ==============
@@ -78,7 +91,10 @@ Kconfig
 - ``CONFIG_DAWN_PROTO_NXSCOPE_SERIAL``: enables the serial transport.
 - ``CONFIG_DAWN_PROTO_NXSCOPE_UDP``: enables the UDP transport.
 - ``CONFIG_DAWN_PROTO_NXSCOPE_STREAMBUF_LEN``: stream buffer length.
-- ``CONFIG_DAWN_PROTO_NXSCOPE_RXBUF_LEN``: receive buffer length.
+- ``CONFIG_DAWN_PROTO_NXSCOPE_RXBUF_LEN``: receive buffer length (also the
+  GET_IO_SEEK chunk limit).
+- ``CONFIG_DAWN_PROTO_NXSCOPE_RECV_INTERVAL``: recv thread poll interval in
+  microseconds (idle timeout in notify mode).
 - ``CONFIG_DAWN_PROTO_NXSCOPE_RX_PADDING``: extra receive buffer padding.
 - ``CONFIG_DAWN_PROTO_NXSCOPE_CRIBUF_LEN``: critical buffer length.
 - ``CONFIG_DAWN_PROTO_NXSCOPE_SAMPLE_THREAD``: polling sample-thread mode.
