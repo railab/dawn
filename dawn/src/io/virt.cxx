@@ -100,9 +100,9 @@ int CIOVirt::setDataImpl(IODataCmn &data)
       return -EACCES;
     }
 
-  // Set IO data
+  // Set IO data (full buffer for batched IOs)
 
-  ret = setVal(data.getDataPtr(), dlen * tlen);
+  ret = setVal(data.getDataPtr(), dlen * tlen * blen);
 
   // Notify provider
 
@@ -126,7 +126,7 @@ int CIOVirt::getFd() const
 
 size_t CIOVirt::getDataSize() const
 {
-  // Data size
+  // Size of a single data item (batches are handled in setVal/getVal)
 
   return dlen * tlen;
 }
@@ -191,6 +191,7 @@ int CIOVirt::initialize(size_t dim, size_t batch, bool notify)
 
   noteSupport = notify;
   dlen = dim;
+  blen = batch;
   data = new (std::nothrow) io_ddata_t(tlen, dim, batch, getDtype());
   if (data == nullptr || !data->isAllocated())
     {
@@ -238,7 +239,7 @@ int CIOVirt::getVal(void *v, size_t d)
       return -EACCES;
     }
 
-  DAWNASSERT(dlen * tlen == d, "invalid input");
+  DAWNASSERT(dlen * tlen * blen == d, "invalid input");
 
   mutex.lock();
 
@@ -258,7 +259,7 @@ int CIOVirt::setVal(const void *v, size_t d)
       return -EACCES;
     }
 
-  DAWNASSERT(dlen * tlen == d, "invalid input");
+  DAWNASSERT(dlen * tlen * blen == d, "invalid input");
 
   mutex.lock();
 

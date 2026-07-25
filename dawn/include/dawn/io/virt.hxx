@@ -115,6 +115,7 @@ private:
   void *set_cb_priv;              ///< Private data for setData callback.
   void *get_cb_priv;              ///< Private data for getData callback.
   size_t dlen;                    ///< Data size in bytes.
+  size_t blen = 1;                ///< Batch length (samples per buffer).
   size_t tlen;                    ///< Type size in bytes.
 #ifdef CONFIG_DAWN_IO_TIMESTAMP
   uint64_t ts;                    ///< Timestamp of last data update.
