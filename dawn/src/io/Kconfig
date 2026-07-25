@@ -366,6 +366,16 @@ config DAWN_IO_FILE
 	depends on DAWN_IO_SEEKABLE
 	---help---
 		Enable support for file system access via the Dawn IO abstraction.
-		Access is restricted to the /data/ and /tmp/ directories.
+		Access is restricted to /data/, /tmp/ and the device-node prefix
+		configured below.
+
+config DAWN_IO_FILE_DEV_PREFIX
+	string "Dawn File IO device-node prefix"
+	default "/dev/eeprom"
+	depends on DAWN_IO_FILE
+	---help---
+		Device-node prefix additionally allowed for File IO paths, e.g.
+		/dev/eeprom admits /dev/eeprom0. The opened path must still be a
+		character or block device. Empty disables device-node access.
 
 endif # DAWN_IO
