@@ -1,0 +1,199 @@
+metadata:
+  title: PPK2 NxScope over USB CDC/ACM
+  version: '1.0'
+  description: >
+    Streams the PPK2 measurement rails and range switch status over an
+    NxScope serial endpoint on USB CDC/ACM. SMU voltage, power path
+    control, calibration loads and RGB lightwell are writable through
+    NxScope set requests. A debug shell is bound to the console.
+  os_required:
+  - /dev/adc0
+  - /dev/pot0
+  - /dev/rgbled0
+  - /dev/gpio0
+  - /dev/ttyACM1
+ios:
+- &io_rails
+  id: rails1
+  type: adc_fetch
+  dtype: int32
+  config:
+    device: 0
+- &io_sw1
+  id: sw1
+  type: gpi
+  dtype: bool
+  config:
+    device: 0
+- &io_sw2
+  id: sw2
+  type: gpi
+  dtype: bool
+  config:
+    device: 1
+- &io_sw3
+  id: sw3
+  type: gpi
+  dtype: bool
+  config:
+    device: 2
+- &io_sw4
+  id: sw4
+  type: gpi
+  dtype: bool
+  config:
+    device: 3
+- &io_vext_en
+  id: vext_en1
+  type: gpo
+  dtype: bool
+  config:
+    device: 4
+- &io_vldo_en
+  id: vldo_en1
+  type: gpo
+  dtype: bool
+  config:
+    device: 5
+- &io_ana_en
+  id: ana_en1
+  type: gpo
+  dtype: bool
+  config:
+    device: 6
+- &io_reg_en
+  id: reg_en1
+  type: gpo
+  dtype: bool
+  config:
+    device: 7
+- &io_vout_en
+  id: vout_en1
+  type: gpo
+  dtype: bool
+  config:
+    device: 8
+- &io_cal100k
+  id: cal100k1
+  type: gpo
+  dtype: bool
+  config:
+    device: 9
+- &io_cal10k
+  id: cal10k1
+  type: gpo
+  dtype: bool
+  config:
+    device: 10
+- &io_cal1k
+  id: cal1k1
+  type: gpo
+  dtype: bool
+  config:
+    device: 11
+- &io_cal100
+  id: cal100_1
+  type: gpo
+  dtype: bool
+  config:
+    device: 12
+- &io_vbb
+  id: vbb1
+  type: pot
+  dtype: int32
+  config:
+    device: 0
+    wiper: 0
+- &io_vldo
+  id: vldo1
+  type: pot
+  dtype: int32
+  config:
+    device: 0
+    wiper: 1
+- &io_iaoff
+  id: iaoff1
+  type: pot
+  dtype: int32
+  config:
+    device: 0
+    wiper: 3
+- &io_rgb
+  id: rgb1
+  type: rgb_led
+  dtype: uint32
+  config:
+    device: 0
+    init_val: 0
+- &io_reset
+  id: reset1
+  type: boardctl
+  dtype: bool
+  variant: reset
+protocols:
+- id: nxscope1
+  type: nxscope_serial
+  config:
+    iobind2:
+    - id: rails1
+      name: rails
+    - id: sw1
+      name: sw1
+    - id: sw2
+      name: sw2
+    - id: sw3
+      name: sw3
+    - id: sw4
+      name: sw4
+    - id: vbb1
+      name: vbb
+    - id: vldo1
+      name: vldo
+    - id: iaoff1
+      name: iaoff
+    - id: vext_en1
+      name: vext_en
+    - id: vldo_en1
+      name: vldo_en
+    - id: ana_en1
+      name: ana_en
+    - id: reg_en1
+      name: reg_en
+    - id: vout_en1
+      name: vout_en
+    - id: cal100k1
+      name: cal100k
+    - id: cal10k1
+      name: cal10k
+    - id: cal1k1
+      name: cal1k
+    - id: cal100_1
+      name: cal100
+    - id: rgb1
+      name: rgb
+    path: /dev/ttyACM1
+    baudrate: 0
+- id: shell_debug
+  type: shell
+  bindings:
+  - *io_rails
+  - *io_sw1
+  - *io_sw2
+  - *io_sw3
+  - *io_sw4
+  - *io_vext_en
+  - *io_vldo_en
+  - *io_ana_en
+  - *io_reg_en
+  - *io_vout_en
+  - *io_cal100k
+  - *io_cal10k
+  - *io_cal1k
+  - *io_cal100
+  - *io_vbb
+  - *io_vldo
+  - *io_iaoff
+  - *io_rgb
+  - *io_reset
+  config:
+    prompt: ppk2>

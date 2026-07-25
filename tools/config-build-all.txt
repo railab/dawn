@@ -40,6 +40,9 @@ boards/arm/nrf52/nrf52840-dk/configs/nimble_ots
 boards/arm/nrf52/nrf52840-dk/configs/nimble_sensor_producer
 boards/arm/nrf52/nrf52840-dk/configs/shell
 
+boards/arm/nrf52/ppk2/configs/shell
+boards/arm/nrf52/ppk2/configs/nxscope
+
 boards/arm/nrf53/thingy53/configs/nimble -D CMAKE_POLICY_VERSION_MINIMUM=3.5
 boards/arm/nrf53/thingy53/configs/nimble_thingy53 -D CMAKE_POLICY_VERSION_MINIMUM=3.5
 boards/arm/nrf53/thingy53/configs/rpmsghci_sdc_cpunet -D CMAKE_POLICY_VERSION_MINIMUM=3.5
@@ -82,3 +85,5 @@ boards/arm/stm32f4/stm32f4discovery/configs/udp_ntfc
 # Out-of-tree demo (C++ descriptor + YAML descriptor variants)
 examples/out-of-tree-demo/boards/sim/sim/sim/configs/nsh_user_shell -e CXX=g++-14 -e CC=gcc-14
 examples/out-of-tree-demo/boards/sim/sim/sim/configs/nsh_user_shell_yaml -e CXX=g++-14 -e CC=gcc-14
+boards/arm/nrf52/ppk2/configs/nxscope_fast
+boards/arm/nrf52/ppk2/configs/nxscope_udp

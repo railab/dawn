@@ -1,0 +1,173 @@
+metadata:
+  title: PPK2 Shell Demo
+  version: '1.0'
+  description: >
+    Provides shell access to the PPK2 measurement rails, power path control,
+    calibration loads, range switch status, logic port and RGB lightwell.
+  os_required:
+  - /dev/adc0
+  - /dev/rgbled0
+  - /dev/gpio0
+ios:
+- &io_uptime
+  id: uptime1
+  type: sysinfo
+  dtype: float
+  variant: uptime
+- &io_rails
+  id: rails1
+  type: adc_fetch
+  dtype: int32
+  config:
+    device: 0
+- &io_sw1
+  id: sw1
+  type: gpi
+  dtype: bool
+  config:
+    device: 0
+- &io_sw2
+  id: sw2
+  type: gpi
+  dtype: bool
+  config:
+    device: 1
+- &io_sw3
+  id: sw3
+  type: gpi
+  dtype: bool
+  config:
+    device: 2
+- &io_sw4
+  id: sw4
+  type: gpi
+  dtype: bool
+  config:
+    device: 3
+- &io_vext_en
+  id: vext_en1
+  type: gpo
+  dtype: bool
+  config:
+    device: 4
+- &io_vldo_en
+  id: vldo_en1
+  type: gpo
+  dtype: bool
+  config:
+    device: 5
+- &io_ana_en
+  id: ana_en1
+  type: gpo
+  dtype: bool
+  config:
+    device: 6
+- &io_reg_en
+  id: reg_en1
+  type: gpo
+  dtype: bool
+  config:
+    device: 7
+- &io_vout_en
+  id: vout_en1
+  type: gpo
+  dtype: bool
+  config:
+    device: 8
+- &io_cal100k
+  id: cal100k1
+  type: gpo
+  dtype: bool
+  config:
+    device: 9
+- &io_cal10k
+  id: cal10k1
+  type: gpo
+  dtype: bool
+  config:
+    device: 10
+- &io_cal1k
+  id: cal1k1
+  type: gpo
+  dtype: bool
+  config:
+    device: 11
+- &io_cal100
+  id: cal100_1
+  type: gpo
+  dtype: bool
+  config:
+    device: 12
+- &io_lp_en
+  id: lp_en1
+  type: gpo
+  dtype: bool
+  config:
+    device: 13
+- &io_ext_usb
+  id: ext_usb1
+  type: gpi
+  dtype: bool
+  config:
+    device: 22
+- &io_vldo
+  id: vldo1
+  type: pot
+  dtype: int32
+  config:
+    device: 0
+    wiper: 1
+- &io_vbb
+  id: vbb1
+  type: pot
+  dtype: int32
+  config:
+    device: 0
+    wiper: 0
+- &io_iaoff
+  id: iaoff1
+  type: pot
+  dtype: int32
+  config:
+    device: 0
+    wiper: 3
+- &io_rgb
+  id: rgb1
+  type: rgb_led
+  dtype: uint32
+  config:
+    device: 0
+    init_val: 0
+- &io_reset
+  id: reset1
+  type: boardctl
+  dtype: bool
+  variant: reset
+protocols:
+- id: shell1
+  type: shell
+  bindings:
+  - *io_uptime
+  - *io_rails
+  - *io_sw1
+  - *io_sw2
+  - *io_sw3
+  - *io_sw4
+  - *io_vext_en
+  - *io_vldo_en
+  - *io_ana_en
+  - *io_reg_en
+  - *io_vout_en
+  - *io_cal100k
+  - *io_cal10k
+  - *io_cal1k
+  - *io_cal100
+  - *io_lp_en
+  - *io_ext_usb
+  - *io_vldo
+  - *io_vbb
+  - *io_iaoff
+  - *io_rgb
+  - *io_reset
+  config:
+    prompt: ppk2>

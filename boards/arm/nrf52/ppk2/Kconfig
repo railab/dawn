@@ -1,0 +1,21 @@
+#
+# For a description of the syntax of this configuration file,
+# see the file kconfig-language.txt in the NuttX tools repository.
+#
+
+config DAWN_PPK2_OVERLAY
+	bool
+	default y
+	---help---
+		Enable the Dawn ppk2 board overlay defaults.
+
+config PPK2_GPIO
+	bool "Export PPK2 control and status pins as GPIO"
+	default n
+	depends on GPIO_LOWER_HALF && DEV_GPIO
+	---help---
+		Export PPK2 control and status pins as GPIOs.
+
+# Include common fake drivers Kconfig
+# DAWN_BOARDS_COMMON is set by dawn/CMakeLists.txt (processed before Kconfig)
+source "$(DAWN_BOARDS_COMMON)/Kconfig"

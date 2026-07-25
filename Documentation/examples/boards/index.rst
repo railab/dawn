@@ -17,6 +17,7 @@ experimental, or placeholder configurations.
    ST Nucleo H743ZI <nucleo-h743zi>
    ST STM32F4 Discovery <stm32f4discovery>
    Nordic nRF52840-DK <nrf52840-dk>
+   Nordic Power Profiler Kit II <ppk2>
    Nordic nRF5340-DK <nrf5340-dk>
    Nordic nRF9160-DK <nrf9160-dk>
    Nordic Thingy:53 <thingy53>

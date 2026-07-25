@@ -1,0 +1,242 @@
+metadata:
+  title: PPK2 NxScope UDP 100kS/s current stream (over RNDIS USB-net)
+  version: '1.0'
+  description: >
+    Streams the current measurement channel (VSE_IA) at 100kS/s over an
+    NxScope serial endpoint on USB CDC/ACM. The SAADC runs in continuous
+    timer mode and each sample carries the range switch state in bits
+    12..15 (adc = v & 0xfff, range = v >> 12). SMU voltage, power path
+    control and calibration loads are writable through NxScope set
+    requests.
+  os_required:
+  - /dev/adc0
+  - /dev/pot0
+  - /dev/rgbled0
+  - /dev/gpio0
+ios:
+- &io_cur
+  id: cur1
+  type: adc_stream
+  # int16 wire samples (the SAADC is 12-bit): halves the bytes per sample so
+  # the full 100 kS/s current stream fits the USB-net transport. The device
+  # ADC upper half is int32; adc_base narrows to int16 on read.
+  dtype: int16
+  config:
+    device: 0
+    batch_size: 460
+    notify:
+      type: stream
+      batch: 460
+- &io_sw1
+  id: sw1
+  type: gpi
+  dtype: bool
+  config:
+    device: 0
+- &io_sw2
+  id: sw2
+  type: gpi
+  dtype: bool
+  config:
+    device: 1
+- &io_sw3
+  id: sw3
+  type: gpi
+  dtype: bool
+  config:
+    device: 2
+- &io_sw4
+  id: sw4
+  type: gpi
+  dtype: bool
+  config:
+    device: 3
+- &io_rangebits
+  id: rangebits
+  type: virt
+  dtype: uint32
+- &io_cursat
+  id: cursat
+  type: virt
+  dtype: int16
+- &io_curtag
+  id: curtag
+  type: virt
+  dtype: int16
+- &io_vext_en
+  id: vext_en1
+  type: gpo
+  dtype: bool
+  config:
+    device: 4
+- &io_vldo_en
+  id: vldo_en1
+  type: gpo
+  dtype: bool
+  config:
+    device: 5
+- &io_ana_en
+  id: ana_en1
+  type: gpo
+  dtype: bool
+  config:
+    device: 6
+- &io_reg_en
+  id: reg_en1
+  type: gpo
+  dtype: bool
+  config:
+    device: 7
+- &io_vout_en
+  id: vout_en1
+  type: gpo
+  dtype: bool
+  config:
+    device: 8
+- &io_cal100k
+  id: cal100k1
+  type: gpo
+  dtype: bool
+  config:
+    device: 9
+- &io_cal10k
+  id: cal10k1
+  type: gpo
+  dtype: bool
+  config:
+    device: 10
+- &io_cal1k
+  id: cal1k1
+  type: gpo
+  dtype: bool
+  config:
+    device: 11
+- &io_cal100
+  id: cal100_1
+  type: gpo
+  dtype: bool
+  config:
+    device: 12
+- &io_vbb
+  id: vbb1
+  type: pot
+  dtype: int16
+  config:
+    device: 0
+    wiper: 0
+- &io_vldo
+  id: vldo1
+  type: pot
+  dtype: int16
+  config:
+    device: 0
+    wiper: 1
+- &io_iaoff
+  id: iaoff1
+  type: pot
+  dtype: int16
+  config:
+    device: 0
+    wiper: 3
+- &io_rgb
+  id: rgb1
+  type: rgb_led
+  dtype: uint32
+  config:
+    device: 0
+    init_val: 0
+- &io_reset
+  id: reset1
+  type: boardctl
+  dtype: bool
+  variant: reset
+programs:
+- id: sw_bitpack
+  type: bitpack
+  config:
+    inputs:
+    - io: *io_sw1
+      bit: 0
+    - io: *io_sw2
+      bit: 1
+    - io: *io_sw3
+      bit: 2
+    - io: *io_sw4
+      bit: 3
+    output: *io_rangebits
+# The SAADC dips below zero at the noise floor. Clamp before the 12-bit field
+# mask turns a small negative into full scale.
+- id: cur_sat
+  type: saturate
+  dtype: int32
+  config:
+    input: *io_cur
+    output: *io_cursat
+    min: 0
+    max: 0x0fff
+- id: cur_tag
+  type: bitmerge
+  config:
+    inputs:
+    - io: *io_cursat
+      shift: 0
+      mask: 0x0fff
+    - io: *io_rangebits
+      shift: 12
+      mask: 0x0f
+    output: *io_curtag
+protocols:
+- id: nxscope1
+  type: nxscope_udp
+  config:
+    iobind2:
+    - id: curtag
+      name: cur
+    - id: rangebits
+      name: range
+    - id: vbb1
+      name: vbb
+    - id: vldo1
+      name: vldo
+    - id: iaoff1
+      name: iaoff
+    - id: vext_en1
+      name: vext_en
+    - id: vldo_en1
+      name: vldo_en
+    - id: ana_en1
+      name: ana_en
+    - id: reg_en1
+      name: reg_en
+    - id: vout_en1
+      name: vout_en
+    - id: cal100k1
+      name: cal100k
+    - id: cal10k1
+      name: cal10k
+    - id: cal1k1
+      name: cal1k
+    - id: cal100_1
+      name: cal100
+    - id: rgb1
+      name: rgb
+    port: 50000
+- id: shell_debug
+  type: shell
+  bindings:
+  - *io_vext_en
+  - *io_vldo_en
+  - *io_ana_en
+  - *io_reg_en
+  - *io_vout_en
+  - *io_cal100k
+  - *io_cal10k
+  - *io_cal1k
+  - *io_cal100
+  - *io_vbb
+  - *io_vldo
+  - *io_iaoff
+  - *io_rgb
+  - *io_reset
+  config:
+    prompt: ppk2>

@@ -1,0 +1,427 @@
+metadata:
+  title: PPK2 NxScope 100kS/s current stream
+  version: '1.0'
+  description: >
+    Streams the current measurement channel (VSE_IA) at 100kS/s over an
+    NxScope serial endpoint on USB CDC/ACM. Samples are raw 12-bit SAADC
+    values; the active range is readable on demand from the sw1..4 range
+    switch status inputs (thermometer coded). SMU voltage, power path
+    control and calibration loads are writable through NxScope set
+    requests, so a host tool can run the self-calibration sequence over
+    the same link.
+  os_required:
+  - /dev/adc0
+  - /dev/pot0
+  - /dev/rgbled0
+  - /dev/gpio0
+  - /dev/ttyACM0
+ios:
+- &io_cur
+  id: cur1
+  type: adc_stream
+  dtype: int32
+  config:
+    device: 0
+    batch_size: 1024
+    notify:
+      type: stream
+      batch: 1024
+- &io_sw1
+  id: sw1
+  type: gpi
+  dtype: bool
+  config:
+    device: 0
+- &io_sw2
+  id: sw2
+  type: gpi
+  dtype: bool
+  config:
+    device: 1
+- &io_sw3
+  id: sw3
+  type: gpi
+  dtype: bool
+  config:
+    device: 2
+- &io_sw4
+  id: sw4
+  type: gpi
+  dtype: bool
+  config:
+    device: 3
+- &io_rangebits
+  id: rangebits
+  type: virt
+  dtype: uint32
+- &io_cursat
+  id: cursat
+  type: virt
+  dtype: int16
+- &io_curtag
+  id: curtag
+  type: virt
+  dtype: int16
+- &io_lpd0
+  id: lpd0
+  type: gpi
+  dtype: bool
+  config:
+    device: 14
+- &io_lpd1
+  id: lpd1
+  type: gpi
+  dtype: bool
+  config:
+    device: 15
+- &io_lpd2
+  id: lpd2
+  type: gpi
+  dtype: bool
+  config:
+    device: 16
+- &io_lpd3
+  id: lpd3
+  type: gpi
+  dtype: bool
+  config:
+    device: 17
+- &io_lpd4
+  id: lpd4
+  type: gpi
+  dtype: bool
+  config:
+    device: 18
+- &io_lpd5
+  id: lpd5
+  type: gpi
+  dtype: bool
+  config:
+    device: 19
+- &io_lpd6
+  id: lpd6
+  type: gpi
+  dtype: bool
+  config:
+    device: 20
+- &io_lpd7
+  id: lpd7
+  type: gpi
+  dtype: bool
+  config:
+    device: 21
+- &io_lpdv0
+  id: lpdv0
+  type: virt
+  dtype: uint32
+- &io_lpdv1
+  id: lpdv1
+  type: virt
+  dtype: uint32
+- &io_lpdv2
+  id: lpdv2
+  type: virt
+  dtype: uint32
+- &io_lpdv3
+  id: lpdv3
+  type: virt
+  dtype: uint32
+- &io_lpdv4
+  id: lpdv4
+  type: virt
+  dtype: uint32
+- &io_lpdv5
+  id: lpdv5
+  type: virt
+  dtype: uint32
+- &io_lpdv6
+  id: lpdv6
+  type: virt
+  dtype: uint32
+- &io_lpdv7
+  id: lpdv7
+  type: virt
+  dtype: uint32
+- &io_lpbits
+  id: lpbits
+  type: virt
+  dtype: uint32
+# On-device over-level trigger (thresholdvalue) fed from cur1 before the
+# range tag is merged: passes the raw ADC through only when it exceeds the
+# threshold, zero otherwise, so a host can catch excursions without pulling
+# the full 100 kS/s stream. Operates on raw ADC counts - range scaling stays
+# a host concern. (Averaging is deliberately NOT done on the device: the host
+# has the per-sample range and calibration and computes a true-amps average,
+# where a device raw-ADC average is meaningless across auto-range switches.)
+- &io_curtrig
+  id: curtrig
+  type: virt
+  dtype: int16
+- &io_vext_en
+  id: vext_en1
+  type: gpo
+  dtype: bool
+  config:
+    device: 4
+- &io_vldo_en
+  id: vldo_en1
+  type: gpo
+  dtype: bool
+  config:
+    device: 5
+- &io_ana_en
+  id: ana_en1
+  type: gpo
+  dtype: bool
+  config:
+    device: 6
+- &io_reg_en
+  id: reg_en1
+  type: gpo
+  dtype: bool
+  config:
+    device: 7
+- &io_vout_en
+  id: vout_en1
+  type: gpo
+  dtype: bool
+  config:
+    device: 8
+- &io_cal100k
+  id: cal100k1
+  type: gpo
+  dtype: bool
+  config:
+    device: 9
+- &io_cal10k
+  id: cal10k1
+  type: gpo
+  dtype: bool
+  config:
+    device: 10
+- &io_cal1k
+  id: cal1k1
+  type: gpo
+  dtype: bool
+  config:
+    device: 11
+- &io_cal100
+  id: cal100_1
+  type: gpo
+  dtype: bool
+  config:
+    device: 12
+- &io_lp_en
+  id: lp_en1
+  type: gpo
+  dtype: bool
+  config:
+    device: 13
+- &io_vbb
+  id: vbb1
+  type: pot
+  dtype: int32
+  config:
+    device: 0
+    wiper: 0
+- &io_vldo
+  id: vldo1
+  type: pot
+  dtype: int32
+  config:
+    device: 0
+    wiper: 1
+- &io_iaoff
+  id: iaoff1
+  type: pot
+  dtype: int32
+  config:
+    device: 0
+    wiper: 3
+- &io_rgb
+  id: rgb1
+  type: rgb_led
+  dtype: uint32
+  config:
+    device: 0
+    init_val: 0
+- &io_calmem
+  id: calmem
+  type: fileio
+  dtype: block
+  config:
+    path: "/dev/eeprom0"
+    perm: 2
+- &io_reset
+  id: reset1
+  type: boardctl
+  dtype: bool
+  variant: reset
+programs:
+- id: sw_bitpack
+  type: bitpack
+  config:
+    inputs:
+    - io: *io_sw1
+      bit: 0
+    - io: *io_sw2
+      bit: 1
+    - io: *io_sw3
+      bit: 2
+    - io: *io_sw4
+      bit: 3
+    output: *io_rangebits
+# The SAADC dips below zero at the noise floor. Clamp before the 12-bit field
+# mask turns a small negative into full scale.
+- id: cur_sat
+  type: saturate
+  dtype: int32
+  config:
+    input: *io_cur
+    output: *io_cursat
+    min: 0
+    max: 0x0fff
+- id: cur_tag
+  type: bitmerge
+  config:
+    inputs:
+    - io: *io_cursat
+      shift: 0
+      mask: 0x0fff
+    - io: *io_rangebits
+      shift: 12
+      mask: 0x0f
+    output: *io_curtag
+- id: lp_sampling
+  type: sampling
+  config:
+    sources:
+    - *io_lpd0
+    - *io_lpd1
+    - *io_lpd2
+    - *io_lpd3
+    - *io_lpd4
+    - *io_lpd5
+    - *io_lpd6
+    - *io_lpd7
+    outputs:
+    - *io_lpdv0
+    - *io_lpdv1
+    - *io_lpdv2
+    - *io_lpdv3
+    - *io_lpdv4
+    - *io_lpdv5
+    - *io_lpdv6
+    - *io_lpdv7
+    interval: 1000
+- id: lp_bitpack
+  type: bitpack
+  config:
+    inputs:
+    - io: *io_lpdv0
+      bit: 0
+    - io: *io_lpdv1
+      bit: 1
+    - io: *io_lpdv2
+      bit: 2
+    - io: *io_lpdv3
+      bit: 3
+    - io: *io_lpdv4
+      bit: 4
+    - io: *io_lpdv5
+      bit: 5
+    - io: *io_lpdv6
+      bit: 6
+    - io: *io_lpdv7
+      bit: 7
+    output: *io_lpbits
+- id: cur_threshold
+  type: thresholdvalue
+  config:
+    sources:
+    - *io_cursat
+    outputs:
+    - *io_curtrig
+    # ABOVE: pass the raw current ADC through when the in-amp output runs
+    # hot (near the top of the active range), zero otherwise, so the host
+    # sees only the over-level excursions. Source is the clamped int16
+    # stream, so this is exactly what the host receives on cur.
+    # thresholdvalue keeps the output the same dtype as the source (int16) - a bool output cannot be
+    # streamed by NxScope. For integer sources low/high are raw counts
+    # (only float sources read them as float bit patterns). Host-tunable at
+    # runtime via the RW mode/low/high config items.
+    mode: 0
+    low: 0
+    high: 3000
+protocols:
+- id: nxscope1
+  type: nxscope_serial
+  config:
+    iobind2:
+    - id: curtag
+      name: cur
+    - id: rangebits
+      name: range
+    - id: curtrig
+      name: trig
+    - id: lpbits
+      name: logic
+    - id: lp_en1
+      name: lp_en
+    - id: calmem
+      name: calmem
+    - id: sw1
+      name: sw1
+    - id: sw2
+      name: sw2
+    - id: sw3
+      name: sw3
+    - id: sw4
+      name: sw4
+    - id: vbb1
+      name: vbb
+    - id: vldo1
+      name: vldo
+    - id: iaoff1
+      name: iaoff
+    - id: vext_en1
+      name: vext_en
+    - id: vldo_en1
+      name: vldo_en
+    - id: ana_en1
+      name: ana_en
+    - id: reg_en1
+      name: reg_en
+    - id: vout_en1
+      name: vout_en
+    - id: cal100k1
+      name: cal100k
+    - id: cal10k1
+      name: cal10k
+    - id: cal1k1
+      name: cal1k
+    - id: cal100_1
+      name: cal100
+    - id: rgb1
+      name: rgb
+    path: /dev/ttyACM0
+    baudrate: 0
+- id: shell_debug
+  type: shell
+  bindings:
+  - *io_vext_en
+  - *io_vldo_en
+  - *io_ana_en
+  - *io_reg_en
+  - *io_vout_en
+  - *io_cal100k
+  - *io_cal10k
+  - *io_cal1k
+  - *io_cal100
+  - *io_vbb
+  - *io_vldo
+  - *io_iaoff
+  - *io_rgb
+  - *io_reset
+  config:
+    prompt: ppk2>
