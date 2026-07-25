@@ -190,8 +190,17 @@ int CIOAdcBase::readSamples(IODataCmn &data, size_t len)
 
   while (total < expected)
     {
-      ret =
-        adc_read(fd, reinterpret_cast<dawn::porting::adc_read_s *>(dst + total), expected - total);
+      size_t req = expected - total;
+
+      // A length that is a multiple of 5 is read back as channel+int32
+      // records; keep the request off that multiple.
+
+      if (req % 5 == 0)
+        {
+          req -= sizeof(dawn::porting::adc_read_s);
+        }
+
+      ret = adc_read(fd, reinterpret_cast<dawn::porting::adc_read_s *>(dst + total), req);
       if (ret < 0)
         {
           return ret;
