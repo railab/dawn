@@ -30,7 +30,7 @@ blocks waiting for VBUS.
 Host tooling
 ============
 
-``tools/ppk2/ppk2.py`` controls everything over the nxscope link: SMU
+``tools/examples/ppk2/ppk2.py`` controls everything over the nxscope link: SMU
 output 0.8..5.0 V (soft-start; VBB headroom raised automatically above
 ~4.2 V), ampere-meter mode (``mode ampere`` - external supply through the
 VEXT path), calibration loads, live plot, measure/CSV with ``--rate``
