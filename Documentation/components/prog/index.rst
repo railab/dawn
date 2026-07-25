@@ -128,6 +128,7 @@ Supported Programs
    selector.rst
    bitpack.rst
    saturate.rst
+   bitmerge.rst
    vecpack.rst
    vecsplit.rst
    manytoone.rst
