@@ -67,7 +67,13 @@ public:
 
   bool isNotify() const override
   {
-    return true;
+#ifdef CONFIG_DAWN_IO_NOTIFY
+    // Determined at configure time: requires interrupt support from the
+    // underlying GPIO device (GPIOC_REGISTER).
+    return isNotifyIO;
+#else
+    return false;
+#endif
   };
 
   bool isBatch() const override
