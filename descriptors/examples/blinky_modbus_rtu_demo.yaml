@@ -7,7 +7,6 @@ metadata:
     remotely while exposing runtime state through holding/coils.
   os_required:
     - /dev/leds0
-    - /dev/ttyS1
 
 ios:
   - id: led1
@@ -32,7 +31,6 @@ protocols:
       - "@blinky.cfg_dwell_off"
       - "@blinky.cfg_dwell_on"
     config:
-      path: /dev/ttyS1
       baudrate: 115200
       registers:
         - type: coil
