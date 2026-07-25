@@ -195,6 +195,10 @@ public:
     IO_CLASS_ENCODER = 85,       ///< Quadrature encoder (position)
     IO_CLASS_ENCODER_INDEX = 86, ///< Quadrature encoder (position+index)
 
+    // Digital potentiometer
+
+    IO_CLASS_POT = 87, ///< Digital potentiometer wiper
+
     // Battery (fuel gauge)
 
     IO_CLASS_BATTERY_VOLTAGE = 90, ///< Battery voltage (fuel gauge)
