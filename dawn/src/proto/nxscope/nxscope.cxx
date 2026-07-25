@@ -5,7 +5,10 @@
 
 #include "dawn/proto/nxscope/nxscope.hxx"
 
+#include <algorithm>
 #include <cstring>
+#include <new>
+#include <time.h>
 
 #include "dawn/io/common.hxx"
 #include "dawn/io/ddata.hxx"
@@ -16,9 +19,9 @@ using namespace dawn;
 #  error one sampling method can be supported
 #endif
 
-// Interval for recv thread in us
+// doStop() stops threadRecv() before the transport - needs non-blocking recv
 
-#define NXSCOPE_RECV_INTERVAL (10000)
+static_assert(NXSCOPE_RECV_NONBLOCK == 1, "doStop() relies on non-blocking recv");
 
 // Interval in us for sample thread
 
@@ -38,13 +41,24 @@ static inline uint32_t nxscopeU32Le(const uint8_t *p)
 int CProtoNxscope::ioNotifierCb(void *priv, io_ddata_t *data)
 {
   SProtoNxscopeIochan *chan = (SProtoNxscopeIochan *)priv;
+  int ret;
 
   if (!chan || !chan->obj || !data || !chan->put)
     {
       return -EINVAL;
     }
 
-  return chan->put(&chan->obj->nxs, chan->chan, data->getDataPtr(), data->getItems());
+  {
+    std::lock_guard<std::recursive_mutex> lock(chan->obj->streamLock);
+
+    ret = chan->put(&chan->obj->nxs, chan->chan, data, chan->dim);
+  }
+
+  // Wake threadRecv to flush this batch (cheap signal, not a flush).
+
+  sem_post(&chan->obj->streamSem);
+
+  return ret;
 }
 #endif
 
@@ -102,7 +116,8 @@ int CProtoNxscope::userIdCb(void *priv, uint8_t id, uint8_t *buff)
       return -EINVAL;
     }
 
-  handled = (id == NXSCOPE_USER_SET_IO || id == NXSCOPE_USER_SET_IO_SEEK);
+  handled = (id == NXSCOPE_USER_SET_IO || id == NXSCOPE_USER_SET_IO_SEEK ||
+             id == NXSCOPE_USER_GET_IO || id == NXSCOPE_USER_GET_IO_SEEK);
   if (!handled)
     {
       /* Ignore non-extension IDs routed through userid callback.
@@ -141,6 +156,16 @@ int CProtoNxscope::handleUserCommand(uint8_t id, uint8_t *buff)
       case NXSCOPE_USER_SET_IO_SEEK:
         {
           return userSetIOSeek(buff);
+        }
+
+      case NXSCOPE_USER_GET_IO:
+        {
+          return userGetIO(buff);
+        }
+
+      case NXSCOPE_USER_GET_IO_SEEK:
+        {
+          return userGetIOSeek(buff);
         }
 
       default:
@@ -275,6 +300,167 @@ int CProtoNxscope::userSetIOSeek(uint8_t *buff)
   return ret;
 }
 
+int CProtoNxscope::userGetIO(uint8_t *buff)
+{
+  SObjectId::ObjectId objid;
+  SProtoNxscopeIochan *iochan;
+  CIOCommon *io;
+  io_ddata_t *iodata;
+  int ret;
+
+  objid = nxscopeU32Le(buff);
+
+  iochan = findIochan(objid);
+  if (iochan == nullptr || iochan->io == nullptr)
+    {
+      return -ENOENT;
+    }
+
+  io = iochan->io;
+  if (!io->isRead())
+    {
+      return -EPERM;
+    }
+
+  if (io->isSeekable())
+    {
+      return -ENOTSUP;
+    }
+
+  if (iochan->getData == nullptr)
+    {
+      iochan->getData = io->ddata_alloc(1);
+      if (iochan->getData == nullptr)
+        {
+          return -ENOMEM;
+        }
+    }
+
+  iodata = iochan->getData;
+  ret = io->getData(*iodata, 1);
+  if (ret < 0)
+    {
+      return ret;
+    }
+
+  ret = sendUserData(objid, iodata->getDataPtr(), (uint16_t)io->getDataSize());
+  if (ret < 0)
+    {
+      return ret;
+    }
+
+  // A positive value is the intf send byte count - the user command ACK
+  // must carry a plain status.
+
+  return OK;
+}
+
+int CProtoNxscope::userGetIOSeek(uint8_t *buff)
+{
+  SObjectId::ObjectId objid;
+  size_t offset;
+  uint16_t size;
+  SProtoNxscopeIochan *iochan;
+  CIOCommon *io;
+  io_ddata_t *iodata;
+  int ret;
+
+  objid = nxscopeU32Le(buff);
+  offset = nxscopeU32Le(&buff[4]);
+  size = nxscopeU16Le(&buff[8]);
+
+  iochan = findIochan(objid);
+  if (iochan == nullptr || iochan->io == nullptr)
+    {
+      return -ENOENT;
+    }
+
+  io = iochan->io;
+  if (!io->isRead())
+    {
+      return -EPERM;
+    }
+
+  if (!io->isSeekable())
+    {
+      return -ENOTSUP;
+    }
+
+  if (iochan->getData == nullptr)
+    {
+      iochan->getData = io->ddata_alloc(1, CONFIG_DAWN_PROTO_NXSCOPE_RXBUF_LEN);
+      if (iochan->getData == nullptr)
+        {
+          return -ENOMEM;
+        }
+    }
+
+  iodata = iochan->getData;
+  if (size > iodata->getDataSize())
+    {
+      return -EINVAL;
+    }
+
+  // A window past the end would ship a stale tail (short reads are silent)
+
+  if (io->getDataSize() != 0 && offset + size > io->getDataSize())
+    {
+      return -EINVAL;
+    }
+
+  ret = io->getData(*iodata, 1, offset);
+  if (ret < 0)
+    {
+      return ret;
+    }
+
+  ret = sendUserData(objid, iodata->getDataPtr(), size);
+  if (ret < 0)
+    {
+      return ret;
+    }
+
+  return OK;
+}
+
+/// Send a NXSCOPE_USER_GET_IO response frame:
+/// objid (u32 LE) | size (u16 LE) | data.
+int CProtoNxscope::sendUserData(SObjectId::ObjectId objid, const void *data, uint16_t size)
+{
+  size_t len;
+  int ret;
+
+  if (nxs.proto_cmd == nullptr || nxs.intf_cmd == nullptr || nxs.proto_cmd->ops == nullptr ||
+      nxs.intf_cmd->ops == nullptr || nxs.proto_cmd->ops->frame_final == nullptr ||
+      nxs.intf_cmd->ops->send == nullptr || userTxBuf == nullptr)
+    {
+      return -EINVAL;
+    }
+
+  if (userTxLen < nxs.proto_cmd->hdrlen + NXSCOPE_USER_DATA_HDR + size + nxs.proto_cmd->footlen)
+    {
+      return -ENOBUFS;
+    }
+
+  len = nxs.proto_cmd->hdrlen;
+  userTxBuf[len++] = (uint8_t)(objid & 0xff);
+  userTxBuf[len++] = (uint8_t)((objid >> 8) & 0xff);
+  userTxBuf[len++] = (uint8_t)((objid >> 16) & 0xff);
+  userTxBuf[len++] = (uint8_t)((objid >> 24) & 0xff);
+  userTxBuf[len++] = (uint8_t)(size & 0xff);
+  userTxBuf[len++] = (uint8_t)((size >> 8) & 0xff);
+  std::memcpy(&userTxBuf[len], data, size);
+  len += size;
+
+  ret = nxs.proto_cmd->ops->frame_final(nxs.proto_cmd, NXSCOPE_USER_GET_IO, userTxBuf, &len);
+  if (ret < 0)
+    {
+      return ret;
+    }
+
+  return nxs.intf_cmd->ops->send(nxs.intf_cmd, userTxBuf, (int)len);
+}
+
 int CProtoNxscope::configureNxscope()
 {
   int ret;
@@ -358,6 +544,34 @@ uint8_t CProtoNxscope::getChannelDtype(const CIOCommon &io)
 
   switch (dtype)
     {
+#ifdef CONFIG_DAWN_DTYPE_UINT8
+      case SObjectId::DTYPE_UINT8:
+        {
+          return NXSCOPE_TYPE_UINT8;
+        }
+#endif
+
+#ifdef CONFIG_DAWN_DTYPE_INT8
+      case SObjectId::DTYPE_INT8:
+        {
+          return NXSCOPE_TYPE_INT8;
+        }
+#endif
+
+#ifdef CONFIG_DAWN_DTYPE_UINT16
+      case SObjectId::DTYPE_UINT16:
+        {
+          return NXSCOPE_TYPE_UINT16;
+        }
+#endif
+
+#ifdef CONFIG_DAWN_DTYPE_INT16
+      case SObjectId::DTYPE_INT16:
+        {
+          return NXSCOPE_TYPE_INT16;
+        }
+#endif
+
 #ifdef CONFIG_DAWN_DTYPE_INT32
       case SObjectId::DTYPE_INT32:
         {
@@ -420,6 +634,7 @@ int CProtoNxscope::nxscopeChannelsCreate()
   union nxscope_chinfo_type_u u;
   const SProtoNxscopeIOBind *alloc;
   size_t bindidx;
+  size_t getmax = 0;
   int chanid = 0;
   int ret;
 
@@ -454,6 +669,7 @@ int CProtoNxscope::nxscopeChannelsCreate()
           iochan.io = (CIOCommon *)io;
           iochan.obj = this;
           iochan.setData = nullptr;
+          iochan.getData = nullptr;
 #ifdef CONFIG_DAWN_IO_NOTIFY
           iochan.put = nullptr;
 #endif
@@ -466,6 +682,20 @@ int CProtoNxscope::nxscopeChannelsCreate()
             {
               DAWNERR("IO 0x%" PRIx32 " has neither read nor write support\n", alloc->objid.v);
               return -EPERM;
+            }
+
+          // GET_IO returns the whole IO, GET_IO_SEEK at most one RXBUF chunk
+
+          if (io->isRead())
+            {
+              size_t n = io->getDataSize();
+
+              if (io->isSeekable())
+                {
+                  n = std::min(n, (size_t)CONFIG_DAWN_PROTO_NXSCOPE_RXBUF_LEN);
+                }
+
+              getmax = std::max(getmax, n);
             }
 
           if (iochan.io->isWrite())
@@ -521,20 +751,12 @@ int CProtoNxscope::nxscopeChannelsCreate()
 #ifdef CONFIG_DAWN_IO_NOTIFY
           if (iochan.stream && iochan.io->isNotify() == false)
             {
-              if (iochan.io->isWrite())
-                {
-                  DAWNINFO("set-only nxscope channel (no notify) for "
-                           "objid=0x%" PRIx32 "\n",
-                           alloc->objid.v);
-                  iochan.stream = false;
-                }
-              else
-                {
-                  DAWNERR("notify not supported for objid=0x%" PRIx32 "\n", alloc->objid.v);
-                  delete iochan.setData;
-                  iochan.setData = nullptr;
-                  return -ENOTSUP;
-                }
+              // Not streamable - still reachable with SET_IO / GET_IO
+
+              DAWNWARN("%s-only nxscope channel (no notify) for objid=0x%" PRIx32 "\n",
+                       iochan.io->isWrite() ? "set" : "get",
+                       alloc->objid.v);
+              iochan.stream = false;
             }
 #endif
 
@@ -601,33 +823,40 @@ int CProtoNxscope::nxscopeChannelsCreate()
         }
     }
 
+  // GET_IO response buffer: the lib txbuf only fits a CHINFO reply
+
+  delete[] userTxBuf;
+  userTxLen = nxsProto.hdrlen + NXSCOPE_USER_DATA_HDR + getmax + nxsProto.footlen;
+  userTxBuf = new (std::nothrow) uint8_t[userTxLen];
+  if (userTxBuf == nullptr)
+    {
+      userTxLen = 0;
+      return -ENOMEM;
+    }
+
   return OK;
 };
 
 #ifdef CONFIG_DAWN_IO_NOTIFY
-int CProtoNxscope::putInt32(struct nxscope_s *nxs, uint8_t chan, void *data, uint8_t dim)
+template<typename T, CProtoNxscope::nxscope_put_t<T> Put>
+int CProtoNxscope::putBatch(struct nxscope_s *nxs, uint8_t chan, io_ddata_t *data, uint8_t dim)
 {
-  return nxscope_put_vint32(nxs, chan, static_cast<int32_t *>(data), dim);
-}
+  int ret = OK;
 
-int CProtoNxscope::putUint32(struct nxscope_s *nxs, uint8_t chan, void *data, uint8_t dim)
-{
-  return nxscope_put_vuint32(nxs, chan, static_cast<uint32_t *>(data), dim);
-}
+  // Address each batch through the buffer so timestamp padding is honoured
 
-int CProtoNxscope::putUint64(struct nxscope_s *nxs, uint8_t chan, void *data, uint8_t dim)
-{
-  return nxscope_put_vuint64(nxs, chan, static_cast<uint64_t *>(data), dim);
-}
+  for (size_t i = 0; i < data->getBatch() && ret >= 0; i++)
+    {
+      ret = Put(nxs, chan, static_cast<T *>(data->getDataPtr(i)), dim);
+    }
 
-int CProtoNxscope::putFloat(struct nxscope_s *nxs, uint8_t chan, void *data, uint8_t dim)
-{
-  return nxscope_put_vfloat(nxs, chan, static_cast<float *>(data), dim);
+  return ret;
 }
 #endif
 
 #ifdef CONFIG_DAWN_PROTO_NXSCOPE_SAMPLE_THREAD
-int CProtoNxscope::sampleInt32(CProtoNxscope *obj, SProtoNxscopeIochan *iochan)
+template<typename T, CProtoNxscope::nxscope_put_t<T> Put>
+int CProtoNxscope::sampleTyped(CProtoNxscope *obj, SProtoNxscopeIochan *iochan)
 {
   int ret;
 
@@ -639,84 +868,64 @@ int CProtoNxscope::sampleInt32(CProtoNxscope *obj, SProtoNxscopeIochan *iochan)
   ret = iochan->io->getData(*iochan->data, 1);
   if (ret == OK)
     {
-      ret = nxscope_put_vint32(
-        &obj->nxs, iochan->chan, static_cast<int32_t *>(iochan->data->getDataPtr()), iochan->dim);
-    }
-
-  return ret;
-}
-
-int CProtoNxscope::sampleUint32(CProtoNxscope *obj, SProtoNxscopeIochan *iochan)
-{
-  int ret;
-
-  if (!iochan || !iochan->data)
-    {
-      return -EINVAL;
-    }
-
-  ret = iochan->io->getData(*iochan->data, 1);
-  if (ret == OK)
-    {
-      ret = nxscope_put_vuint32(
-        &obj->nxs, iochan->chan, static_cast<uint32_t *>(iochan->data->getDataPtr()), iochan->dim);
-    }
-
-  return ret;
-}
-
-int CProtoNxscope::sampleUint64(CProtoNxscope *obj, SProtoNxscopeIochan *iochan)
-{
-  int ret;
-
-  if (!iochan || !iochan->data)
-    {
-      return -EINVAL;
-    }
-
-  ret = iochan->io->getData(*iochan->data, 1);
-  if (ret == OK)
-    {
-      ret = nxscope_put_vuint64(
-        &obj->nxs, iochan->chan, static_cast<uint64_t *>(iochan->data->getDataPtr()), iochan->dim);
-    }
-
-  return ret;
-}
-
-int CProtoNxscope::sampleFloat(CProtoNxscope *obj, SProtoNxscopeIochan *iochan)
-{
-  int ret;
-
-  if (!iochan || !iochan->data)
-    {
-      return -EINVAL;
-    }
-
-  ret = iochan->io->getData(*iochan->data, 1);
-  if (ret == OK)
-    {
-      ret = nxscope_put_vfloat(
-        &obj->nxs, iochan->chan, static_cast<float *>(iochan->data->getDataPtr()), iochan->dim);
+      ret = Put(&obj->nxs, iochan->chan, static_cast<T *>(iochan->data->getDataPtr()), iochan->dim);
     }
 
   return ret;
 }
 #endif
+
+template<typename T, CProtoNxscope::nxscope_put_t<T> Put>
+void CProtoNxscope::bindTyped(SProtoNxscopeIochan &iochan)
+{
+#ifdef CONFIG_DAWN_IO_NOTIFY
+  iochan.put = &putBatch<T, Put>;
+#endif
+#ifdef CONFIG_DAWN_PROTO_NXSCOPE_SAMPLE_THREAD
+  iochan.sample = &sampleTyped<T, Put>;
+#endif
+}
 
 int CProtoNxscope::bindChannelCallbacks(SProtoNxscopeIochan &iochan, uint8_t dtype)
 {
   switch (dtype)
     {
+#ifdef CONFIG_DAWN_DTYPE_UINT8
+      case SObjectId::DTYPE_UINT8:
+        {
+          bindTyped<uint8_t, nxscope_put_vuint8>(iochan);
+          break;
+        }
+#endif
+
+#ifdef CONFIG_DAWN_DTYPE_INT8
+      case SObjectId::DTYPE_INT8:
+        {
+          bindTyped<int8_t, nxscope_put_vint8>(iochan);
+          break;
+        }
+#endif
+
+#ifdef CONFIG_DAWN_DTYPE_UINT16
+      case SObjectId::DTYPE_UINT16:
+        {
+          bindTyped<uint16_t, nxscope_put_vuint16>(iochan);
+          break;
+        }
+#endif
+
+#ifdef CONFIG_DAWN_DTYPE_INT16
+      case SObjectId::DTYPE_INT16:
+        {
+          bindTyped<int16_t, nxscope_put_vint16>(iochan);
+          break;
+        }
+#endif
+
 #ifdef CONFIG_DAWN_DTYPE_INT32
       case SObjectId::DTYPE_INT32:
         {
-#  ifdef CONFIG_DAWN_IO_NOTIFY
-          iochan.put = &putInt32;
-#  endif
-#  ifdef CONFIG_DAWN_PROTO_NXSCOPE_SAMPLE_THREAD
-          iochan.sample = &sampleInt32;
-#  endif
+          bindTyped<int32_t, nxscope_put_vint32>(iochan);
           break;
         }
 #endif
@@ -724,12 +933,7 @@ int CProtoNxscope::bindChannelCallbacks(SProtoNxscopeIochan &iochan, uint8_t dty
 #ifdef CONFIG_DAWN_DTYPE_UINT32
       case SObjectId::DTYPE_UINT32:
         {
-#  ifdef CONFIG_DAWN_IO_NOTIFY
-          iochan.put = &putUint32;
-#  endif
-#  ifdef CONFIG_DAWN_PROTO_NXSCOPE_SAMPLE_THREAD
-          iochan.sample = &sampleUint32;
-#  endif
+          bindTyped<uint32_t, nxscope_put_vuint32>(iochan);
           break;
         }
 #endif
@@ -737,12 +941,7 @@ int CProtoNxscope::bindChannelCallbacks(SProtoNxscopeIochan &iochan, uint8_t dty
 #ifdef CONFIG_DAWN_DTYPE_UINT64
       case SObjectId::DTYPE_UINT64:
         {
-#  ifdef CONFIG_DAWN_IO_NOTIFY
-          iochan.put = &putUint64;
-#  endif
-#  ifdef CONFIG_DAWN_PROTO_NXSCOPE_SAMPLE_THREAD
-          iochan.sample = &sampleUint64;
-#  endif
+          bindTyped<uint64_t, nxscope_put_vuint64>(iochan);
           break;
         }
 #endif
@@ -750,12 +949,7 @@ int CProtoNxscope::bindChannelCallbacks(SProtoNxscopeIochan &iochan, uint8_t dty
 #ifdef CONFIG_DAWN_DTYPE_FLOAT
       case SObjectId::DTYPE_FLOAT:
         {
-#  ifdef CONFIG_DAWN_IO_NOTIFY
-          iochan.put = &putFloat;
-#  endif
-#  ifdef CONFIG_DAWN_PROTO_NXSCOPE_SAMPLE_THREAD
-          iochan.sample = &sampleFloat;
-#  endif
+          bindTyped<float, nxscope_put_vfloat>(iochan);
           break;
         }
 #endif
@@ -779,6 +973,8 @@ void CProtoNxscope::getAndPut(SProtoNxscopeIochan *iochan)
       return;
     }
 
+  std::lock_guard<std::recursive_mutex> lock(streamLock);
+
   ret = iochan->sample(this, iochan);
   if (ret < 0 && ret != -EAGAIN)
     {
@@ -793,12 +989,38 @@ void CProtoNxscope::threadRecv()
 
   do
     {
+      bool waited = false;
       int ret;
-
-      /* Flush stream data */
 
       if (hasStreamChannels)
         {
+#ifdef CONFIG_DAWN_IO_NOTIFY
+          struct timespec ts;
+
+          /* Wait until the notifier signals a batch is ready, or a short
+           * timeout elapses so client commands are still serviced when idle.
+           * This paces flushing at the data rate instead of a fixed tick.
+           */
+
+          clock_gettime(CLOCK_MONOTONIC, &ts);
+          ts.tv_nsec += CONFIG_DAWN_PROTO_NXSCOPE_RECV_INTERVAL * 1000L;
+          ts.tv_sec += ts.tv_nsec / 1000000000L;
+          ts.tv_nsec %= 1000000000L;
+
+          sem_clockwait(&streamSem, CLOCK_MONOTONIC, &ts);
+          waited = true;
+
+          /* Coalesce any further pending batches into this one flush */
+
+          while (sem_trywait(&streamSem) == 0)
+            {
+            }
+#endif
+
+          /* Flush stream data */
+
+          std::lock_guard<std::recursive_mutex> lock(streamLock);
+
           ret = nxscope_stream(&nxs);
           if (ret < 0)
             {
@@ -806,19 +1028,27 @@ void CProtoNxscope::threadRecv()
             }
         }
 
-      /* Handle recv data */
+      /* Handle recv data - command handlers share streamLock with the
+       * producers (see nxscope.hxx), which is only safe with non-blocking recv
+       */
 
-      ret = nxscope_recv(&nxs);
+      {
+        std::lock_guard<std::recursive_mutex> lock(streamLock);
+
+        ret = nxscope_recv(&nxs);
+      }
+
       if (ret < 0)
         {
           DAWNERR("ERROR: nxscope_recv failed %d\n", ret);
         }
 
-#if NXSCOPE_RECV_NONBLOCK == 1
-      // Sleep if read is non-blocking
+      // Pace command polling when there is no stream to wait on
 
-      usleep(NXSCOPE_RECV_INTERVAL);
-#endif
+      if (!waited)
+        {
+          usleep(CONFIG_DAWN_PROTO_NXSCOPE_RECV_INTERVAL);
+        }
     }
   while (!threadRecvMember.shouldQuit());
 
@@ -864,11 +1094,20 @@ CProtoNxscope::~CProtoNxscope()
 #endif
       delete io.setData;
       io.setData = nullptr;
+      delete io.getData;
+      io.getData = nullptr;
     }
 
   vchannels.clear();
   vnames.clear();
   vio.clear();
+
+  delete[] userTxBuf;
+  userTxBuf = nullptr;
+
+#ifdef CONFIG_DAWN_IO_NOTIFY
+  sem_destroy(&streamSem);
+#endif
 
   // Deinit nxscope
 
@@ -911,6 +1150,25 @@ int CProtoNxscope::doStart()
 {
   int ret;
 
+#ifdef CONFIG_DAWN_IO_NOTIFY
+  // Register notifications first - an advertised stream channel that cannot
+  // notify is a start failure, not a silent downgrade
+
+  for (auto &io : vio)
+    {
+      if (!io.stream)
+        {
+          continue;
+        }
+      ret = io.io->setNotifier(ioNotifierCb, 0, (void *)&io);
+      if (ret < 0)
+        {
+          DAWNERR("set notifier failed for objId = 0x%" PRIx32 " (%d)\n", io.io->getIdV(), ret);
+          return ret;
+        }
+    }
+#endif
+
   ret = startPriv();
   if (ret != OK)
     {
@@ -935,33 +1193,6 @@ int CProtoNxscope::doStart()
     {
       return ret;
     }
-
-#else
-  // Register notifications
-
-  for (auto &io : vio)
-    {
-      if (!io.stream)
-        {
-          continue;
-        }
-      ret = io.io->setNotifier(ioNotifierCb, 0, (void *)&io);
-      if (ret < 0)
-        {
-          if (io.io->isWrite())
-            {
-              DAWNINFO("set notifier failed for writable objId = 0x%" PRIx32
-                       ", fallback to set-only (%d)\n",
-                       io.io->getIdV(),
-                       ret);
-              io.stream = false;
-              continue;
-            }
-
-          DAWNERR("set notifier failed for objId = 0x%" PRIx32 "\n", io.io->getIdV());
-          return ret;
-        }
-    }
 #endif
 
   return OK;
@@ -971,11 +1202,8 @@ int CProtoNxscope::doStop()
 {
   int ret;
 
-  // Stop transport first to unblock recv path before thread joins
-
-  ret = stopPriv();
-
-  // Stop recv thread
+  // Stop recv thread first - recv is non-blocking, so the thread quits on
+  // its own and can't touch the transport after it's torn down
 
   threadRecvMember.threadStop();
 
@@ -984,6 +1212,10 @@ int CProtoNxscope::doStop()
 
   threadSampleMember.threadStop();
 #endif
+
+  // Now the transport is unused - tear it down
+
+  ret = stopPriv();
 
   return ret;
 };

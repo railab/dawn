@@ -42,6 +42,14 @@ config DAWN_PROTO_NXSCOPE_RXBUF_LEN
 	---help---
 		Set the receive buffer size for NxScope input.
 
+config DAWN_PROTO_NXSCOPE_RECV_INTERVAL
+	int "nxscope recv interval (us)"
+	default 10000
+	---help---
+		Polling interval of the recv thread in microseconds. With the
+		notify sampling method this is the idle timeout only, as the
+		thread is woken by every stream batch.
+
 config DAWN_PROTO_NXSCOPE_RX_PADDING
 	int "nxscope RX padding"
 	default 0
