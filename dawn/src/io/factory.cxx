@@ -36,6 +36,9 @@
 #ifdef CONFIG_DAWN_IO_DAC
 #  include "dawn/io/dac.hxx"
 #endif
+#ifdef CONFIG_DAWN_IO_POT
+#  include "dawn/io/pot.hxx"
+#endif
 #ifdef CONFIG_DAWN_IO_ENCODER
 #  include "dawn/io/encoder.hxx"
 #endif
@@ -255,6 +258,11 @@ CIOCommon *CIOFactory::create(CDescObject &desc)
 #ifdef CONFIG_DAWN_IO_DAC
       case CIOCommon::IO_CLASS_DAC:
         return new CIODac(desc);
+#endif
+
+#ifdef CONFIG_DAWN_IO_POT
+      case CIOCommon::IO_CLASS_POT:
+        return new CIOPot(desc);
 #endif
 
 #ifdef CONFIG_DAWN_IO_ENCODER

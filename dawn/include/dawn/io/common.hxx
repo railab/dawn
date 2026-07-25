@@ -186,6 +186,7 @@ public:
     IO_CLASS_ADC_FETCH = 82,  ///< ADC fetch (on-demand)
     IO_CLASS_ADC_SYNC = 83,   ///< ADC sync (HW-triggered control loop)
     IO_CLASS_ADC_STREAM = 84, ///< ADC stream (batch/high-throughput)
+    IO_CLASS_POT = 87,        ///< Digital potentiometer wiper
 
     // Ecnoder input
 
