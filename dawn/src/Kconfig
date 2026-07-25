@@ -198,6 +198,26 @@ config DAWN_DTYPE_BLOCK
 
 endmenu
 
+menu "Dawn network"
+
+config DAWN_NET_DHCPD
+	bool "Start DHCP server on network bring-up"
+	default n
+	depends on NET && NETUTILS_DHCPD
+	---help---
+		Start a DHCP server when Dawn brings up the network. This makes a
+		USB network gadget (e.g. RNDIS) plug-and-play: the host is
+		auto-configured over the USB link without any manual IP setup.
+
+config DAWN_NET_DHCPD_IFNAME
+	string "DHCP server interface"
+	default "eth0"
+	depends on DAWN_NET_DHCPD
+	---help---
+		Network interface the DHCP server serves.
+
+endmenu
+
 source "$APPSDIR/external/dawn/src/io/Kconfig"
 source "$APPSDIR/external/dawn/src/proto/Kconfig"
 source "$APPSDIR/external/dawn/src/prog/Kconfig"
