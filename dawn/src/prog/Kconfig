@@ -272,6 +272,16 @@ config DAWN_PROG_VECPACK
 		Enable the VecPack program, which combines multiple IO values
 		into one multidimensional output IO.
 
+config DAWN_PROG_BITMERGE
+	bool "Dawn program bit merger"
+	default n
+	depends on DAWN_IO_VIRT && DAWN_IO_NOTIFY
+	---help---
+		Enable the BitMerge program, which packs masked, shifted input
+		values into a single output word. When one input is batched the
+		merge runs per sample, so slow values (e.g. range or state bits)
+		can be folded into every sample of a stream.
+
 config DAWN_PROG_VECSPLIT
 	bool "Dawn program vector splitter"
 	default n

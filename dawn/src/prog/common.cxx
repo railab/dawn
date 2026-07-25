@@ -7,6 +7,7 @@
 
 #include "dawn/debug.hxx"
 #include "dawn/io/common.hxx"
+#include "dawn/io/ddata.hxx"
 #ifdef CONFIG_DAWN_IO_VIRT
 #  include "dawn/io/virt.hxx"
 #endif
@@ -21,7 +22,27 @@ CProgCommon::CProgCommon(CDescObject &desc)
              "invalid class");
 }
 
-int CProgCommon::prepareWritableTarget(CIOCommon *io, size_t dim, bool notify)
+size_t CProgCommon::flatItems(io_ddata_t *d, size_t nbatch, size_t nitems)
+{
+  if (nitems != d->getItems())
+    {
+      return 0;
+    }
+
+  if (nbatch == 1)
+    {
+      return nitems;
+    }
+
+  if (d->hasTs || d->off != d->getSize() * d->getItems())
+    {
+      return 0;
+    }
+
+  return nbatch * nitems;
+}
+
+int CProgCommon::prepareWritableTarget(CIOCommon *io, size_t dim, bool notify, size_t batch)
 {
   if (io == nullptr)
     {
@@ -42,7 +63,7 @@ int CProgCommon::prepareWritableTarget(CIOCommon *io, size_t dim, bool notify)
 #ifdef CONFIG_DAWN_IO_VIRT
   if (io->getDataDim() == 0)
     {
-      return reinterpret_cast<CIOVirt *>(io)->initialize(dim, 1, notify);
+      return reinterpret_cast<CIOVirt *>(io)->initialize(dim, batch, notify);
     }
 
   if (io->getDataDim() != dim)
@@ -67,6 +88,7 @@ int CProgCommon::prepareWritableTarget(CIOCommon *io, size_t dim, bool notify)
 #else
   UNUSED(dim);
   UNUSED(notify);
+  UNUSED(batch);
   DAWNERR("virtIO target 0x%" PRIx32 " requires CONFIG_DAWN_IO_VIRT\n", io->getIdV());
   return -ENOTSUP;
 #endif
