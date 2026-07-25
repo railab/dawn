@@ -16,6 +16,7 @@
 #  include "dawn/io/adc_stream.hxx"
 #endif
 #include "dawn/io/sdata.hxx"
+#include "dawn/porting/adc.hxx"
 #include "test_common.hxx"
 
 using namespace dawn;
@@ -108,6 +109,30 @@ static void test_io_adc_fetch_init()
   TEST_ASSERT_EQUAL(4, data2(2));
   TEST_ASSERT_EQUAL(5, data2(3));
 }
+
+//***************************************************************************
+// Description: consecutive fetches keep the channel order - every fetch
+// drains one whole conversion, nothing is left in the FIFO to rotate it.
+//***************************************************************************
+
+static void test_io_adc_fetch_repeat_order()
+{
+  CDescObject desc0(g_cfg_adc_fetch0);
+  CIOAdcFetch adc0(desc0);
+  io_sdata_t<int32_t, 32> data0;
+  int i;
+
+  TEST_ASSERT_EQUAL(OK, adc0.configure());
+  TEST_ASSERT_EQUAL(OK, adc0.init());
+
+  for (i = 0; i < 3; i++)
+    {
+      TEST_ASSERT_EQUAL(OK, adc0.getData(data0, 1));
+      TEST_ASSERT_EQUAL(0, data0(0));
+      TEST_ASSERT_EQUAL(1, data0(1));
+      TEST_ASSERT_EQUAL(31, data0(31));
+    }
+}
 #endif
 
 #ifdef CONFIG_DAWN_IO_ADC_SYNC
@@ -180,14 +205,34 @@ static void test_io_adc_stream_init()
 }
 #endif
 
+//***************************************************************************
+// Description: a read length that is a multiple of 5 is trimmed by one
+// sample so the driver returns plain int32 records, others pass through;
+// zero or a partial sample is rejected (0).
+//***************************************************************************
+
+static void test_io_adc_read_len_quirk()
+{
+  TEST_ASSERT_EQUAL(16, adc_read_len(20));
+  TEST_ASSERT_EQUAL(36, adc_read_len(40));
+  TEST_ASSERT_EQUAL(16, adc_read_len(16));
+  TEST_ASSERT_EQUAL(12, adc_read_len(12));
+  TEST_ASSERT_EQUAL(4, adc_read_len(4));
+  TEST_ASSERT_EQUAL(0, adc_read_len(0));
+  TEST_ASSERT_EQUAL(0, adc_read_len(6));
+}
+
 extern "C"
 {
   int test_io_adc()
   {
     UNITY_BEGIN();
 
+    DAWN_RUN_TEST(test_io_adc_read_len_quirk);
+
 #ifdef CONFIG_DAWN_IO_ADC_FETCH
     DAWN_RUN_TEST(test_io_adc_fetch_init);
+    DAWN_RUN_TEST(test_io_adc_fetch_repeat_order);
 #endif
 #ifdef CONFIG_DAWN_IO_ADC_SYNC
     DAWN_RUN_TEST(test_io_adc_sync_init);
