@@ -5,7 +5,6 @@ metadata:
     Provides serial access to demo data together with one LED output and one
     button input.
   os_required:
-  - /dev/ttyS0
   - /dev/leds0
   - /dev/buttons0
 ios:
@@ -68,5 +67,4 @@ protocols:
   - *id009
   - *id010
   config:
-    path: /dev/ttyS0
     baudrate: 115200

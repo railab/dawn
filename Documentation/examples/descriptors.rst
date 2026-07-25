@@ -259,7 +259,9 @@ Examples
   parameters are exposed as Modbus registers, including writable dwell values
   and start-index control.
 
-  Required resources: ``/dev/leds0``, ``/dev/ttyS1``
+  The Modbus device path is taken from ``CONFIG_DAWN_PROTO_MODBUS_RTU_PATH``.
+
+  Required resources: ``/dev/leds0``
 
   Host helper: :file:`tools/examples/blinky/modbus_blinky_cli.py`
 
@@ -497,7 +499,9 @@ Examples
   Provides serial access to demo data together with one LED output and one
   button input.
 
-  Required resources: ``/dev/ttyS0``, ``/dev/leds0``, ``/dev/buttons0``
+  The serial device path is taken from ``CONFIG_DAWN_PROTO_SERIAL_PATH``.
+
+  Required resources: ``/dev/leds0``, ``/dev/buttons0``
 
 .. _descriptor-shell-core-demo:
 
@@ -574,7 +578,9 @@ NTFC
   covering coil, packed coil, holding, input register, seekable, and
   file access.
 
-  Required resources: ``/dev/ttyS1``, ``/tmp``
+  The Modbus device path is taken from ``CONFIG_DAWN_PROTO_MODBUS_RTU_PATH``.
+
+  Required resources: ``/tmp``
 
 .. _descriptor-ntfc-wakaama:
 

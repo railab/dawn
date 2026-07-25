@@ -6,7 +6,6 @@ metadata:
     covering coil, packed coil, holding, input register, seekable, and file
     access.
   os_required:
-  - /dev/ttyS1
   - /tmp
 
 ios:
@@ -80,7 +79,6 @@ protocols:
   - *id0026
   - *id0027
   config:
-    path: /dev/ttyS1
     registers:
     - type: coil
       config: 0
