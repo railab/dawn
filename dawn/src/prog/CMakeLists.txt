@@ -71,6 +71,10 @@ if(CONFIG_DAWN_PROG_VECPACK)
   list(APPEND SRCS vecpack.cxx)
 endif()
 
+if(CONFIG_DAWN_PROG_BITMERGE)
+  list(APPEND SRCS bitmerge.cxx)
+endif()
+
 if(CONFIG_DAWN_PROG_VECSPLIT)
   list(APPEND SRCS vecsplit.cxx)
 endif()
