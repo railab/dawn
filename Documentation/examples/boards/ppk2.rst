@@ -27,6 +27,15 @@ calibration EEPROM are writable through NxScope set requests. Syslog and the
 debug shell run on the Segger RTT console. The USB DATA/POWER port must be
 connected, otherwise boot blocks waiting for VBUS.
 
+Host tooling
+============
+
+``tools/examples/ppk2/ppk2.py`` drives the board over nxscope: SMU output
+(``on VOLTS``, 0.87..5.15 V), ampere-meter mode
+(``mode ampere``), calibration loads, live plot, measure/CSV
+(``--decimate`` block-averages the 100 kS/s stream) and self-calibration
+(``cal``, optional ``--anchor-volts <DMM reading>``).
+
 Flashing
 ========
 
