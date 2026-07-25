@@ -23,6 +23,10 @@ struct io_data_cmn_t
 
   virtual size_t getItems() = 0;
 
+  /** @brief Get number of batches. */
+
+  virtual size_t getBatch() = 0;
+
   /**
    * @brief Get data size in bytes.
    *

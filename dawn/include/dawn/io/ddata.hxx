@@ -132,7 +132,7 @@ struct io_ddata_t : public io_data_cmn_t
 
   /** @brief Get number of batches. */
 
-  constexpr size_t getBatch() const
+  constexpr size_t getBatch() override
   {
     return this->M;
   }
