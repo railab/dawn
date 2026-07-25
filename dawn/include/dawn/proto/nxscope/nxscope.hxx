@@ -10,6 +10,8 @@
 #include "dawn/proto/common.hxx"
 #include "logging/nxscope/nxscope.h"
 #include <cstddef>
+#include <mutex>
+#include <semaphore.h>
 
 // Recv is non blocking and uses usleep.
 // TODO: blocking recv doesn't work for some reason - investigate per
@@ -89,7 +91,8 @@ protected:
 
 private:
 #ifdef CONFIG_DAWN_IO_NOTIFY
-  typedef int (*nxscope_put_cb_t)(struct nxscope_s *nxs, uint8_t chan, void *data, uint8_t dim);
+  typedef int (
+    *nxscope_put_cb_t)(struct nxscope_s *nxs, uint8_t chan, void *data, uint8_t dim, size_t batch);
 #endif
 
 #ifdef CONFIG_DAWN_PROTO_NXSCOPE_SAMPLE_THREAD
@@ -100,15 +103,16 @@ private:
 
   struct proto_nxscope_iochan_s
   {
-    uint8_t chan;         ///< NXScope channel ID.
-    uint8_t dim;          ///< Number of data items in one sample.
-    bool stream;          ///< True when channel participates in stream path.
-    CIOCommon *io;        ///< Pointer to I/O object.
-    CProtoNxscope *obj;   ///< Reference to owner handler.
-    io_ddata_t *setData;  ///< Dynamic buffer used for set requests.
+    uint8_t chan;                  ///< NXScope channel ID.
+    uint8_t dim;                   ///< Number of data items in one sample.
+    bool stream;                   ///< True when channel participates in stream path.
+    CIOCommon *io;                 ///< Pointer to I/O object.
+    CProtoNxscope *obj;            ///< Reference to owner handler.
+    io_ddata_t *setData;           ///< Dynamic buffer used for set requests.
+    io_ddata_t *getData = nullptr; ///< Lazily allocated get request buffer.
 
 #ifdef CONFIG_DAWN_IO_NOTIFY
-    nxscope_put_cb_t put; ///< Bound nxscope_put_v* callback.
+    nxscope_put_cb_t put;          ///< Bound nxscope_put_v* callback.
 #endif
 
 #ifdef CONFIG_DAWN_PROTO_NXSCOPE_SAMPLE_THREAD
@@ -120,7 +124,9 @@ private:
   enum
   {
     NXSCOPE_USER_SET_IO = NXSCOPE_HDRID_USER,
-    NXSCOPE_USER_SET_IO_SEEK = NXSCOPE_HDRID_USER + 1
+    NXSCOPE_USER_SET_IO_SEEK = NXSCOPE_HDRID_USER + 1,
+    NXSCOPE_USER_GET_IO = NXSCOPE_HDRID_USER + 2,
+    NXSCOPE_USER_GET_IO_SEEK = NXSCOPE_HDRID_USER + 3
   };
 
   CThreadedObject threadRecvMember;   ///< Receive thread for client commands.
@@ -134,6 +140,17 @@ private:
   struct nxscope_proto_s nxsProto;
   struct nxscope_callbacks_s nxsCbs;
 
+  /// Serializes stream buffer producers against the stream flush. Taken
+  /// once per batch, so it can replace the per-sample nxscope put lock
+  /// (CONFIG_LOGGING_NXSCOPE_DISABLE_PUTLOCK).
+  std::mutex streamLock;
+
+  /// Posted by the notifier when a batch has been put into the stream
+  /// buffer. threadRecv() waits on it so it flushes at the data rate
+  /// instead of on a fixed timer (which is limited to one flush per
+  /// system tick).
+  sem_t streamSem;
+
   std::vector<const SProtoNxscopeIOBind *> vchannels; ///< Channel I/O bindings (from descriptor).
   std::vector<const SProtoNxscopeNames *> vnames;     ///< Channel names (from descriptor).
   std::vector<SProtoNxscopeIochan> vio;               ///< Runtime I/O-to-channel mappings.
@@ -144,7 +161,10 @@ private:
   int handleUserCommand(uint8_t id, uint8_t *buff);
   int userSetIO(uint8_t *buff);
   int userSetIOSeek(uint8_t *buff);
+  int userGetIO(uint8_t *buff);
+  int userGetIOSeek(uint8_t *buff);
   int sendAck(int ret);
+  int sendUserData(SObjectId::ObjectId objid, const void *data, uint16_t size);
 
   static int userIdCb(void *priv, uint8_t id, uint8_t *buff);
 
@@ -158,15 +178,17 @@ private:
   int bindChannelCallbacks(SProtoNxscopeIochan &iochan, uint8_t dtype);
 
 #ifdef CONFIG_DAWN_IO_NOTIFY
-  static int putInt32(struct nxscope_s *nxs, uint8_t chan, void *data, uint8_t dim);
-  static int putUint32(struct nxscope_s *nxs, uint8_t chan, void *data, uint8_t dim);
-  static int putUint64(struct nxscope_s *nxs, uint8_t chan, void *data, uint8_t dim);
-  static int putFloat(struct nxscope_s *nxs, uint8_t chan, void *data, uint8_t dim);
+  static int putInt16(struct nxscope_s *nxs, uint8_t chan, void *data, uint8_t dim, size_t batch);
+  static int putInt32(struct nxscope_s *nxs, uint8_t chan, void *data, uint8_t dim, size_t batch);
+  static int putUint32(struct nxscope_s *nxs, uint8_t chan, void *data, uint8_t dim, size_t batch);
+  static int putUint64(struct nxscope_s *nxs, uint8_t chan, void *data, uint8_t dim, size_t batch);
+  static int putFloat(struct nxscope_s *nxs, uint8_t chan, void *data, uint8_t dim, size_t batch);
 #endif
 
 #ifdef CONFIG_DAWN_PROTO_NXSCOPE_SAMPLE_THREAD
   void getAndPut(SProtoNxscopeIochan *iochan);
 
+  static int sampleInt16(CProtoNxscope *obj, SProtoNxscopeIochan *iochan);
   static int sampleInt32(CProtoNxscope *obj, SProtoNxscopeIochan *iochan);
   static int sampleUint32(CProtoNxscope *obj, SProtoNxscopeIochan *iochan);
   static int sampleUint64(CProtoNxscope *obj, SProtoNxscopeIochan *iochan);
