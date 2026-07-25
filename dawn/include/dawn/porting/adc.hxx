@@ -91,12 +91,23 @@ int adc_set_timer_freq(int fd, uint32_t freq_hz);
 int adc_get_samples_count(int fd);
 
 /**
+ * @brief Request length actually passed to the ADC driver read.
+ *
+ * @param req Requested length in bytes.
+ * @return Length in bytes that reads back plain int32 samples.
+ */
+
+size_t adc_read_len(size_t req);
+
+/**
  * @brief Read ADC data.
+ *
+ * May return fewer bytes than requested, see adc_read_len().
  *
  * @param fd File descriptor.
  * @param adc Pointer to array of adc_read_s structures.
- * @param len Number of samples to read.
- * @return Number of samples read or negative error code.
+ * @param len Number of bytes to read.
+ * @return Number of bytes read or negative error code.
  */
 
 int adc_read(int fd, dawn::porting::adc_read_s *adc, size_t len);
