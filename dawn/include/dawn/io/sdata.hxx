@@ -93,7 +93,7 @@ struct io_sdata_t : public io_data_cmn_t
 
   /** @brief Get number of batches. */
 
-  constexpr static size_t getBatch()
+  constexpr size_t getBatch() override
   {
     return M;
   }
@@ -222,7 +222,7 @@ struct io_sdata_t<T, N, M, true> : public io_data_cmn_t
 
   /** @brief Get number of batches. */
 
-  constexpr static size_t getBatch()
+  constexpr size_t getBatch() override
   {
     return M;
   }

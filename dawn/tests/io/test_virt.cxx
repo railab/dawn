@@ -74,6 +74,17 @@ static int virt_notifier_callback5(void *priv, io_ddata_t *data)
   return OK;
 }
 
+// Batch count seen by the last notification
+
+static size_t g_notify_batch;
+
+static int virt_notifier_batch(void *priv, io_ddata_t *data)
+{
+  DAWNASSERT(data != nullptr, "nullptr pointer");
+  g_notify_batch = data->getBatch();
+  return OK;
+}
+
 static void virt_set_cb(CIOVirt *io, void *priv)
 {
   DAWNASSERT(io != nullptr, "nullptr pointer");
@@ -90,6 +101,39 @@ static void virt_get_cb(CIOVirt *io, void *priv)
   UNUSED(io);
   UNUSED(priv);
   g_get_cntr++;
+}
+
+//***************************************************************************
+// Description: a timestamped multi-batch virtio keeps each batch value and
+// its own timestamp across setData/getData.
+//***************************************************************************
+
+static void test_io_virt_ts_multibatch_roundtrip()
+{
+  CDescObject desc(g_cfg_virt_ts);
+  CIOVirt virt(desc);
+  io_sdata_t<uint32_t, 1, 4, true> wdata;
+  io_sdata_t<uint32_t, 1, 4, true> rdata;
+  size_t i;
+
+  TEST_ASSERT_EQUAL(OK, virt.configure());
+  TEST_ASSERT_EQUAL(OK, virt.init());
+  TEST_ASSERT_EQUAL(OK, virt.initialize(1, 4));
+
+  for (i = 0; i < 4; i++)
+    {
+      wdata(0, i) = 100 + i;
+      wdata[i] = 1000 + i;
+    }
+
+  TEST_ASSERT_EQUAL(OK, virt.setData(wdata));
+  TEST_ASSERT_EQUAL(OK, virt.getData(rdata, 4));
+
+  for (i = 0; i < 4; i++)
+    {
+      TEST_ASSERT_EQUAL(100 + i, rdata(0, i));
+      TEST_ASSERT_EQUAL(1000 + i, rdata[i]);
+    }
 }
 
 //***************************************************************************
@@ -224,6 +268,132 @@ static void test_io_virt_batched_getdata()
     }
   TEST_ASSERT_EQUAL(0, bdata(0, 5));
   TEST_ASSERT_EQUAL(0, bdata[5]);
+}
+
+//***************************************************************************
+// Description: a multi-batch virtio returns each batch as stored, not the
+// first one repeated, and rejects a read longer than it holds.
+//***************************************************************************
+
+static void test_io_virt_multibatch_getdata()
+{
+  CDescObject desc(g_cfg_virt);
+  CIOVirt virt(desc);
+  io_sdata_t<uint32_t, 1, 4> wdata;
+  io_sdata_t<uint32_t, 1, 4> rdata;
+  io_sdata_t<uint32_t, 1, 8> toolong;
+  size_t i;
+
+  TEST_ASSERT_EQUAL(OK, virt.configure());
+  TEST_ASSERT_EQUAL(OK, virt.init());
+  TEST_ASSERT_EQUAL(OK, virt.initialize(1, 4));
+
+  for (i = 0; i < 4; i++)
+    {
+      wdata(0, i) = 100 + i;
+    }
+
+  TEST_ASSERT_EQUAL(OK, virt.setData(wdata));
+  TEST_ASSERT_EQUAL(OK, virt.getData(rdata, 4));
+
+  for (i = 0; i < 4; i++)
+    {
+      TEST_ASSERT_EQUAL(100 + i, rdata(0, i));
+    }
+
+  TEST_ASSERT_EQUAL(-EINVAL, virt.getData(toolong, 8));
+}
+
+//***************************************************************************
+// Description: a multi-batch virtio rejects setData from a buffer holding
+// fewer batches than it stores instead of reading past the source.
+//***************************************************************************
+
+static void test_io_virt_multibatch_setdata_rejects_short_batch()
+{
+  CDescObject desc(g_cfg_virt);
+  CIOVirt virt(desc);
+  io_sdata_t<uint32_t, 1, 1> one;
+  io_sdata_t<uint32_t, 1, 4> four;
+
+  TEST_ASSERT_EQUAL(OK, virt.configure());
+  TEST_ASSERT_EQUAL(OK, virt.init());
+  TEST_ASSERT_EQUAL(OK, virt.initialize(1, 4));
+
+  one(0) = 7;
+  TEST_ASSERT_EQUAL(-EINVAL, virt.setData(one));
+
+  TEST_ASSERT_EQUAL(OK, virt.setData(four));
+}
+
+//***************************************************************************
+// Description: a source holding more batches than the virtio stores (a
+// batched notifier buffer into a batch-1 target) stores the first ones.
+//***************************************************************************
+
+static void test_io_virt_setdata_longer_source_stores_first()
+{
+  CDescObject desc1(g_cfg_virt);
+  CIOVirt one(desc1);
+  CDescObject desc4(g_cfg_virt);
+  CIOVirt four(desc4);
+  io_sdata_t<uint32_t, 1, 4> src4;
+  io_sdata_t<uint32_t, 1, 8> src8;
+  io_sdata_t<uint32_t, 1, 4> rdata;
+  size_t i;
+
+  for (i = 0; i < 4; i++)
+    {
+      src4(0, i) = 5 + i;
+    }
+  for (i = 0; i < 8; i++)
+    {
+      src8(0, i) = 10 + i;
+    }
+
+  TEST_ASSERT_EQUAL(OK, one.init());
+  TEST_ASSERT_EQUAL(OK, one.initialize(1, 1));
+  TEST_ASSERT_EQUAL(OK, one.setData(src4));
+  TEST_ASSERT_EQUAL(OK, one.getData(rdata, 1));
+  TEST_ASSERT_EQUAL(5, rdata(0, 0));
+
+  TEST_ASSERT_EQUAL(OK, four.init());
+  TEST_ASSERT_EQUAL(OK, four.initialize(1, 4));
+  TEST_ASSERT_EQUAL(OK, four.setData(src8));
+  TEST_ASSERT_EQUAL(OK, four.getData(rdata, 4));
+  for (i = 0; i < 4; i++)
+    {
+      TEST_ASSERT_EQUAL(10 + i, rdata(0, i));
+    }
+}
+
+//***************************************************************************
+// Description: setVal/getVal on a multi-batch virtio move the whole batch
+// block in storage order.
+//***************************************************************************
+
+static void test_io_virt_multibatch_setval_getval()
+{
+  CDescObject desc(g_cfg_virt);
+  CIOVirt virt(desc);
+  io_sdata_t<uint32_t, 1, 4> rdata;
+  uint32_t in[4] = {1, 2, 3, 4};
+  uint32_t out[4] = {0, 0, 0, 0};
+  size_t i;
+
+  TEST_ASSERT_EQUAL(OK, virt.configure());
+  TEST_ASSERT_EQUAL(OK, virt.init());
+  TEST_ASSERT_EQUAL(OK, virt.initialize(1, 4));
+
+  TEST_ASSERT_EQUAL(OK, virt.setVal(in, sizeof(in)));
+  TEST_ASSERT_EQUAL(OK, virt.getVal(out, sizeof(out)));
+  TEST_ASSERT_EQUAL(OK, virt.getData(rdata, 4));
+
+  for (i = 0; i < 4; i++)
+    {
+      TEST_ASSERT_EQUAL(in[i], out[i]);
+      TEST_ASSERT_EQUAL(in[i], rdata(0, i));
+    }
 }
 
 //***************************************************************************
@@ -374,6 +544,28 @@ static void test_io_virt_notify_isolation()
 }
 
 //***************************************************************************
+// Description: a multi-batch virtio hands the notifier a buffer holding the
+// whole batch.
+//***************************************************************************
+
+static void test_io_virt_notify_batch_size()
+{
+  CDescObject desc(g_cfg_virt);
+  CIOVirt virt(desc);
+  io_sdata_t<uint32_t, 1, 4> data;
+
+  g_notify_batch = 0;
+
+  TEST_ASSERT_EQUAL(OK, virt.configure());
+  TEST_ASSERT_EQUAL(OK, virt.init());
+  TEST_ASSERT_EQUAL(OK, virt.initialize(1, 4, true));
+  TEST_ASSERT_EQUAL(OK, virt.setNotifier(virt_notifier_batch, 0, &virt));
+
+  TEST_ASSERT_EQUAL(OK, virt.setData(data));
+  TEST_ASSERT_EQUAL(4, g_notify_batch);
+}
+
+//***************************************************************************
 // Description: unregistering a virtIO notifier prevents later callbacks.
 //***************************************************************************
 
@@ -492,13 +684,19 @@ extern "C"
     DAWN_RUN_TEST(test_io_virt_reinitialize_updates_dimension);
     DAWN_RUN_TEST(test_io_virt_setdata_updates_value);
     DAWN_RUN_TEST(test_io_virt_batched_getdata);
+    DAWN_RUN_TEST(test_io_virt_multibatch_getdata);
+    DAWN_RUN_TEST(test_io_virt_multibatch_setdata_rejects_short_batch);
+    DAWN_RUN_TEST(test_io_virt_setdata_longer_source_stores_first);
+    DAWN_RUN_TEST(test_io_virt_multibatch_setval_getval);
 
     DAWN_RUN_TEST(test_io_virt_ts_setdata_updates_value);
     DAWN_RUN_TEST(test_io_virt_ts_batched_getdata);
+    DAWN_RUN_TEST(test_io_virt_ts_multibatch_roundtrip);
 
     DAWN_RUN_TEST(test_io_virt_notify_single);
     DAWN_RUN_TEST(test_io_virt_notify_multiple_callbacks);
     DAWN_RUN_TEST(test_io_virt_notify_isolation);
+    DAWN_RUN_TEST(test_io_virt_notify_batch_size);
     DAWN_RUN_TEST(test_io_virt_notify_unregister);
     DAWN_RUN_TEST(test_io_virt_notify_set_notifier_null_unregisters);
 

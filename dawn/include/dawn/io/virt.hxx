@@ -35,6 +35,7 @@ public:
     , set_cb_priv(nullptr)
     , get_cb_priv(nullptr)
     , dlen(0)
+    , blen(1)
     , tlen(getDtypeSize())
 #ifdef CONFIG_DAWN_IO_TIMESTAMP
     , ts(0)
@@ -85,7 +86,7 @@ public:
 
   bool isBatch() const override
   {
-    return false;
+    return this->blen > 1;
   };
 
   int regNotifier(SIONotifier n) override;
@@ -115,6 +116,7 @@ private:
   void *set_cb_priv;              ///< Private data for setData callback.
   void *get_cb_priv;              ///< Private data for getData callback.
   size_t dlen;                    ///< Data size in bytes.
+  size_t blen;                    ///< Batch length (samples per buffer).
   size_t tlen;                    ///< Type size in bytes.
 #ifdef CONFIG_DAWN_IO_TIMESTAMP
   uint64_t ts;                    ///< Timestamp of last data update.
@@ -124,6 +126,10 @@ private:
   std::vector<SIONotifier> vnote; ///< Registered notifiers for data change events.
   std::mutex pfdsLock;            ///< Mutex protecting notifier registration.
 #endif
+
+  void copyBatches(uint8_t *dst, size_t dstStride, const uint8_t *src, size_t srcStride, size_t n);
+  size_t batchStride(IODataCmn &data);
+  int store(const void *src, size_t stride, IODataCmn *tsSrc);
 
 #ifdef CONFIG_DAWN_IO_NOTIFY
   void sendNotify(io_ddata_t *data);

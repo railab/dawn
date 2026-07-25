@@ -44,6 +44,13 @@ struct io_data_view_t : public io_data_cmn_t
     return items;
   }
 
+  /** @brief A view is a single batch. */
+
+  size_t getBatch() override
+  {
+    return 1;
+  }
+
   /** @brief Get viewed data size in bytes. */
 
   size_t getDataSize() override
