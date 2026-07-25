@@ -102,6 +102,7 @@ private:
   SObjectId::ObjectId outputId;  ///< Output IO ObjectId.
   std::vector<SBitInput> inputs; ///< Configured bit inputs.
   io_ddata_t *outputData;        ///< Scratch buffer for packed output.
+  io_ddata_t *lastOutputData;    ///< Last published output (dedup).
   bool active;                   ///< Activation flag.
   bool registered;               ///< Whether input notifiers are registered.
 

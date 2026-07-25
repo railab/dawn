@@ -24,6 +24,7 @@ CProgBitPack::CProgBitPack(CDescObject &desc)
   , output(nullptr)
   , outputId(0)
   , outputData(nullptr)
+  , lastOutputData(nullptr)
   , active(false)
   , registered(false)
 {
@@ -208,12 +209,14 @@ int CProgBitPack::init()
     }
 
   outputData = output->ddata_alloc(1);
-  if (outputData == nullptr)
+  lastOutputData = output->ddata_alloc(1);
+  if (outputData == nullptr || lastOutputData == nullptr)
     {
       DAWNERR("bitpack: outputData allocation failed\n");
       return -ENOMEM;
     }
 
+  std::memset(lastOutputData->getDataPtr(), 0xff, lastOutputData->getDataSize());
   return OK;
 }
 
@@ -231,6 +234,8 @@ int CProgBitPack::deinit()
 
   delete outputData;
   outputData = nullptr;
+  delete lastOutputData;
+  lastOutputData = nullptr;
   output = nullptr;
   outputId = 0;
   return OK;
@@ -353,6 +358,21 @@ void CProgBitPack::updateOutput()
                 output, outputData->getDataPtr(), static_cast<size_t>(inputs[i].bit) + bit, true);
             }
         }
+    }
+
+  // Publish only on change - periodic producers (e.g. a sampling program)
+  // would otherwise turn the output into a fixed-rate stream.
+
+  if (lastOutputData != nullptr)
+    {
+      if (std::memcmp(
+            outputData->getDataPtr(), lastOutputData->getDataPtr(), outputData->getDataSize()) == 0)
+        {
+          return;
+        }
+
+      std::memcpy(
+        lastOutputData->getDataPtr(), outputData->getDataPtr(), outputData->getDataSize());
     }
 
   ret = output->setData(*outputData);
