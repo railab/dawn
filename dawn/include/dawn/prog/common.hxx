@@ -15,6 +15,7 @@ namespace dawn
 // Forward declaration
 
 class CIOCommon;
+struct io_ddata_t;
 
 /**
  * @brief Base class for all PROG (processing) objects.
@@ -121,6 +122,7 @@ public:
     PROG_CLASS_IOMUX = 32,
     PROG_CLASS_IODEMUX = 33,
     PROG_CLASS_AHRS = 34,
+    PROG_CLASS_BITMERGE = 35,
 
     /** @brief User-defined PROG types start here. */
 
@@ -149,6 +151,10 @@ public:
   explicit CProgCommon(CDescObject &desc);
 
 protected:
-  int prepareWritableTarget(CIOCommon *io, size_t dim, bool notify);
+  int prepareWritableTarget(CIOCommon *io, size_t dim, bool notify, size_t batch = 1);
+
+  /** @brief Elements walkable as one array, 0 when batches are padded. */
+
+  static size_t flatItems(io_ddata_t *d, size_t nbatch, size_t nitems);
 };
 } // Namespace dawn
