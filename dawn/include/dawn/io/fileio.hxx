@@ -16,8 +16,9 @@ namespace dawn
  * @brief File system I/O access.
  *
  * Provides read/write access to files on the device file system using the
- * Dawn IO abstraction. Access is restricted to the /data/ and /tmp/
- * directories to prevent path-injection attacks via a crafted descriptor.
+ * Dawn IO abstraction. Access is restricted to /data/, /tmp/ and device
+ * nodes under CONFIG_DAWN_IO_FILE_DEV_PREFIX to prevent path-injection
+ * attacks via a crafted descriptor.
  *
  * The file path is read-only configuration hardcoded in the device
  * descriptor and cannot be changed at runtime.
@@ -31,7 +32,7 @@ public:
     IO_FILE_PERM_READ = 0,       ///< Read-only
     IO_FILE_PERM_WRITE = 1,      ///< Write-only
     IO_FILE_PERM_RW = 2,         ///< Read-write
-    IO_FILE_PERM_WRITE_ONCE = 3, ///< Write-once
+    IO_FILE_PERM_WRITE_ONCE = 3, ///< Write-once (per session on device nodes)
   };
 
   enum
@@ -48,6 +49,7 @@ public:
     , fsize(0)
     , perm(IO_FILE_PERM_READ)
     , writeOnceLocked(false)
+    , devNode(false)
   {
   }
 
@@ -124,7 +126,9 @@ private:
   size_t fsize;             ///< Tracked file size in bytes (updated after successful writes).
   uint8_t perm;             ///< Configured permission mode.
   bool writeOnceLocked;     ///< Whether WRITE_ONCE has already consumed its single write.
+  bool devNode;             ///< Backing path is a char/block device (no truncate, fixed size).
 
   int configureDesc(const CDescObject &desc);
+  int truncateFile();
 };
 } // Namespace dawn

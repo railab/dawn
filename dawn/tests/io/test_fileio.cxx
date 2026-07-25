@@ -8,10 +8,12 @@
 #include "test_common.hxx"
 
 #include <fcntl.h>
+#include <nuttx/fs/fs.h>
 #include <sys/mount.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include <algorithm>
 #include <cstring>
 
 using namespace dawn;
@@ -89,6 +91,87 @@ static uint32_t g_cfg_fileio_write_once[] = {
 };
 
 //***************************************************************************
+// Description: fake EEPROM char device /dev/eeprom9, read-write permission
+//
+// Path "/dev/eeprom9" packed as little-endian uint32 words (4 words):
+//   Word 0: '/', 'd', 'e', 'v'  = 0x7665642f
+//   Word 1: '/', 'e', 'e', 'p'  = 0x7065652f
+//   Word 2: 'r', 'o', 'm', '9'  = 0x396d6f72
+//   Word 3: '\0','\0','\0','\0' = 0x00000000
+//***************************************************************************
+
+static uint32_t g_cfg_fileio_chardev_rw[] = {
+  CIOFile::objectId(7),
+  2,
+  CIOFile::cfgIdPath(4),
+  0x7665642f,
+  0x7065652f,
+  0x396d6f72,
+  0x00000000,
+  CIOFile::cfgIdPerm(),
+  CIOFile::IO_FILE_PERM_RW,
+};
+
+//***************************************************************************
+// Description: fake EEPROM char device /dev/eeprom9, write-once permission
+//***************************************************************************
+
+static uint32_t g_cfg_fileio_chardev_write_once[] = {
+  CIOFile::objectId(8),
+  2,
+  CIOFile::cfgIdPath(4),
+  0x7665642f,
+  0x7065652f,
+  0x396d6f72,
+  0x00000000,
+  CIOFile::cfgIdPerm(),
+  CIOFile::IO_FILE_PERM_WRITE_ONCE,
+};
+
+//***************************************************************************
+// Description: regular file under the device prefix (tmpfs mounted at
+// /dev/eepromfs), read-write permission
+//
+// Path "/dev/eepromfs/r" packed as little-endian uint32 words (4 words):
+//   Word 0: '/', 'd', 'e', 'v'  = 0x7665642f
+//   Word 1: '/', 'e', 'e', 'p'  = 0x7065652f
+//   Word 2: 'r', 'o', 'm', 'f'  = 0x666d6f72
+//   Word 3: 's', '/', 'r', '\0' = 0x00722f73
+//***************************************************************************
+
+static uint32_t g_cfg_fileio_dev_regular[] = {
+  CIOFile::objectId(9),
+  2,
+  CIOFile::cfgIdPath(4),
+  0x7665642f,
+  0x7065652f,
+  0x666d6f72,
+  0x00722f73,
+  CIOFile::cfgIdPerm(),
+  CIOFile::IO_FILE_PERM_RW,
+};
+
+//***************************************************************************
+// Description: /dev path outside the device prefix (must be rejected)
+//
+// Path "/dev/other" packed as little-endian uint32 words (4 words):
+//   Word 0: '/', 'd', 'e', 'v'  = 0x7665642f
+//   Word 1: '/', 'o', 't', 'h'  = 0x68746f2f
+//   Word 2: 'e', 'r', '\0','\0' = 0x00007265
+//   Word 3: '\0','\0','\0','\0' = 0x00000000
+//***************************************************************************
+
+static uint32_t g_cfg_fileio_dev_other[] = {
+  CIOFile::objectId(10),
+  1,
+  CIOFile::cfgIdPath(4),
+  0x7665642f,
+  0x68746f2f,
+  0x00007265,
+  0x00000000,
+};
+
+//***************************************************************************
 // Description: invalid path /etc/test (not in whitelist)
 //
 // Path "/etc/test" packed as little-endian uint32 words (4 words, min_words=4):
@@ -129,12 +212,107 @@ static uint32_t g_cfg_traversal[] = {
   0x00000000,
 };
 
+// Fake EEPROM: a fixed-size char device with read/write/seek and, like the
+// real 24xx driver, no truncate operation.
+
+static constexpr auto FAKE_EEPROM_PATH = "/dev/eeprom9";
+static uint8_t g_fake_eeprom[16];
+
+static ssize_t fake_eeprom_read(struct file *filep, char *buffer, size_t buflen)
+{
+  size_t pos = (size_t)filep->f_pos;
+  size_t n;
+
+  if (pos >= sizeof(g_fake_eeprom))
+    {
+      return 0;
+    }
+
+  n = std::min(buflen, sizeof(g_fake_eeprom) - pos);
+  std::memcpy(buffer, &g_fake_eeprom[pos], n);
+  filep->f_pos += n;
+  return (ssize_t)n;
+}
+
+static ssize_t fake_eeprom_write(struct file *filep, const char *buffer, size_t buflen)
+{
+  size_t pos = (size_t)filep->f_pos;
+  size_t n;
+
+  if (pos >= sizeof(g_fake_eeprom))
+    {
+      return -ENOSPC;
+    }
+
+  n = std::min(buflen, sizeof(g_fake_eeprom) - pos);
+  std::memcpy(&g_fake_eeprom[pos], buffer, n);
+  filep->f_pos += n;
+  return (ssize_t)n;
+}
+
+static off_t fake_eeprom_seek(struct file *filep, off_t offset, int whence)
+{
+  off_t pos;
+
+  switch (whence)
+    {
+      case SEEK_SET:
+        pos = offset;
+        break;
+      case SEEK_CUR:
+        pos = filep->f_pos + offset;
+        break;
+      case SEEK_END:
+        pos = (off_t)sizeof(g_fake_eeprom) + offset;
+        break;
+      default:
+        return -EINVAL;
+    }
+
+  if (pos < 0 || pos > (off_t)sizeof(g_fake_eeprom))
+    {
+      return -EINVAL;
+    }
+
+  filep->f_pos = pos;
+  return pos;
+}
+
+static const struct file_operations g_fake_eeprom_fops = {
+  .read = fake_eeprom_read,
+  .write = fake_eeprom_write,
+  .seek = fake_eeprom_seek,
+};
+
+// register the fake EEPROM once and clear its contents
+
+static void setup_fake_eeprom()
+{
+  static bool registered = false;
+
+  if (!registered)
+    {
+      TEST_ASSERT_EQUAL(OK, register_driver(FAKE_EEPROM_PATH, &g_fake_eeprom_fops, 0666, nullptr));
+      registered = true;
+    }
+
+  std::memset(g_fake_eeprom, 0, sizeof(g_fake_eeprom));
+}
+
 // mount tmpfs at /tmp for file-based tests
 
 static void setup_tmp()
 {
   mkdir("/tmp", 0777);
   mount(NULL, "/tmp", "tmpfs", 0, NULL);
+}
+
+// mount tmpfs under the device prefix so a regular file can live there
+
+static void setup_dev_tmpfs()
+{
+  mkdir("/dev/eepromfs", 0777);
+  mount(NULL, "/dev/eepromfs", "tmpfs", 0, NULL);
 }
 
 // write the supplied buffer to TEST_FILE_PATH (creates/truncs).
@@ -197,6 +375,35 @@ static void test_io_fileio_path_traversal()
   CIOFile io_trav(desc_trav);
 
   TEST_ASSERT_EQUAL(-EACCES, io_trav.configure());
+}
+
+//***************************************************************************
+// Description: a /dev path outside the device prefix is rejected.
+//***************************************************************************
+
+static void test_io_fileio_dev_other_rejected()
+{
+  CDescObject desc(g_cfg_fileio_dev_other);
+  CIOFile io(desc);
+
+  TEST_ASSERT_EQUAL(-EACCES, io.configure());
+}
+
+//***************************************************************************
+// Description: a path under the device prefix that is not a device node is
+// rejected.
+//***************************************************************************
+
+static void test_io_fileio_dev_regular_file_rejected()
+{
+  CDescObject desc(g_cfg_fileio_dev_regular);
+  CIOFile io(desc);
+
+  setup_dev_tmpfs();
+
+  TEST_ASSERT_EQUAL(-EACCES, io.configure());
+
+  unlink("/dev/eepromfs/r");
 }
 
 //***************************************************************************
@@ -302,6 +509,38 @@ static void test_io_fileio_write_contents()
   std::memcpy(buf->getDataPtr(0), write_data, sizeof(write_data));
 
   TEST_ASSERT_EQUAL(OK, io.setData(*buf, 0));
+
+  delete buf;
+  io.deinit();
+
+  fileio_assert_file(write_data, sizeof(write_data));
+  unlink(TEST_FILE_PATH);
+}
+
+//***************************************************************************
+// Description: a write-only IO over an existing non-empty file reports zero
+// size and still accepts a write.
+//***************************************************************************
+
+static void test_io_fileio_write_existing_file()
+{
+  CDescObject desc(g_cfg_fileio_write);
+  CIOFile io(desc);
+  static const char write_data[] = "NEW";
+  io_ddata_t *buf;
+
+  setup_tmp();
+  fileio_seed("OLD-DATA", 8);
+  fileio_open_io(io);
+
+  TEST_ASSERT_EQUAL(0u, io.getDataSize());
+
+  buf = new io_ddata_t(1, sizeof(write_data));
+  TEST_ASSERT(buf != nullptr);
+  std::memcpy(buf->getDataPtr(0), write_data, sizeof(write_data));
+
+  TEST_ASSERT_EQUAL(OK, io.setData(*buf, 0));
+  TEST_ASSERT_EQUAL(sizeof(write_data), io.getDataSize());
 
   delete buf;
   io.deinit();
@@ -544,6 +783,67 @@ static void test_io_fileio_rewrite_truncates_tail()
   unlink(TEST_FILE_PATH);
 }
 
+//***************************************************************************
+// Description: a char device is sized with SEEK_END and a write at offset 0
+// succeeds although the device has no truncate operation.
+//***************************************************************************
+
+static void test_io_fileio_chardev_write_at_zero()
+{
+  CDescObject desc(g_cfg_fileio_chardev_rw);
+  CIOFile io(desc);
+  io_ddata_t *buf;
+  uint8_t *ptr;
+
+  setup_fake_eeprom();
+  fileio_open_io(io);
+  TEST_ASSERT_EQUAL(sizeof(g_fake_eeprom), io.getDataSize());
+
+  buf = new io_ddata_t(1, 4);
+  TEST_ASSERT(buf != nullptr);
+  ptr = static_cast<uint8_t *>(buf->getDataPtr(0));
+  ptr[0] = 'C';
+  ptr[1] = 'A';
+  ptr[2] = 'L';
+  ptr[3] = '!';
+
+  TEST_ASSERT_EQUAL(OK, io.setData(*buf, 0));
+  TEST_ASSERT_EQUAL(0, std::memcmp(g_fake_eeprom, "CAL!", 4));
+  TEST_ASSERT_EQUAL(sizeof(g_fake_eeprom), io.getDataSize());
+
+  delete buf;
+  io.deinit();
+}
+
+//***************************************************************************
+// Description: write-once on a char device is not locked by the fixed device
+// size at init, so the first write goes through and the second is rejected.
+//***************************************************************************
+
+static void test_io_fileio_chardev_write_once()
+{
+  CDescObject desc(g_cfg_fileio_chardev_write_once);
+  CIOFile io(desc);
+  io_ddata_t *buf;
+  uint8_t *ptr;
+
+  setup_fake_eeprom();
+  fileio_open_io(io);
+
+  buf = new io_ddata_t(1, 2);
+  TEST_ASSERT(buf != nullptr);
+  ptr = static_cast<uint8_t *>(buf->getDataPtr(0));
+  ptr[0] = 'O';
+  ptr[1] = 'K';
+
+  TEST_ASSERT_EQUAL(OK, io.setData(*buf, 0));
+  TEST_ASSERT_EQUAL(-EPERM, io.setData(*buf, 0));
+  TEST_ASSERT_EQUAL(0, std::memcmp(g_fake_eeprom, "OK", 2));
+
+  delete buf;
+  io.deinit();
+}
+
 extern "C"
 {
   int test_io_fileio()
@@ -552,12 +852,15 @@ extern "C"
 
     DAWN_RUN_TEST(test_io_fileio_path_outside_whitelist);
     DAWN_RUN_TEST(test_io_fileio_path_traversal);
+    DAWN_RUN_TEST(test_io_fileio_dev_other_rejected);
+    DAWN_RUN_TEST(test_io_fileio_dev_regular_file_rejected);
 
     DAWN_RUN_TEST(test_io_fileio_read_properties);
     DAWN_RUN_TEST(test_io_fileio_read_contents);
 
     DAWN_RUN_TEST(test_io_fileio_write_properties);
     DAWN_RUN_TEST(test_io_fileio_write_contents);
+    DAWN_RUN_TEST(test_io_fileio_write_existing_file);
 
     DAWN_RUN_TEST(test_io_fileio_seek_read);
     DAWN_RUN_TEST(test_io_fileio_seek_read_past_eof);
@@ -568,6 +871,9 @@ extern "C"
     DAWN_RUN_TEST(test_io_fileio_write_once_existing_file_locked);
 
     DAWN_RUN_TEST(test_io_fileio_rewrite_truncates_tail);
+
+    DAWN_RUN_TEST(test_io_fileio_chardev_write_at_zero);
+    DAWN_RUN_TEST(test_io_fileio_chardev_write_once);
 
     return UNITY_END();
   }
