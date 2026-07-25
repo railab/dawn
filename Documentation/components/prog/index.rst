@@ -127,6 +127,7 @@ Supported Programs
    expression.rst
    selector.rst
    bitpack.rst
+   bitmerge.rst
    vecpack.rst
    vecsplit.rst
    manytoone.rst
