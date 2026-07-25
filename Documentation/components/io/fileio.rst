@@ -21,15 +21,22 @@ Implementation
 Security
 --------
 
-File access is restricted to two allowed directory prefixes:
+File access is restricted to three allowed path prefixes:
 
 - ``/data/`` - persistent storage
 - ``/tmp/`` - temporary storage
+- ``CONFIG_DAWN_IO_FILE_DEV_PREFIX`` (default ``/dev/eeprom``) - device
+  nodes only; the opened path must be a character or block device, anything
+  else under the prefix is rejected with ``-EACCES``. An empty prefix
+  disables device-node access.
 
 Any path that does not start with one of these prefixes is rejected with
 ``-EACCES`` at ``init()`` time, before the file is opened. Paths containing
 the ``..`` sequence are also rejected unconditionally to prevent directory
 traversal attacks.
+
+Device nodes have a fixed size (probed with ``SEEK_END``) that writes never
+change, and they are never truncated.
 
 The file path is **read-only configuration** embedded in the device descriptor.
 It cannot be changed at runtime, eliminating the attack surface of a descriptor
@@ -53,7 +60,9 @@ The permission mode is configured as a descriptor config item:
      - File can be read and written; created if it does not exist
    * - ``IO_FILE_PERM_WRITE_ONCE`` (3)
      - File can be written exactly once; any later write returns
-       ``-EPERM``
+       ``-EPERM``. A non-empty regular file is locked at ``init()``; a
+       device node cannot tell whether it was written before, so
+       write-once is enforced per session only
 
 ``isRead()`` and ``isWrite()`` return based on the configured permission so
 that protocols can query capability before performing I/O.
@@ -65,8 +74,9 @@ Data Model
 (``isSeekable()`` returns ``true``).
 
 - ``getDataSize()`` - returns the tracked file size in bytes. It is
-  initialized from ``fstat()`` when the file is opened and updated after
-  successful writes.
+  initialized from ``fstat()`` when the file is opened (zero for a
+  write-only regular file) and updated after successful writes to regular
+  files.
 - ``getDataDim()`` - same as ``getDataSize()`` (1-byte units).
 - ``getDataImpl()`` / ``setDataImpl()`` - whole-file access (seek to offset 0
   then read/write the entire file).
@@ -101,6 +111,8 @@ Kconfig
 
 - ``CONFIG_DAWN_IO_FILE``: enables file-system IO support.
   Depends on ``CONFIG_DAWN_IO_SEEKABLE``.
+- ``CONFIG_DAWN_IO_FILE_DEV_PREFIX``: device-node path prefix additionally
+  allowed (default ``/dev/eeprom``); empty disables it.
 
 YAML
 ----
