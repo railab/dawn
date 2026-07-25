@@ -466,6 +466,20 @@ Examples
   Required resources: ``/dev/uorb/sensor_accel0``, ``/dev/leds0``,
   ``/dev/buttons0``
 
+.. _descriptor-ppk2-nxscope:
+
+``descriptors/examples/ppk2_nxscope.yaml``
+  **PPK2 NXScope 100 kS/s Current Stream**
+
+  Board-dedicated NXScope demo for the Nordic Power Profiler Kit II: streams
+  the current ADC channel at 100 kS/s over USB CDC/ACM, each int16 sample
+  carrying the raw 12-bit value and the range switch state (``saturate`` +
+  ``bitmerge``). SMU voltage, power path and calibration loads are writable
+  through NXScope set requests.
+
+  Required resources: ``/dev/adc0``, ``/dev/pot0``, ``/dev/rgbled0``,
+  ``/dev/gpio0``, ``/dev/ttyACM0``
+
 .. _descriptor-modbus-tcp-dummy-map:
 
 ``descriptors/examples/qemu_modbus_tcp_dummy_map.yaml``
