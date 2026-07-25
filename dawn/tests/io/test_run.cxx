@@ -40,6 +40,7 @@ extern "C"
   int test_io_dac();
   int test_io_encoder();
   int test_io_encoder_index();
+  int test_io_pot();
   int test_io_gpo();
   int test_io_gpi();
   int test_io_pwm();
@@ -125,6 +126,9 @@ static int (*test_array[])(void) = {
 #endif
 #ifdef CONFIG_DAWN_IO_ENCODER_INDEX
   test_io_encoder_index,
+#endif
+#ifdef CONFIG_DAWN_IO_POT
+  test_io_pot,
 #endif
 #ifdef CONFIG_DAWN_IO_GPI
   test_io_gpi,

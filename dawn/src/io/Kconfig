@@ -212,6 +212,13 @@ config DAWN_IO_DAC
 	---help---
 		Enable DAC-backed IO objects for analog output control.
 
+config DAWN_IO_POT
+	bool "Dawn POT IO support"
+	default n
+	depends on DAWN_DTYPE_INT32
+	---help---
+		Enable digital potentiometer wiper IO objects.
+
 config DAWN_IO_ENCODER
 	bool "Dawn Encoder IO support"
 	default n
