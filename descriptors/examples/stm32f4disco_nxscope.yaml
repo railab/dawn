@@ -1,0 +1,44 @@
+metadata:
+  title: STM32F4-Discovery NXScope Demo
+  version: '1.0'
+  description: >
+    Dedicated NXScope demo for the STM32F4-Discovery. Streams the on-board
+    LIS3DSH accelerometer as a sampled channel, pushes the user button
+    asynchronously (notify), and drives the four user LEDs from the host over
+    the NXScope control channel. The serial device path comes from
+    CONFIG_DAWN_PROTO_NXSCOPE_SERIAL_PATH.
+  os_required:
+  - /dev/uorb/sensor_accel0
+  - /dev/leds0
+  - /dev/buttons0
+ios:
+- &accel
+  id: accel1
+  type: sensor
+  dtype: float
+  subtype: accel
+  config:
+    device: 0
+- &button
+  id: button1
+  type: buttons
+  dtype: uint32
+  config:
+    device: 0
+- &leds
+  id: leds1
+  type: leds
+  dtype: uint32
+  config:
+    device: 0
+protocols:
+- id: nxscope1
+  type: nxscope_serial
+  config:
+    iobind2:
+    - id: accel1
+      name: accel
+    - id: button1
+      name: button
+    - id: leds1
+      name: leds

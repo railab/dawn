@@ -1,0 +1,36 @@
+options:
+  fail_fast: false
+  parallel: false
+
+# Real-hardware NTFC sessions for the STM32F4-Discovery board.
+#
+# The NSH console (core0) runs on the USART2 line bridged to the on-board
+# ST-LINK VCP; the Dawn proto runs on the F4 USB OTG device.  Run with:
+#
+#   dawnpy-tests --ntfc-only --ntfc-list ntfc/manifest-stm32f4discovery.yaml
+
+sessions:
+
+  - name: "stm32f4discovery-blinky-shell"
+    confpath: ntfc/configs/stm32f4discovery/blinky_shell/config.yaml
+    testpath: ntfc/tests/blinky_shell
+    resources: [hw-stm32f4discovery]
+
+  - name: "stm32f4discovery-modbus-ntfc"
+    confpath: ntfc/configs/stm32f4discovery/modbus_ntfc/config.yaml
+    testpath: ntfc/tests/modbus
+    resources: [hw-stm32f4discovery, modbus-rtu]
+
+  # TCP/UDP proto over the F4 USB CDC-ECM.  The board uses a static link-local
+  # address (169.254.7.2/16); testenv_init.sh installs a udev rule that brings
+  # the CDC-ECM interface up with a matching host address automatically, so the
+  # automated run needs no manual network setup.
+  - name: "stm32f4discovery-modbus-tcp-ntfc"
+    confpath: ntfc/configs/stm32f4discovery/modbus_tcp_ntfc/config.yaml
+    testpath: ntfc/tests/modbus
+    resources: [hw-stm32f4discovery, usbnet]
+
+  - name: "stm32f4discovery-udp-ntfc"
+    confpath: ntfc/configs/stm32f4discovery/udp_ntfc/config.yaml
+    testpath: ntfc/tests/udp
+    resources: [hw-stm32f4discovery, usbnet]

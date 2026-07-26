@@ -13,6 +13,15 @@ BRIDGE="${BRIDGE:-br0}"
 TAP="${TAP:-tap0}"
 BRIDGE_IP="${BRIDGE_IP:-192.168.8.1/24}"
 
+# USB CDC-ECM board net (Modbus-TCP/UDP-over-USB hardware tests). The board
+# exposes a static link-local address; the host just needs a matching one on
+# the CDC-ECM interface. That interface appears dynamically each time the board
+# enumerates, so a udev rule auto-configures it on every plug/flash.
+USBNET_HOST_IP="${USBNET_HOST_IP:-169.254.0.1/16}"
+USBNET_VID="${USBNET_VID:-0525}"
+USBNET_PID="${USBNET_PID:-a4a2}"
+USBNET_RULE="${USBNET_RULE:-/etc/udev/rules.d/70-dawn-usbnet.rules}"
+
 UID_NUM="$(id -u)"
 GID_NUM="$(id -g)"
 
@@ -81,6 +90,38 @@ qemu_net_cleanup() {
   "
 }
 
+usbnet_setup() {
+  # Install a udev rule that brings up the board's CDC-ECM interface and gives
+  # the host a matching link-local address automatically with plain `ip`, so
+  # Modbus-TCP/UDP-over-USB tests need no manual network setup. `ip addr
+  # replace` plus `udevadm trigger` make it idempotent and apply to an
+  # already-present board.
+  #
+  # Only needed for the stm32f4discovery hardware tests. Skip gracefully where
+  # udev is unavailable (e.g. CI containers) so the sim/qemu setup still runs.
+  if ! command -v udevadm >/dev/null 2>&1; then
+    echo "usbnet: udevadm not found; skipping CDC-ECM auto-setup"
+    return 0
+  fi
+  ip_bin="$(command -v ip)"
+  sudo sh -c "
+    set -eu
+    cat > '$USBNET_RULE' <<EOF
+ACTION==\"add\", SUBSYSTEM==\"net\", ATTRS{idVendor}==\"$USBNET_VID\", ATTRS{idProduct}==\"$USBNET_PID\", RUN+=\"$ip_bin link set %k up\", RUN+=\"$ip_bin addr replace $USBNET_HOST_IP dev %k\"
+EOF
+    udevadm control --reload-rules
+    udevadm trigger --subsystem-match=net --action=add
+  "
+}
+
+usbnet_cleanup() {
+  command -v udevadm >/dev/null 2>&1 || return 0
+  sudo sh -c "
+    rm -f '$USBNET_RULE'
+    udevadm control --reload-rules 2>/dev/null || true
+  "
+}
+
 start_socat() {
   if [ -f "$PIDFILE" ] && kill -0 "$(cat "$PIDFILE")" 2>/dev/null; then
     echo "socat already running (pid $(cat "$PIDFILE"))"
@@ -119,6 +160,7 @@ print_summary() {
   echo "Started successfully:"
   echo "  CAN interface : $CANDEV"
   echo "  Network       : $BRIDGE ($BRIDGE_IP) <-> $TAP"
+  echo "  USB net       : CDC-ECM ($USBNET_VID:$USBNET_PID) -> host $USBNET_HOST_IP (udev)"
   echo "  PTYs          : $SIM <-> $NX"
   if [ -f "$PIDFILE" ]; then
     echo "  socat PID     : $(cat "$PIDFILE")"
@@ -144,6 +186,7 @@ status() {
   ip link show "$CANDEV" 2>/dev/null || echo "$CANDEV not present/up"
   ip link show "$BRIDGE" 2>/dev/null || echo "$BRIDGE not present/up"
   ip link show "$TAP" 2>/dev/null || echo "$TAP not present/up"
+  [ -f "$USBNET_RULE" ] && echo "usbnet udev rule installed: $USBNET_RULE" || echo "usbnet udev rule not installed"
   [ -e "$SIM" ] && ls -l "$SIM" || echo "missing: $SIM"
   [ -e "$NX" ] && ls -l "$NX" || echo "missing: $NX"
 }
@@ -159,19 +202,23 @@ main() {
       check_sudo
       can_setup
       qemu_net_setup
+      usbnet_setup
       start_socat
       print_summary
       ;;
     stop)
       stop_socat
       qemu_net_cleanup
+      usbnet_cleanup
       ;;
     restart)
       check_sudo
       stop_socat
       qemu_net_cleanup
+      usbnet_cleanup
       can_setup
       qemu_net_setup
+      usbnet_setup
       start_socat
       print_summary
       ;;

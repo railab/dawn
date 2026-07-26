@@ -79,6 +79,24 @@ def _modbus_target():
         )
 
     if device == "serial":
+        # Transport and its endpoint come from the product's optional `modbus`
+        # config block: RTU over a host serial port (default), or TCP over an
+        # IP the board exposes (e.g. a USB CDC-ECM interface).
+        mb = pytest.products[0].conf.config.get("modbus", {})
+        if mb.get("transport") == "tcp":
+            return ModbusTarget(
+                device=device,
+                desc_path=TCP_DESC_PATH,
+                protocol_id="modbus_tcp",
+                transport="tcp",
+                settle_s=1.0,
+                connect_attempts=30,
+                retry_s=0.5,
+                tcp_host=mb.get("tcp_host", ""),
+                tcp_port=int(
+                    protocol_config_value(TCP_DESC_PATH, "modbus_tcp", "port")
+                ),
+            )
         return ModbusTarget(
             device=device,
             desc_path=RTU_DESC_PATH,
@@ -87,8 +105,8 @@ def _modbus_target():
             settle_s=0.5,
             connect_attempts=30,
             retry_s=0.2,
-            serial_port="/dev/ttyUSB0",
-            serial_parity="E",
+            serial_port=mb.get("serial_port", "/dev/ttyUSB0"),
+            serial_parity=mb.get("parity", "E"),
             readiness_probe=True,
         )
 

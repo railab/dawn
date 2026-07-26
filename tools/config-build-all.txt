@@ -69,6 +69,16 @@ boards/arm/stm32h7/nucleo-h743zi/configs/blinky_udp
 boards/arm/stm32h7/nucleo-h743zi/configs/blinky_serial
 boards/arm/stm32h7/nucleo-h743zi/configs/blinky_modbus_tcp
 
+boards/arm/stm32f4/stm32f4discovery/configs/serial
+boards/arm/stm32f4/stm32f4discovery/configs/modbus_rtu
+boards/arm/stm32f4/stm32f4discovery/configs/modbus_tcp
+boards/arm/stm32f4/stm32f4discovery/configs/udp
+boards/arm/stm32f4/stm32f4discovery/configs/nxscope
+boards/arm/stm32f4/stm32f4discovery/configs/blinky_shell
+boards/arm/stm32f4/stm32f4discovery/configs/modbus_ntfc
+boards/arm/stm32f4/stm32f4discovery/configs/modbus_tcp_ntfc
+boards/arm/stm32f4/stm32f4discovery/configs/udp_ntfc
+
 # Out-of-tree demo (C++ descriptor + YAML descriptor variants)
 examples/out-of-tree-demo/boards/sim/sim/sim/configs/nsh_user_shell -e CXX=g++-14 -e CC=gcc-14
 examples/out-of-tree-demo/boards/sim/sim/sim/configs/nsh_user_shell_yaml -e CXX=g++-14 -e CC=gcc-14
