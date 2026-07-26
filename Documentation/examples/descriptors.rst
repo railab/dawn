@@ -94,7 +94,8 @@ Feature index
        :ref:`Shell and NimBLE Environmental <descriptor-shell-nimble-env-demo>`
    * - NXScope
      - :ref:`NXScope Serial <descriptor-nxscope-serial>`,
-       :ref:`NXScope UDP <descriptor-nxscope-udp>`
+       :ref:`NXScope UDP <descriptor-nxscope-udp>`,
+       :ref:`STM32F4-Discovery NXScope <descriptor-stm32f4disco-nxscope>`
    * - Serial
      - :ref:`Blinky Serial <descriptor-blinky-serial-demo>`,
        :ref:`Dynamic Descriptor Slot0 <descriptor-dynamic-desc-slot0>`,
@@ -451,6 +452,19 @@ Examples
   Required resources:
   ``/dev/ttyS1``, ``/dev/uorb/sensor_accel0``,
   ``/dev/uorb/sensor_mag0``, ``/dev/uorb/sensor_gyro0``
+
+.. _descriptor-stm32f4disco-nxscope:
+
+``descriptors/examples/stm32f4disco_nxscope.yaml``
+  **STM32F4-Discovery NXScope Demo**
+
+  Board-dedicated NXScope demo: streams the on-board LIS3DSH accelerometer as a
+  sampled channel, pushes the user button asynchronously (notify), and drives
+  the four user LEDs from the host over the NXScope control channel. Serial
+  path from ``CONFIG_DAWN_PROTO_NXSCOPE_SERIAL_PATH``.
+
+  Required resources: ``/dev/uorb/sensor_accel0``, ``/dev/leds0``,
+  ``/dev/buttons0``
 
 .. _descriptor-modbus-tcp-dummy-map:
 

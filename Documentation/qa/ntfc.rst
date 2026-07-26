@@ -23,6 +23,9 @@ manifests so the CI suite stays independent of physical hardware:
 * ``ntfc/manifest-nucleo-c071rb.yaml`` - hardware-in-the-loop Modbus
   RTU session for the STM32 Nucleo-C071RB. **Not** run by default; opt
   in with ``--ntfc-list``.
+* ``ntfc/manifest-stm32f4discovery.yaml`` - hardware-in-the-loop Modbus
+  RTU/TCP and UDP sessions for the STM32F4-Discovery, all over USB.
+  **Not** run by default; opt in with ``--ntfc-list``.
 
 Targets
 =======
@@ -45,6 +48,11 @@ Targets
   adapter wired to the board USART1 RS485 pins through a compatible
   RS485 transceiver. The Modbus client uses ``/dev/ttyUSB0`` by default;
   override with ``DAWN_NTFC_MODBUS_PORT``.
+* **stm32f4discovery** - real hardware. A connected STM32F4-Discovery whose
+  NSH console runs on USART2 (ST-LINK VCP) while the Dawn proto rides the F4
+  USB OTG port: Modbus RTU over CDC/ACM (no RS485 adapter needed) and Modbus
+  TCP / UDP over CDC-ECM. The CDC-ECM configs use a link-local address so the
+  host auto-configures a matching interface with no manual setup.
 
 Host requirements
 -----------------
@@ -60,6 +68,11 @@ see :doc:`/guides/environment` for the general host setup):
   ``/tmp/ttySIM0`` and ``/tmp/ttyNX0``.
 * Hardware Modbus RTU on ``nucleo-c071rb`` needs ``st-flash`` and a
   host RS485 adapter.
+* Hardware TCP/UDP-over-USB suites on ``stm32f4discovery`` need ``st-flash``
+  and the board's CDC-ECM interface configured. ``testenv_init.sh`` installs a
+  udev rule that brings that interface up and assigns the host a matching
+  link-local address automatically whenever the board enumerates, so no manual
+  network setup is needed.
 * QEMU-based suites (``udp``, ``modbus_tcp``) need
   ``qemu-system-x86_64`` with KVM and kernel ``tun``/``bridge``
   support; ``testenv_init.sh`` sets up ``br0`` + ``tap0``.
@@ -102,6 +115,13 @@ Test Suites
    * - ``udp``
      - qemu-intel64
      - Ping, IO list, read/write round-trip (uint16, float).
+   * - ``modbus``
+     - stm32f4discovery
+     - Same Modbus dummy register map as the sim suite, run over the F4 USB
+       CDC/ACM (RTU) and CDC-ECM (TCP) interfaces.
+   * - ``udp``
+     - stm32f4discovery
+     - Same UDP suite as QEMU, run over the F4 USB CDC-ECM interface.
    * - ``gateway``
      - sim
      - Serial->CAN and CAN->Serial data routing; segmented uint64
@@ -158,6 +178,10 @@ Running
    # hardware-in-the-loop manifest (Nucleo-C071RB + Modbus RTU)
    dawnpy-tests --ntfc-only \
        --ntfc-list ntfc/manifest-nucleo-c071rb.yaml
+
+   # hardware-in-the-loop manifest (STM32F4-Discovery, Modbus/UDP over USB)
+   dawnpy-tests --ntfc-only \
+       --ntfc-list ntfc/manifest-stm32f4discovery.yaml
 
    # single host suite
    python -m ntfc test \

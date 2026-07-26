@@ -18,6 +18,8 @@ from _proto_client_common import (
 from dawnpy_udp.udp import DawnUdpProtocol
 
 DESC_PATH = "descriptors/examples/udp_basic.yaml"
+# Default host (qemu); boards that expose the UDP proto over a network device
+# (e.g. a USB CDC-ECM interface) override it via the `udp.host` config block.
 UDP_HOST = "192.168.8.104"
 UDP_PORT = int(protocol_config_value(DESC_PATH, "udp", "port"))
 
@@ -28,7 +30,8 @@ NOTIFYIO1_ID = io_objid(DESC_PATH, "notifyio1")
 
 @pytest.fixture
 def udp_client():
-    client = DawnUdpProtocol(UDP_HOST, UDP_PORT, timeout=2.0)
+    host = pytest.products[0].conf.config.get("udp", {}).get("host", UDP_HOST)
+    client = DawnUdpProtocol(host, UDP_PORT, timeout=2.0)
     client.connect()
     yield client
     client.disconnect()

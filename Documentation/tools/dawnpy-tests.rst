@@ -63,7 +63,8 @@ Common options:
 * ``--ntfc-list PATH``: NTFC manifest YAML file. Defaults to
   ``ntfc/manifest-host.yaml``; hardware examples include
   ``ntfc/manifest-nrf52840dk.yaml``, ``ntfc/manifest-nrf5340dk.yaml``,
-  and ``ntfc/manifest-nucleo-c071rb.yaml``.
+  ``ntfc/manifest-nucleo-c071rb.yaml``, and
+  ``ntfc/manifest-stm32f4discovery.yaml``.
 * ``--size-only``: run only build size analysis, building missing
   configurations first.
 * ``--debug`` / ``--no-debug``: enable verbose logging.

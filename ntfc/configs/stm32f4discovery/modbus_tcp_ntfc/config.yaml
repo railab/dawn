@@ -1,0 +1,27 @@
+config:
+  cwd: './external'
+  build_dir: './build'
+
+# Modbus-TCP-over-USB session.  The NSH console (core0) is the USART2 line on
+# the on-board ST-LINK VCP; the Modbus-TCP proto is served over the F4 USB
+# CDC-ECM interface.  The board uses a static IPv4 link-local address
+# (169.254.7.2/16); testenv_init.sh installs a udev rule that brings the
+# CDC-ECM interface up with a matching host address automatically, so the
+# automated run reaches the board with no manual setup.
+
+product:
+  name: "dawn-stm32f4discovery-modbus-tcp-ntfc"
+  modbus:
+    transport: 'tcp'
+    tcp_host: '169.254.7.2'
+  cores:
+    core0:
+      name: 'main'
+      device: 'serial'
+      exec_path: '/dev/ttyACM0'
+      exec_args: '115200,n,8,1'
+      defconfig: '../../boards/arm/stm32f4/stm32f4discovery/configs/modbus_tcp_ntfc'
+      flash: 'st-flash --connect-under-reset --reset write $IMAGE_BIN 0x08000000'
+      reboot: 'st-flash --connect-under-reset reset'
+      dcmake:
+        CMAKE_SUPPRESS_DEVELOPER_WARNINGS: "ON"
