@@ -117,8 +117,7 @@ int CProgAhrs::configureDesc(const CDescObject &desc)
                   return -EINVAL;
                 }
 
-              const SProgAhrsParams *params =
-                reinterpret_cast<const SProgAhrsParams *>(item->data);
+              const SProgAhrsParams *params = reinterpret_cast<const SProgAhrsParams *>(item->data);
 
               pGain = SObjectCfg::cfgToF(params->gain);
               pRejection = SObjectCfg::cfgToF(params->accel_rejection);
