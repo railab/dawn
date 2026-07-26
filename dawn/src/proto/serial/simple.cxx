@@ -61,6 +61,16 @@ void CProtoSerial::thread()
   struct pollfd fds[1];
   SPollLoopCallbacks callbacks;
 
+  /* Open the transport here (not in init()) so a not-yet-connected removable
+   * USB serial device waits for the host without blocking descriptor load.
+   */
+
+  if (serialInit() < 0)
+    {
+      workerThread().markThreadFinished();
+      return;
+    }
+
   std::memset(fds, 0, sizeof(fds));
 
   fds[0].fd = fd;
@@ -281,11 +291,33 @@ int CProtoSerial::serialInit()
       return -1;
     }
 
-  fd = open(path, O_RDWR);
-  if (fd < 0)
+  /* A removable USB serial device (e.g. CDC/ACM) returns -ENOTCONN from
+   * open() until the USB host has enumerated it.  Wait here for the host to
+   * connect; any other error is fatal.  serialInit() runs in the worker
+   * thread, so this waits for usbdev without blocking the rest of the
+   * descriptor load and without any board-specific bring-up delay.
+   */
+
+  for (;;)
     {
-      DAWNERR("Failed to open serial port: %s\n", path);
-      return -1;
+      fd = open(path, O_RDWR);
+      if (fd >= 0)
+        {
+          break;
+        }
+
+      if (errno != ENOTCONN)
+        {
+          DAWNERR("Failed to open serial port %s: %d\n", path, errno);
+          return -1;
+        }
+
+      if (workerThread().shouldQuit())
+        {
+          return -1;
+        }
+
+      usleep(100000);
     }
 
 #ifdef CONFIG_SERIAL_TERMIOS
@@ -335,11 +367,10 @@ int CProtoSerial::init()
 {
   int ret;
 
-  ret = serialInit();
-  if (ret < 0)
-    {
-      return ret;
-    }
+  /* Note: the transport device is opened in thread() (see serialInit), so a
+   * removable USB serial device that is not yet connected does not block the
+   * descriptor load here.
+   */
 
   ret = createBuffers();
   if (ret < 0)
