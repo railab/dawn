@@ -83,6 +83,35 @@ void CProtoModbusRtu::thread()
 {
   DAWNINFO("start modbus thread\n");
 
+  /* Open the transport (nxmb_enable) here rather than in init(): a removable
+   * USB serial device (CDC/ACM) returns -ENOTCONN until the USB host has
+   * enumerated it, so wait for the host without blocking descriptor load.
+   */
+
+  for (;;)
+    {
+      int ret = nxmb_enable(mbhandle);
+      if (ret >= 0)
+        {
+          break;
+        }
+
+      if (ret != -ENOTCONN)
+        {
+          DAWNERR("ERROR: nxmb_enable failed: %d\n", ret);
+          workerThread().markThreadFinished();
+          return;
+        }
+
+      if (workerThread().shouldQuit())
+        {
+          workerThread().markThreadFinished();
+          return;
+        }
+
+      usleep(100000);
+    }
+
   do
     {
       int ret;
@@ -178,14 +207,10 @@ int CProtoModbusRtu::modbusInitialize()
       return ret;
     }
 
-  ret = nxmb_enable(mbhandle);
-  if (ret < 0)
-    {
-      DAWNERR("ERROR: nxmb_enable failed: %d\n", ret);
-      nxmb_destroy(mbhandle);
-      mbhandle = NULL;
-      return ret;
-    }
+  /* nxmb_enable() opens the transport device; it is deferred to thread() so a
+   * not-yet-connected removable USB serial device (CDC/ACM) waits for the USB
+   * host without blocking the descriptor load.
+   */
 
   return OK;
 }
