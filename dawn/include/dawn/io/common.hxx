@@ -139,15 +139,14 @@ public:
     IO_CLASS_SENSOR_PRODUCER_IR = 33,            ///< Infrared publisher
     IO_CLASS_SENSOR_PRODUCER_UV = 34,            ///< Ultraviolet publisher
     IO_CLASS_SENSOR_PRODUCER_GAS = 35,           ///< Gas publisher
-    IO_CLASS_SENSOR_PRODUCER_CONFIG = 36,        ///< Sensor producer configuration IDs
 
     // GNSS sensor (uORB sensor_gnss). Read-only, so it has no producer
     // counterpart and lives outside the aligned sensor/producer ranges above.
 
-    IO_CLASS_SENSOR_GNSS = 37,            ///< GNSS position+velocity (lat/lon/alt/speed/course)
-    IO_CLASS_SENSOR_GNSS_TIME = 38,       ///< GNSS UTC time (seconds since epoch)
-    IO_CLASS_SENSOR_GNSS_INFO = 39,       ///< GNSS accuracy + DOP (eph/epv/hdop/pdop/vdop)
-    IO_CLASS_SENSOR_GNSS_SATELLITES = 40, ///< GNSS satellites used in fix
+    IO_CLASS_SENSOR_GNSS = 36,            ///< GNSS position+velocity (lat/lon/alt/speed/course)
+    IO_CLASS_SENSOR_GNSS_TIME = 37,       ///< GNSS UTC time (seconds since epoch)
+    IO_CLASS_SENSOR_GNSS_INFO = 38,       ///< GNSS accuracy + DOP (eph/epv/hdop/pdop/vdop)
+    IO_CLASS_SENSOR_GNSS_SATELLITES = 39, ///< GNSS satellites used in fix
 
     // there is 59 sensor types in Nuttx now, most likely it grows later
     // we still have many free slots, but in the future, it there are no free IO slots
@@ -155,16 +154,16 @@ public:
 
     // System information
 
-    IO_CLASS_SYSTEM_UPTIME = 41,     ///< System uptime
-    IO_CLASS_SYSTEM_CPULOAD = 42,    ///< CPU load
-    IO_CLASS_SYSTEM_RESET = 43,      ///< System reset control
-    IO_CLASS_SYSTEM_RESETCAUSE = 44, ///< Reset cause
-    IO_CLASS_SYSTEM_POWEROFF = 45,   ///< Power off control
-    IO_CLASS_SYSTEM_HOSTNAME = 46,   ///< System hostname
-    IO_CLASS_SYSTEM_UUID = 47,       ///< UUID
-    IO_CLASS_SYSTEM_SYSTEMTIME = 48, ///< System time
+    IO_CLASS_SYSTEM_UPTIME = 40,     ///< System uptime
+    IO_CLASS_SYSTEM_CPULOAD = 41,    ///< CPU load
+    IO_CLASS_SYSTEM_RESET = 42,      ///< System reset control
+    IO_CLASS_SYSTEM_RESETCAUSE = 43, ///< Reset cause
+    IO_CLASS_SYSTEM_POWEROFF = 44,   ///< Power off control
+    IO_CLASS_SYSTEM_HOSTNAME = 45,   ///< System hostname
+    IO_CLASS_SYSTEM_UUID = 46,       ///< UUID
+    IO_CLASS_SYSTEM_SYSTEMTIME = 47, ///< System time
 
-    // Slots 49-59 reserved for future system classes (serial number,
+    // Slots 48-59 reserved for future system classes (serial number,
     // firmware version, firmware update, etc.).
 
     // GPIO

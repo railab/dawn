@@ -23,8 +23,28 @@ int CIOSensorProducer::configureDesc(const CDescObject &desc)
 
       switch (item->cfgid.s.cls)
         {
-          case CIOCommon::IO_CLASS_SENSOR_PRODUCER_CONFIG:
+          case CIOCommon::IO_CLASS_SENSOR_PRODUCER_ACCELEROMETER:
+          case CIOCommon::IO_CLASS_SENSOR_PRODUCER_MAGNETICFIELD:
+          case CIOCommon::IO_CLASS_SENSOR_PRODUCER_GYROSCOPE:
+          case CIOCommon::IO_CLASS_SENSOR_PRODUCER_LIGHT:
+          case CIOCommon::IO_CLASS_SENSOR_PRODUCER_BAROMETER:
+          case CIOCommon::IO_CLASS_SENSOR_PRODUCER_PROXIMITY:
+          case CIOCommon::IO_CLASS_SENSOR_PRODUCER_HUMIDITY:
+          case CIOCommon::IO_CLASS_SENSOR_PRODUCER_TEMPERATURE:
+          case CIOCommon::IO_CLASS_SENSOR_PRODUCER_ATEMPERATURE:
+          case CIOCommon::IO_CLASS_SENSOR_PRODUCER_RGB:
+          case CIOCommon::IO_CLASS_SENSOR_PRODUCER_IR:
+          case CIOCommon::IO_CLASS_SENSOR_PRODUCER_UV:
+          case CIOCommon::IO_CLASS_SENSOR_PRODUCER_GAS:
             {
+              if (item->cfgid.s.cls != getCls())
+                {
+                  DAWNERR("Sensor producer config class %u does not match object class %u\n",
+                          item->cfgid.s.cls,
+                          getCls());
+                  return -EINVAL;
+                }
+
               switch (item->cfgid.s.id)
                 {
                   case CIOSensorProducer::IO_SENSOR_PRODUCER_CFG_QUEUE_SIZE:

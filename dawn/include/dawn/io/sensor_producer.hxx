@@ -199,24 +199,20 @@ public:
     return CIOSensorProducer::objectId(CIOCommon::IO_CLASS_SENSOR_PRODUCER_GAS, dtype, ts, inst);
   }
 
-  constexpr static SObjectCfg::ObjectCfgId cfgIdQueueSize()
+  constexpr static SObjectCfg::ObjectCfgId cfgIdQueueSize(uint16_t cls)
   {
     return SObjectCfg::objectCfg(SObjectId::OBJTYPE_IO,
-                                 CIOCommon::IO_CLASS_SENSOR_PRODUCER_CONFIG,
+                                 cls,
                                  SObjectId::DTYPE_UINT32,
                                  true,
                                  1,
                                  IO_SENSOR_PRODUCER_CFG_QUEUE_SIZE);
   }
 
-  constexpr static SObjectCfg::ObjectCfgId cfgIdPersist()
+  constexpr static SObjectCfg::ObjectCfgId cfgIdPersist(uint16_t cls)
   {
-    return SObjectCfg::objectCfg(SObjectId::OBJTYPE_IO,
-                                 CIOCommon::IO_CLASS_SENSOR_PRODUCER_CONFIG,
-                                 SObjectId::DTYPE_BOOL,
-                                 true,
-                                 1,
-                                 IO_SENSOR_PRODUCER_CFG_PERSIST);
+    return SObjectCfg::objectCfg(
+      SObjectId::OBJTYPE_IO, cls, SObjectId::DTYPE_BOOL, true, 1, IO_SENSOR_PRODUCER_CFG_PERSIST);
   }
 
 private:
