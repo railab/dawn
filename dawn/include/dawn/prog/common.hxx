@@ -122,6 +122,7 @@ public:
     PROG_CLASS_IOMUX = 32,
     PROG_CLASS_IODEMUX = 33,
     PROG_CLASS_AHRS = 34,
+    PROG_CLASS_SATURATE = 36,
 
     /** @brief User-defined PROG types start here. */
 

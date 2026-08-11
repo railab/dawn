@@ -71,6 +71,10 @@ if(CONFIG_DAWN_PROG_VECPACK)
   list(APPEND SRCS vecpack.cxx)
 endif()
 
+if(CONFIG_DAWN_PROG_SATURATE)
+  list(APPEND SRCS saturate.cxx)
+endif()
+
 if(CONFIG_DAWN_PROG_VECSPLIT)
   list(APPEND SRCS vecsplit.cxx)
 endif()
