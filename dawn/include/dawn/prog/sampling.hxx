@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include <atomic>
 #include <vector>
 
 #include "dawn/common/thread.hxx"
@@ -29,6 +30,10 @@ class CProgSampling : public CProgCommon
 {
 public:
   constexpr static uint32_t INTERVAL_DEFAULT = CONFIG_DAWN_PROG_SAMPLING_INTERVAL;
+
+  /** @brief Idle poll period used while the interval is zero (disabled). */
+
+  constexpr static uint32_t INTERVAL_IDLE = CONFIG_DAWN_PROG_SAMPLING_IDLE_INTERVAL;
 
   enum
   {
@@ -56,6 +61,7 @@ public:
   int configure() override;
   int init() override;
   int deinit() override;
+  int onSetObjConfig(SObjectCfg::ObjectCfgId objcfg, uint32_t *data, size_t len) override;
   int doStart() override;
   int doStop() override;
   bool hasThread() const override;
@@ -97,7 +103,7 @@ private:
   };
 
   std::vector<SSamplingBind *> binds; ///< Sampling bindings table.
-  uint32_t interval;                  ///< Sampling interval in microseconds.
+  std::atomic<uint32_t> interval;     ///< Sampling interval in microseconds.
   CThreadedObject threadCtl;          ///< Thread management object.
 
   int configureDesc(const CDescObject &desc);

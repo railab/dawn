@@ -36,6 +36,8 @@ Kconfig
 - ``CONFIG_DAWN_PROG_SAMPLING``: enables the Sampling program.
 - ``CONFIG_DAWN_PROG_SAMPLING_INTERVAL``: default polling interval when the
   descriptor does not set one.
+- ``CONFIG_DAWN_PROG_SAMPLING_IDLE_INTERVAL``: poll period while the interval
+  is zero; bounds how long stop and a new interval take to take effect.
 
 YAML
 ----
@@ -50,6 +52,15 @@ YAML
            - src1
            - output1
          interval: 100000
+
+Runtime configuration
+=====================
+
+``interval`` is runtime-writable (``cfgIdIOInterval`` is rw) only when the
+item is present in the descriptor; a new value applies after the current
+period ends. Zero disables sampling;
+the thread idles at ``CONFIG_DAWN_PROG_SAMPLING_IDLE_INTERVAL`` until a
+non-zero interval is written.
 
 External Control
 ================
