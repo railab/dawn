@@ -25,10 +25,17 @@ static uint32_t g_cfg_sensor_producer_temp[] = {
   3,
   CIOCommon::cfgIdDevno(),
   SENSOR_PRODUCER_TEMP_DEVNO,
-  CIOSensorProducer::cfgIdQueueSize(),
+  CIOSensorProducer::cfgIdQueueSize(CIOCommon::IO_CLASS_SENSOR_PRODUCER_TEMPERATURE),
   4,
-  CIOSensorProducer::cfgIdPersist(),
+  CIOSensorProducer::cfgIdPersist(CIOCommon::IO_CLASS_SENSOR_PRODUCER_TEMPERATURE),
   false,
+};
+
+static uint32_t g_cfg_sensor_producer_temp_wrong_config_class[] = {
+  CIOSensorProducer::objectIdTemp(SObjectId::DTYPE_FLOAT, false, 2),
+  1,
+  CIOSensorProducer::cfgIdQueueSize(CIOCommon::IO_CLASS_SENSOR_PRODUCER_HUMIDITY),
+  4,
 };
 
 static uint32_t g_cfg_sensor_producer_temp_bad_dtype[] = {
@@ -114,6 +121,14 @@ static void test_io_sensor_producer_rejects_bad_dtype()
   TEST_ASSERT_EQUAL(-EINVAL, producer.configure());
 }
 
+static void test_io_sensor_producer_rejects_wrong_config_class()
+{
+  CDescObject desc(g_cfg_sensor_producer_temp_wrong_config_class);
+  CIOSensorProducer io(desc);
+
+  TEST_ASSERT_EQUAL(-EINVAL, io.configure());
+}
+
 //***************************************************************************
 // Description: setData validates protocol payload size before publishing.
 //***************************************************************************
@@ -176,6 +191,7 @@ extern "C"
     DAWN_RUN_TEST(test_io_sensor_producer_contract);
     DAWN_RUN_TEST(test_io_sensor_producer_factory_create);
     DAWN_RUN_TEST(test_io_sensor_producer_rejects_bad_dtype);
+    DAWN_RUN_TEST(test_io_sensor_producer_rejects_wrong_config_class);
     DAWN_RUN_TEST(test_io_sensor_producer_rejects_wrong_payload_size);
     DAWN_RUN_TEST(test_io_sensor_producer_publishes_temp_updates);
 
