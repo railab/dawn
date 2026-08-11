@@ -30,6 +30,10 @@ class CProgSampling : public CProgCommon
 public:
   constexpr static uint32_t INTERVAL_DEFAULT = CONFIG_DAWN_PROG_SAMPLING_INTERVAL;
 
+  /** @brief Idle poll period used while the interval is zero (disabled). */
+
+  constexpr static uint32_t INTERVAL_IDLE = CONFIG_DAWN_PROG_SAMPLING_IDLE_INTERVAL;
+
   enum
   {
     PROG_SAMPLING_CFG_FIRST = 0,
@@ -56,6 +60,7 @@ public:
   int configure() override;
   int init() override;
   int deinit() override;
+  int onSetObjConfig(SObjectCfg::ObjectCfgId objcfg, uint32_t *data, size_t len) override;
   int doStart() override;
   int doStop() override;
   bool hasThread() const override;

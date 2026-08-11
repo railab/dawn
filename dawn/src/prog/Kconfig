@@ -187,6 +187,14 @@ config DAWN_PROG_SAMPLING_INTERVAL
 		Default sampling interval in microseconds used when no interval
 		is specified in the descriptor.
 
+config DAWN_PROG_SAMPLING_IDLE_INTERVAL
+	int "Dawn sampling idle poll interval (microseconds)"
+	default 100000
+	---help---
+		Poll period of the sampling thread while the interval is zero
+		(sampling disabled). Bounds how long stop and a new runtime
+		interval take to take effect.
+
 endif # DAWN_PROG_SAMPLING
 
 config DAWN_PROG_SEQUENCER

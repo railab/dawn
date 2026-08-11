@@ -107,9 +107,26 @@ int CProgSampling::allocObject(SObjectId::ObjectId srcId, SObjectId::ObjectId ta
   return OK;
 }
 
+int CProgSampling::onSetObjConfig(SObjectCfg::ObjectCfgId objcfg, uint32_t *data, size_t len)
+{
+  if (SObjectCfg::objectCfgGetId(objcfg) != PROG_SAMPLING_CFG_INTERVAL)
+    {
+      return OK;
+    }
+
+  if (data == nullptr || len != 1)
+    {
+      return -EINVAL;
+    }
+
+  interval = *data;
+  return OK;
+}
+
 void CProgSampling::thread()
 {
   SSamplingBind *b;
+  uint32_t period;
   size_t i;
   int ret;
 
@@ -117,6 +134,15 @@ void CProgSampling::thread()
 
   do
     {
+      // A zero interval means sampling is off; idle until the host sets one
+
+      period = interval;
+      if (period == 0)
+        {
+          usleep(INTERVAL_IDLE);
+          continue;
+        }
+
       // Sample all source IOs and push to targets
 
       for (i = 0; i < binds.size(); i++)
@@ -139,7 +165,7 @@ void CProgSampling::thread()
 
       // Wait for next interval
 
-      usleep(interval);
+      usleep(period);
     }
   while (!threadCtl.shouldQuit());
 }
