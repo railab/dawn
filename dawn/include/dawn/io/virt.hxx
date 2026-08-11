@@ -85,7 +85,7 @@ public:
 
   bool isBatch() const override
   {
-    return false;
+    return this->blen > 1;
   };
 
   int regNotifier(SIONotifier n) override;
@@ -125,6 +125,8 @@ private:
   std::vector<SIONotifier> vnote; ///< Registered notifiers for data change events.
   std::mutex pfdsLock;            ///< Mutex protecting notifier registration.
 #endif
+
+  int setBatched(IODataCmn &data);
 
 #ifdef CONFIG_DAWN_IO_NOTIFY
   void sendNotify(io_ddata_t *data);

@@ -227,6 +227,40 @@ static void test_io_virt_batched_getdata()
 }
 
 //***************************************************************************
+// Description: a multi-batch virtio returns each batch as stored, not the
+// first one repeated, and rejects a read longer than it holds.
+//***************************************************************************
+
+static void test_io_virt_multibatch_getdata()
+{
+  CDescObject desc(g_cfg_virt);
+  CIOVirt virt(desc);
+  io_sdata_t<uint32_t, 1, 4> wdata;
+  io_sdata_t<uint32_t, 1, 4> rdata;
+  io_sdata_t<uint32_t, 1, 8> toolong;
+  size_t i;
+
+  TEST_ASSERT_EQUAL(OK, virt.configure());
+  TEST_ASSERT_EQUAL(OK, virt.init());
+  TEST_ASSERT_EQUAL(OK, virt.initialize(1, 4));
+
+  for (i = 0; i < 4; i++)
+    {
+      wdata(0, i) = 100 + i;
+    }
+
+  TEST_ASSERT_EQUAL(OK, virt.setData(wdata));
+  TEST_ASSERT_EQUAL(OK, virt.getData(rdata, 4));
+
+  for (i = 0; i < 4; i++)
+    {
+      TEST_ASSERT_EQUAL(100 + i, rdata(0, i));
+    }
+
+  TEST_ASSERT_EQUAL(-EINVAL, virt.getData(toolong, 8));
+}
+
+//***************************************************************************
 // Description: with timestamp enabled, getData() returns a non-zero
 // timestamp alongside the value.
 //***************************************************************************
@@ -492,6 +526,7 @@ extern "C"
     DAWN_RUN_TEST(test_io_virt_reinitialize_updates_dimension);
     DAWN_RUN_TEST(test_io_virt_setdata_updates_value);
     DAWN_RUN_TEST(test_io_virt_batched_getdata);
+    DAWN_RUN_TEST(test_io_virt_multibatch_getdata);
 
     DAWN_RUN_TEST(test_io_virt_ts_setdata_updates_value);
     DAWN_RUN_TEST(test_io_virt_ts_batched_getdata);

@@ -62,6 +62,11 @@ int CIOVirt::getDataImpl(IODataCmn &data, size_t len)
       return -EACCES;
     }
 
+  if (blen > 1 && len > blen)
+    {
+      return -EINVAL;
+    }
+
   for (size_t i = 0; i < len; i++)
     {
       // Notify provider
@@ -79,12 +84,44 @@ int CIOVirt::getDataImpl(IODataCmn &data, size_t len)
       data.getTs(i) = ts;
 #endif
 
-      // We use batch=1 storage for iodata now
+      // Single-batch storage replicates its value into every slot
 
-      std::memcpy(data.getDataPtr(i), iodata->getDataPtr(0), dlen * tlen);
+      std::memcpy(data.getDataPtr(i), iodata->getDataPtr(blen > 1 ? i : 0), dlen * tlen);
 
       mutex.unlock();
     }
+
+  return OK;
+}
+
+int CIOVirt::setBatched(IODataCmn &data)
+{
+  size_t b;
+
+  mutex.lock();
+
+  for (b = 0; b < blen; b++)
+    {
+      std::memcpy(iodata->getDataPtr(b), data.getDataPtr(b), dlen * tlen);
+
+      if (iodata->hasTs && data.hasTimestamp())
+        {
+          iodata->getTs(b) = data.getTs(b);
+        }
+    }
+
+#ifdef CONFIG_DAWN_IO_TIMESTAMP
+  if (isTimestamp())
+    {
+      ts = getTimestamp();
+    }
+#endif
+
+  mutex.unlock();
+
+#ifdef CONFIG_DAWN_IO_NOTIFY
+  sendNotify(iodata);
+#endif
 
   return OK;
 }
@@ -100,9 +137,16 @@ int CIOVirt::setDataImpl(IODataCmn &data)
       return -EACCES;
     }
 
-  // Set IO data (full buffer for batched IOs)
+  // A timestamped batch is padded, so it cannot be copied flat
 
-  ret = setVal(data.getDataPtr(), dlen * tlen * blen);
+  if (blen > 1 && (iodata->hasTs || data.hasTimestamp()))
+    {
+      ret = setBatched(data);
+    }
+  else
+    {
+      ret = setVal(data.getDataPtr(), dlen * tlen * blen);
+    }
 
   // Notify provider
 
@@ -206,6 +250,7 @@ int CIOVirt::initialize(size_t dim, size_t batch, bool notify)
   mutex.unlock();
 
 #ifdef CONFIG_DAWN_IO_NOTIFY
+  setNotifyBatch(batch);
   bindNotifier(this);
 #endif
 

@@ -729,6 +729,13 @@ protected:
   /** @brief Notifier interface pointer, bound during initialization. */
 
   IIONotifier *notifier;
+
+  /** @brief Set notifier batch count for IOs batched at runtime. */
+
+  void setNotifyBatch(size_t batch)
+  {
+    notifyBatch = (batch == 0) ? 1 : batch;
+  }
 #endif
 
   /**
