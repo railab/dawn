@@ -285,6 +285,17 @@ config DAWN_PROG_BITMERGE
 		and shape while the rest are read once per batch, so slow values
 		(e.g. range or state bits) are folded into every sample.
 
+config DAWN_PROG_SATURATE
+	bool "Dawn program saturating limiter"
+	default n
+	depends on DAWN_IO_VIRT && DAWN_IO_NOTIFY
+	---help---
+		Enable the Saturate program, which clamps input samples into a
+		configured min/max range. Unlike IO limits, which only reject
+		out-of-range config writes, this conditions the data itself.
+		Supported types: bool, 8/16/32-bit integers, float, double and
+		b16 (b16 in and out only). Bounds are encoded in the input type.
+
 config DAWN_PROG_VECSPLIT
 	bool "Dawn program vector splitter"
 	default n
