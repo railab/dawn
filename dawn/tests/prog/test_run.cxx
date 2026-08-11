@@ -91,6 +91,9 @@ extern "C"
 #ifdef CONFIG_DAWN_PROG_BITPACK
   int test_prog_bitpack();
 #endif
+#ifdef CONFIG_DAWN_PROG_SATURATE
+  int test_prog_saturate();
+#endif
 #ifdef CONFIG_DAWN_PROG_VECPACK
   int test_prog_vecpack();
 #endif
@@ -191,6 +194,9 @@ static int (*test_array[])(void) = {
 #endif
 #ifdef CONFIG_DAWN_PROG_BITPACK
   test_prog_bitpack,
+#endif
+#ifdef CONFIG_DAWN_PROG_SATURATE
+  test_prog_saturate,
 #endif
 #ifdef CONFIG_DAWN_PROG_VECPACK
   test_prog_vecpack,

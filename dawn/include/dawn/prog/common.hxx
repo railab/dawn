@@ -126,6 +126,7 @@ public:
     /** @brief Retired: 35 was the stream tagger, replaced by BITMERGE. */
 
     PROG_CLASS_BITMERGE = 36,
+    PROG_CLASS_SATURATE = 37,
 
     /** @brief User-defined PROG types start here. */
 

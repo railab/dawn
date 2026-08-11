@@ -282,6 +282,15 @@ config DAWN_PROG_BITMERGE
 		merge runs per sample, so slow values (e.g. range or state bits)
 		can be folded into every sample of a stream.
 
+config DAWN_PROG_SATURATE
+	bool "Dawn program saturating limiter"
+	default n
+	depends on DAWN_IO_VIRT
+	---help---
+		Enable the Saturate program, which clamps input samples into a
+		configured min/max range. Unlike IO limits, which only reject
+		out-of-range config writes, this conditions the data itself.
+
 config DAWN_PROG_VECSPLIT
 	bool "Dawn program vector splitter"
 	default n
