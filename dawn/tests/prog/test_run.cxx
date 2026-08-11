@@ -91,6 +91,9 @@ extern "C"
 #ifdef CONFIG_DAWN_PROG_BITPACK
   int test_prog_bitpack();
 #endif
+#ifdef CONFIG_DAWN_PROG_SATURATE
+  int test_prog_saturate();
+#endif
 #ifdef CONFIG_DAWN_PROG_BITMERGE
   int test_prog_bitmerge();
 #endif
@@ -194,6 +197,9 @@ static int (*test_array[])(void) = {
 #endif
 #ifdef CONFIG_DAWN_PROG_BITPACK
   test_prog_bitpack,
+#endif
+#ifdef CONFIG_DAWN_PROG_SATURATE
+  test_prog_saturate,
 #endif
 #ifdef CONFIG_DAWN_PROG_BITMERGE
   test_prog_bitmerge,

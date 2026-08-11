@@ -283,6 +283,17 @@ config DAWN_PROG_BITMERGE
 		One batched input may drive the output; the rest are read once
 		per batch.
 
+config DAWN_PROG_SATURATE
+	bool "Dawn program saturating limiter support"
+	default n
+	select DAWN_PROG_PROCESS
+	depends on DAWN_IO_VIRT && DAWN_IO_NOTIFY
+	depends on DAWN_DTYPE_NUMERIC
+	---help---
+		Enable support for a notify-driven saturating limiter program,
+		which clamps input samples into a configured min/max range.
+		64-bit integer and ub16 types are not supported.
+
 config DAWN_PROG_VECSPLIT
 	bool "Dawn program vector splitter"
 	default n

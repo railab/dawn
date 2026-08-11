@@ -291,6 +291,9 @@ void CIOCapabilities::buildProgBitmap()
 #ifdef CONFIG_DAWN_PROG_BITMERGE
   setBitmapBit(progBitmap, CProgCommon::PROG_CLASS_BITMERGE);
 #endif
+#ifdef CONFIG_DAWN_PROG_SATURATE
+  setBitmapBit(progBitmap, CProgCommon::PROG_CLASS_SATURATE);
+#endif
 }
 
 void CIOCapabilities::buildProtoBitmap()
