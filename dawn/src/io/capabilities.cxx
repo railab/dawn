@@ -288,6 +288,9 @@ void CIOCapabilities::buildProgBitmap()
 #ifdef CONFIG_DAWN_PROG_CONFIGWRITER
   setBitmapBit(progBitmap, CProgCommon::PROG_CLASS_CONFIGWRITER);
 #endif
+#ifdef CONFIG_DAWN_PROG_SATURATE
+  setBitmapBit(progBitmap, CProgCommon::PROG_CLASS_SATURATE);
+#endif
 }
 
 void CIOCapabilities::buildProtoBitmap()

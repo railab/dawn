@@ -102,6 +102,10 @@ if(CONFIG_DAWN_PROG_BITPACK)
   list(APPEND SRCS test_bitpack.cxx)
 endif()
 
+if(CONFIG_DAWN_PROG_SATURATE)
+  list(APPEND SRCS test_saturate.cxx)
+endif()
+
 if(CONFIG_DAWN_PROG_VECPACK)
   list(APPEND SRCS test_vecpack.cxx)
 endif()
