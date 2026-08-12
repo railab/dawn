@@ -311,6 +311,24 @@ int CProtoNimblePrphImds::createIMDS()
               break;
             }
 
+          case PRPH_IMDS_TYPE_CO2:
+            {
+              // CO2 Concentration is uint16 in ppm (BT SIG 0x2B8C)
+
+              chr->access_cb = CProtoNimblePrphImds::callback<uint16_t>;
+              char_uuid = IProtoNimblePrphCb::UUID_CO2;
+              break;
+            }
+
+          case PRPH_IMDS_TYPE_TVOC:
+            {
+              // VOC Concentration is uint16 in ppb (BT SIG 0x2BE7)
+
+              chr->access_cb = CProtoNimblePrphImds::callback<uint16_t>;
+              char_uuid = IProtoNimblePrphCb::UUID_TVOC;
+              break;
+            }
+
           default:
             {
               DAWNERR("unknown IMDS type %d\n", ioTypeMap[objid]);

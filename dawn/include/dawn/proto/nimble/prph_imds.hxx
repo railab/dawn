@@ -54,6 +54,8 @@ public:
     PRPH_IMDS_TYPE_GAS,   ///< Industrial gas resistance sensor (non-standard
                           ///< UUID).
     PRPH_IMDS_TYPE_LIGHT, ///< Industrial illuminance / light sensor.
+    PRPH_IMDS_TYPE_CO2,   ///< Industrial CO2 concentration sensor.
+    PRPH_IMDS_TYPE_TVOC,  ///< Industrial VOC concentration sensor.
   };
 
   struct

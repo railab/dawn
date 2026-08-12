@@ -111,6 +111,8 @@ void CIOCapabilities::buildIoBitmap()
   setBitmapBit(ioBitmap, CIOCommon::IO_CLASS_SENSOR_IR);
   setBitmapBit(ioBitmap, CIOCommon::IO_CLASS_SENSOR_UV);
   setBitmapBit(ioBitmap, CIOCommon::IO_CLASS_SENSOR_GAS);
+  setBitmapBit(ioBitmap, CIOCommon::IO_CLASS_SENSOR_CO2);
+  setBitmapBit(ioBitmap, CIOCommon::IO_CLASS_SENSOR_TVOC);
   setBitmapBit(ioBitmap, CIOCommon::IO_CLASS_SENSOR_GNSS);
   setBitmapBit(ioBitmap, CIOCommon::IO_CLASS_SENSOR_GNSS_TIME);
   setBitmapBit(ioBitmap, CIOCommon::IO_CLASS_SENSOR_GNSS_INFO);
@@ -130,6 +132,8 @@ void CIOCapabilities::buildIoBitmap()
   setBitmapBit(ioBitmap, CIOCommon::IO_CLASS_SENSOR_PRODUCER_IR);
   setBitmapBit(ioBitmap, CIOCommon::IO_CLASS_SENSOR_PRODUCER_UV);
   setBitmapBit(ioBitmap, CIOCommon::IO_CLASS_SENSOR_PRODUCER_GAS);
+  setBitmapBit(ioBitmap, CIOCommon::IO_CLASS_SENSOR_PRODUCER_CO2);
+  setBitmapBit(ioBitmap, CIOCommon::IO_CLASS_SENSOR_PRODUCER_TVOC);
 #endif
 #ifdef CONFIG_DAWN_IO_SYSINFO
   setBitmapBit(ioBitmap, CIOCommon::IO_CLASS_SYSTEM_UPTIME);

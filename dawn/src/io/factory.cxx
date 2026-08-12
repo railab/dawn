@@ -197,6 +197,8 @@ CIOCommon *CIOFactory::create(CDescObject &desc)
       case CIOCommon::IO_CLASS_SENSOR_IR:
       case CIOCommon::IO_CLASS_SENSOR_UV:
       case CIOCommon::IO_CLASS_SENSOR_GAS:
+      case CIOCommon::IO_CLASS_SENSOR_CO2:
+      case CIOCommon::IO_CLASS_SENSOR_TVOC:
         return new CIOSensor(desc);
       case CIOCommon::IO_CLASS_SENSOR_GNSS:
       case CIOCommon::IO_CLASS_SENSOR_GNSS_TIME:
@@ -219,6 +221,8 @@ CIOCommon *CIOFactory::create(CDescObject &desc)
       case CIOCommon::IO_CLASS_SENSOR_PRODUCER_IR:
       case CIOCommon::IO_CLASS_SENSOR_PRODUCER_UV:
       case CIOCommon::IO_CLASS_SENSOR_PRODUCER_GAS:
+      case CIOCommon::IO_CLASS_SENSOR_PRODUCER_CO2:
+      case CIOCommon::IO_CLASS_SENSOR_PRODUCER_TVOC:
         return new CIOSensorProducer(desc);
 #endif
 

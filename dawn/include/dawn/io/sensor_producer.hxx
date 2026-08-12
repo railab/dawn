@@ -77,6 +77,10 @@ public:
           return "sprod_uv";
         case IO_CLASS_SENSOR_PRODUCER_GAS:
           return "sprod_gas";
+        case IO_CLASS_SENSOR_PRODUCER_CO2:
+          return "sprod_co2";
+        case IO_CLASS_SENSOR_PRODUCER_TVOC:
+          return "sprod_tvoc";
         default:
           return "sprod";
       }
@@ -197,6 +201,16 @@ public:
   constexpr static SObjectId::ObjectId objectIdGas(uint8_t dtype, bool ts, uint16_t inst)
   {
     return CIOSensorProducer::objectId(CIOCommon::IO_CLASS_SENSOR_PRODUCER_GAS, dtype, ts, inst);
+  }
+
+  constexpr static SObjectId::ObjectId objectIdCo2(uint8_t dtype, bool ts, uint16_t inst)
+  {
+    return CIOSensorProducer::objectId(CIOCommon::IO_CLASS_SENSOR_PRODUCER_CO2, dtype, ts, inst);
+  }
+
+  constexpr static SObjectId::ObjectId objectIdTvoc(uint8_t dtype, bool ts, uint16_t inst)
+  {
+    return CIOSensorProducer::objectId(CIOCommon::IO_CLASS_SENSOR_PRODUCER_TVOC, dtype, ts, inst);
   }
 
   constexpr static SObjectCfg::ObjectCfgId cfgIdQueueSize(uint16_t cls)

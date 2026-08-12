@@ -54,6 +54,8 @@ Dawn Type           Default Dawn Unit
 ``ir``              ``float`` or ``b16``, lux
 ``uv``              ``float`` or ``b16``, UV index
 ``gas``             ``float`` or ``b16``, kilohms
+``co2``             ``float`` or ``b16``, ppm
+``tvoc``            ``float`` or ``b16``, ppm
 ``gnss``            ``float``, 5-vector: latitude, longitude (degrees), altitude (metres), ground speed (m/s), course (degrees)
 ``gnss_time``       ``uint64``, UTC time in seconds since the Unix epoch
 ``gnss_info``       ``float``, 5-vector: horizontal/vertical accuracy (metres), HDOP, PDOP, VDOP
@@ -107,6 +109,8 @@ underlying NuttX sensor structures:
    "ir", "sensor_ir", "struct sensor_ir"
    "uv", "sensor_uv", "struct sensor_uv"
    "gas", "sensor_gas", "struct sensor_gas"
+   "co2", "sensor_co2", "struct sensor_co2"
+   "tvoc", "sensor_tvoc", "struct sensor_tvoc"
    "gnss", "sensor_gnss", "struct sensor_gnss"
    "gnss_time", "sensor_gnss", "struct sensor_gnss"
    "gnss_info", "sensor_gnss", "struct sensor_gnss"
