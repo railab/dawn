@@ -102,6 +102,8 @@ Relative Humidity   float, percent (%), scale = 1          sint16, percent (%), 
 PM1P0               float, SI units (ug/m^3), scale = 1    not yet supported in Dawn
 PH                  float, pH unit, scale = 1              not yet supported in Dawn
 Gas resistance      float, kilohm, scale = 1               sint16, kilohm, scale = 1 (non-standard UUID 0x272A)
+CO2                 float, ppm, scale = 1                  uint16, ppm, scale = 1
+TVOC                float, ppm, scale = 1                  uint16, ppb, scale = 1000
 Force               float, N unit, scale = 1               not yet supported in Dawn
 Hall                int32_t, hall state                    not yet supported in Dawn
 IR                  float, lux unit, scale = 1             uint24, lux, scale = 0.01

@@ -52,6 +52,8 @@ Supported keys:
 - ``uv_index``
 - ``gas_resistance`` (uses non-standard 0x272A UUID; see :ref:`nimble_units`)
 - ``light``
+- ``co2`` (CO2 Concentration, 0x2B8C)
+- ``tvoc`` (VOC Concentration, 0x2BE7)
 
 Each measurement may be either a direct IO reference or a mapping with
 ``data``/``io`` and ``metadata``. Supported metadata:

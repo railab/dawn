@@ -104,6 +104,16 @@ public:
        sizeof(struct sensor_gas),
        1,
        offsetof(struct sensor_gas, gas_resistance)},
+      {CIOCommon::IO_CLASS_SENSOR_CO2,
+       "co2",
+       sizeof(struct sensor_co2),
+       1,
+       offsetof(struct sensor_co2, co2)},
+      {CIOCommon::IO_CLASS_SENSOR_TVOC,
+       "tvoc",
+       sizeof(struct sensor_tvoc),
+       1,
+       offsetof(struct sensor_tvoc, tvoc)},
       // GNSS variants (handled by CIOSensorGnss). All read the same
       // /dev/uorb/sensor_gnss device; the payload offset is unused because
       // CIOSensorGnss::getDataImpl assembles the specific fields itself. Only
@@ -143,13 +153,13 @@ public:
 
   static int16_t producerToSensorClass(int16_t cls)
   {
-    static_assert(CIOCommon::IO_CLASS_SENSOR_PRODUCER_GAS -
+    static_assert(CIOCommon::IO_CLASS_SENSOR_PRODUCER_TVOC -
                       CIOCommon::IO_CLASS_SENSOR_PRODUCER_ACCELEROMETER ==
-                    CIOCommon::IO_CLASS_SENSOR_GAS - CIOCommon::IO_CLASS_SENSOR_ACCELEROMETER,
+                    CIOCommon::IO_CLASS_SENSOR_TVOC - CIOCommon::IO_CLASS_SENSOR_ACCELEROMETER,
                   "Sensor and sensor producer class ranges must stay aligned");
 
     if (cls < CIOCommon::IO_CLASS_SENSOR_PRODUCER_ACCELEROMETER ||
-        cls > CIOCommon::IO_CLASS_SENSOR_PRODUCER_GAS)
+        cls > CIOCommon::IO_CLASS_SENSOR_PRODUCER_TVOC)
       {
         return CIOCommon::IO_CLASS_ANY;
       }
