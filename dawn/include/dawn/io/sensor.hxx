@@ -86,6 +86,10 @@ public:
           return "uv";
         case IO_CLASS_SENSOR_GAS:
           return "gas";
+        case IO_CLASS_SENSOR_CO2:
+          return "co2";
+        case IO_CLASS_SENSOR_TVOC:
+          return "tvoc";
         case IO_CLASS_SENSOR_GNSS:
           return "gnss";
         case IO_CLASS_SENSOR_GNSS_TIME:
@@ -210,6 +214,16 @@ public:
   constexpr static SObjectId::ObjectId objectIdGas(uint8_t dtype, bool ts, uint16_t inst)
   {
     return CIOSensor::objectId(CIOCommon::IO_CLASS_SENSOR_GAS, dtype, ts, inst);
+  }
+
+  constexpr static SObjectId::ObjectId objectIdCo2(uint8_t dtype, bool ts, uint16_t inst)
+  {
+    return CIOSensor::objectId(CIOCommon::IO_CLASS_SENSOR_CO2, dtype, ts, inst);
+  }
+
+  constexpr static SObjectId::ObjectId objectIdTvoc(uint8_t dtype, bool ts, uint16_t inst)
+  {
+    return CIOSensor::objectId(CIOCommon::IO_CLASS_SENSOR_TVOC, dtype, ts, inst);
   }
 
   constexpr static SObjectId::ObjectId objectIdGnss(uint8_t dtype, bool ts, uint16_t inst)

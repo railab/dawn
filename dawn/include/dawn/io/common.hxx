@@ -123,30 +123,34 @@ public:
     IO_CLASS_SENSOR_IR = 20,            ///< Infrared sensor
     IO_CLASS_SENSOR_UV = 21,            ///< Ultraviolet sensor
     IO_CLASS_SENSOR_GAS = 22,           ///< Gas sensor
+    IO_CLASS_SENSOR_CO2 = 23,           ///< CO2 concentration sensor
+    IO_CLASS_SENSOR_TVOC = 24,          ///< TVOC concentration sensor
 
     // Sensor producers
 
-    IO_CLASS_SENSOR_PRODUCER_ACCELEROMETER = 23, ///< Accelerometer publisher
-    IO_CLASS_SENSOR_PRODUCER_MAGNETICFIELD = 24, ///< Magnetic field publisher
-    IO_CLASS_SENSOR_PRODUCER_GYROSCOPE = 25,     ///< Gyroscope publisher
-    IO_CLASS_SENSOR_PRODUCER_LIGHT = 26,         ///< Light publisher
-    IO_CLASS_SENSOR_PRODUCER_BAROMETER = 27,     ///< Barometer publisher
-    IO_CLASS_SENSOR_PRODUCER_PROXIMITY = 28,     ///< Proximity publisher
-    IO_CLASS_SENSOR_PRODUCER_HUMIDITY = 29,      ///< Humidity publisher
-    IO_CLASS_SENSOR_PRODUCER_TEMPERATURE = 30,   ///< Temperature publisher
-    IO_CLASS_SENSOR_PRODUCER_ATEMPERATURE = 31,  ///< Ambient temperature publisher
-    IO_CLASS_SENSOR_PRODUCER_RGB = 32,           ///< RGB color publisher
-    IO_CLASS_SENSOR_PRODUCER_IR = 33,            ///< Infrared publisher
-    IO_CLASS_SENSOR_PRODUCER_UV = 34,            ///< Ultraviolet publisher
-    IO_CLASS_SENSOR_PRODUCER_GAS = 35,           ///< Gas publisher
+    IO_CLASS_SENSOR_PRODUCER_ACCELEROMETER = 25, ///< Accelerometer publisher
+    IO_CLASS_SENSOR_PRODUCER_MAGNETICFIELD = 26, ///< Magnetic field publisher
+    IO_CLASS_SENSOR_PRODUCER_GYROSCOPE = 27,     ///< Gyroscope publisher
+    IO_CLASS_SENSOR_PRODUCER_LIGHT = 28,         ///< Light publisher
+    IO_CLASS_SENSOR_PRODUCER_BAROMETER = 29,     ///< Barometer publisher
+    IO_CLASS_SENSOR_PRODUCER_PROXIMITY = 30,     ///< Proximity publisher
+    IO_CLASS_SENSOR_PRODUCER_HUMIDITY = 31,      ///< Humidity publisher
+    IO_CLASS_SENSOR_PRODUCER_TEMPERATURE = 32,   ///< Temperature publisher
+    IO_CLASS_SENSOR_PRODUCER_ATEMPERATURE = 33,  ///< Ambient temperature publisher
+    IO_CLASS_SENSOR_PRODUCER_RGB = 34,           ///< RGB color publisher
+    IO_CLASS_SENSOR_PRODUCER_IR = 35,            ///< Infrared publisher
+    IO_CLASS_SENSOR_PRODUCER_UV = 36,            ///< Ultraviolet publisher
+    IO_CLASS_SENSOR_PRODUCER_GAS = 37,           ///< Gas publisher
+    IO_CLASS_SENSOR_PRODUCER_CO2 = 38,           ///< CO2 concentration publisher
+    IO_CLASS_SENSOR_PRODUCER_TVOC = 39,          ///< TVOC concentration publisher
 
     // GNSS sensor (uORB sensor_gnss). Read-only, so it has no producer
     // counterpart and lives outside the aligned sensor/producer ranges above.
 
-    IO_CLASS_SENSOR_GNSS = 36,            ///< GNSS position+velocity (lat/lon/alt/speed/course)
-    IO_CLASS_SENSOR_GNSS_TIME = 37,       ///< GNSS UTC time (seconds since epoch)
-    IO_CLASS_SENSOR_GNSS_INFO = 38,       ///< GNSS accuracy + DOP (eph/epv/hdop/pdop/vdop)
-    IO_CLASS_SENSOR_GNSS_SATELLITES = 39, ///< GNSS satellites used in fix
+    IO_CLASS_SENSOR_GNSS = 40,            ///< GNSS position+velocity (lat/lon/alt/speed/course)
+    IO_CLASS_SENSOR_GNSS_TIME = 41,       ///< GNSS UTC time (seconds since epoch)
+    IO_CLASS_SENSOR_GNSS_INFO = 42,       ///< GNSS accuracy + DOP (eph/epv/hdop/pdop/vdop)
+    IO_CLASS_SENSOR_GNSS_SATELLITES = 43, ///< GNSS satellites used in fix
 
     // there is 59 sensor types in Nuttx now, most likely it grows later
     // we still have many free slots, but in the future, it there are no free IO slots
@@ -154,16 +158,16 @@ public:
 
     // System information
 
-    IO_CLASS_SYSTEM_UPTIME = 40,     ///< System uptime
-    IO_CLASS_SYSTEM_CPULOAD = 41,    ///< CPU load
-    IO_CLASS_SYSTEM_RESET = 42,      ///< System reset control
-    IO_CLASS_SYSTEM_RESETCAUSE = 43, ///< Reset cause
-    IO_CLASS_SYSTEM_POWEROFF = 44,   ///< Power off control
-    IO_CLASS_SYSTEM_HOSTNAME = 45,   ///< System hostname
-    IO_CLASS_SYSTEM_UUID = 46,       ///< UUID
-    IO_CLASS_SYSTEM_SYSTEMTIME = 47, ///< System time
+    IO_CLASS_SYSTEM_UPTIME = 44,     ///< System uptime
+    IO_CLASS_SYSTEM_CPULOAD = 45,    ///< CPU load
+    IO_CLASS_SYSTEM_RESET = 46,      ///< System reset control
+    IO_CLASS_SYSTEM_RESETCAUSE = 47, ///< Reset cause
+    IO_CLASS_SYSTEM_POWEROFF = 48,   ///< Power off control
+    IO_CLASS_SYSTEM_HOSTNAME = 49,   ///< System hostname
+    IO_CLASS_SYSTEM_UUID = 50,       ///< UUID
+    IO_CLASS_SYSTEM_SYSTEMTIME = 51, ///< System time
 
-    // Slots 48-59 reserved for future system classes (serial number,
+    // Slots 52-59 reserved for future system classes (serial number,
     // firmware version, firmware update, etc.).
 
     // GPIO

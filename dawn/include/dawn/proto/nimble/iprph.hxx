@@ -346,6 +346,30 @@ public:
   constexpr static uint16_t UUID16_RESISTANCE = 0x272a;
 
   /**
+   * @brief CO2 Concentration Characteristic UUID (0x2B8C).
+   *
+   * CO2 concentration in 1 ppm units (uint16).
+   */
+
+  constexpr static uint32_t UUID_CO2[4] = {0x2b8c0010, 0x7474754e, 0x694e2058, 0x454c426d};
+
+  /** @brief 16-bit UUID for CO2 Concentration characteristic. */
+
+  constexpr static uint16_t UUID16_CO2 = 0x2b8c;
+
+  /**
+   * @brief VOC Concentration Characteristic UUID (0x2BE7).
+   *
+   * VOC concentration in 1 ppb units (uint16).
+   */
+
+  constexpr static uint32_t UUID_TVOC[4] = {0x2be70010, 0x7474754e, 0x694e2058, 0x454c426d};
+
+  /** @brief 16-bit UUID for VOC Concentration characteristic. */
+
+  constexpr static uint16_t UUID16_TVOC = 0x2be7;
+
+  /**
    * @brief Scaling factors for GATT characteristics.
    *
    * Maps characteristic UUIDs to their scaling factors.
@@ -363,6 +387,10 @@ public:
     {UUID16_UVIDX, 1.0f},         /** UV Index: 1 unit (no scaling) */
 
     {UUID16_ILLUMINANCE, 100.0f}, /** Illuminance: 0.01 lux units */
+
+    {UUID16_CO2, 1.0f},           /** CO2 concentration: 1 ppm units (no scaling) */
+
+    {UUID16_TVOC, 1000.0f},       /** VOC concentration: IO ppm -> 1 ppb units */
 
   };
 

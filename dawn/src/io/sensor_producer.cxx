@@ -36,6 +36,8 @@ int CIOSensorProducer::configureDesc(const CDescObject &desc)
           case CIOCommon::IO_CLASS_SENSOR_PRODUCER_IR:
           case CIOCommon::IO_CLASS_SENSOR_PRODUCER_UV:
           case CIOCommon::IO_CLASS_SENSOR_PRODUCER_GAS:
+          case CIOCommon::IO_CLASS_SENSOR_PRODUCER_CO2:
+          case CIOCommon::IO_CLASS_SENSOR_PRODUCER_TVOC:
             {
               if (item->cfgid.s.cls != getCls())
                 {
