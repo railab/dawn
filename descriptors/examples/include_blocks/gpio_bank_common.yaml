@@ -1,0 +1,74 @@
+metadata:
+  title: GPIO Bank Common Include Block
+  version: "1.0"
+  description: >
+    Reusable four-in / four-out GPIO bank mapped onto /dev/gpio0../dev/gpio7,
+    as exposed by the fake IO expander on simulator targets. Intended for
+    inclusion from demo descriptors that bind these pins to a protocol.
+
+outputs:
+  - id: gpi1
+    ref: gpi1
+  - id: gpi2
+    ref: gpi2
+  - id: gpi3
+    ref: gpi3
+  - id: gpi4
+    ref: gpi4
+  - id: gpo1
+    ref: gpo1
+  - id: gpo2
+    ref: gpo2
+  - id: gpo3
+    ref: gpo3
+  - id: gpo4
+    ref: gpo4
+
+ios:
+  - id: gpi1
+    type: gpi
+    dtype: bool
+    config:
+      device: 0
+
+  - id: gpi2
+    type: gpi
+    dtype: bool
+    config:
+      device: 1
+
+  - id: gpi3
+    type: gpi
+    dtype: bool
+    config:
+      device: 2
+
+  - id: gpi4
+    type: gpi
+    dtype: bool
+    config:
+      device: 3
+
+  - id: gpo1
+    type: gpo
+    dtype: bool
+    config:
+      device: 4
+
+  - id: gpo2
+    type: gpo
+    dtype: bool
+    config:
+      device: 5
+
+  - id: gpo3
+    type: gpo
+    dtype: bool
+    config:
+      device: 6
+
+  - id: gpo4
+    type: gpo
+    dtype: bool
+    config:
+      device: 7

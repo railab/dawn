@@ -32,54 +32,6 @@ ios:
   type: sysinfo
   dtype: float
   variant: cpuload
-- &id008
-  id: gpi1
-  type: gpi
-  dtype: bool
-  config:
-    device: 0
-- &id009
-  id: gpi2
-  type: gpi
-  dtype: bool
-  config:
-    device: 1
-- &id010
-  id: gpi3
-  type: gpi
-  dtype: bool
-  config:
-    device: 2
-- &id011
-  id: gpi4
-  type: gpi
-  dtype: bool
-  config:
-    device: 3
-- &id012
-  id: gpo1
-  type: gpo
-  dtype: bool
-  config:
-    device: 4
-- &id013
-  id: gpo2
-  type: gpo
-  dtype: bool
-  config:
-    device: 5
-- &id014
-  id: gpo3
-  type: gpo
-  dtype: bool
-  config:
-    device: 6
-- &id015
-  id: gpo4
-  type: gpo
-  dtype: bool
-  config:
-    device: 7
 - &id019
   id: reset1
   type: boardctl
@@ -104,6 +56,9 @@ ios:
   dtype: uint32
   config:
     device: 0
+includes:
+- id: gpio
+  path: include_blocks/gpio_bank_common.yaml
 protocols:
 - id: shell1
   type: shell
@@ -111,14 +66,14 @@ protocols:
   - *id001
   - *id006
   - *id007
-  - *id008
-  - *id009
-  - *id010
-  - *id011
-  - *id012
-  - *id013
-  - *id014
-  - *id015
+  - "@gpio.gpi1"
+  - "@gpio.gpi2"
+  - "@gpio.gpi3"
+  - "@gpio.gpi4"
+  - "@gpio.gpo1"
+  - "@gpio.gpo2"
+  - "@gpio.gpo3"
+  - "@gpio.gpo4"
   - *id019
   - *id020
   - *id024

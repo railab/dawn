@@ -65,54 +65,9 @@ ios:
   dtype: float
   config:
     init_value: 6.6
-- &aios_gpi1
-  id: gpi1
-  type: gpi
-  dtype: bool
-  config:
-    device: 0
-- &aios_gpi2
-  id: gpi2
-  type: gpi
-  dtype: bool
-  config:
-    device: 1
-- &aios_gpi3
-  id: gpi3
-  type: gpi
-  dtype: bool
-  config:
-    device: 2
-- &aios_gpi4
-  id: gpi4
-  type: gpi
-  dtype: bool
-  config:
-    device: 3
-- &aios_gpo1
-  id: gpo1
-  type: gpo
-  dtype: bool
-  config:
-    device: 4
-- &aios_gpo2
-  id: gpo2
-  type: gpo
-  dtype: bool
-  config:
-    device: 5
-- &aios_gpo3
-  id: gpo3
-  type: gpo
-  dtype: bool
-  config:
-    device: 6
-- &aios_gpo4
-  id: gpo4
-  type: gpo
-  dtype: bool
-  config:
-    device: 7
+includes:
+- id: gpio
+  path: include_blocks/gpio_bank_common.yaml
 protocols:
 - id: nimble1
   type: nimble
@@ -126,15 +81,15 @@ protocols:
       aios:
         groups:
         - digital_inputs:
-          - *aios_gpi1
-          - *aios_gpi2
-          - *aios_gpi3
-          - *aios_gpi4
+          - "@gpio.gpi1"
+          - "@gpio.gpi2"
+          - "@gpio.gpi3"
+          - "@gpio.gpi4"
           digital_outputs:
-          - *aios_gpo1
-          - *aios_gpo2
-          - *aios_gpo3
-          - *aios_gpo4
+          - "@gpio.gpo1"
+          - "@gpio.gpo2"
+          - "@gpio.gpo3"
+          - "@gpio.gpo4"
         - analog_inputs:
           - *analog_input_io
       ess:
