@@ -5,19 +5,30 @@
 ############################################################################
 """NTFC integration tests for dynamic descriptor capabilities blob IO."""
 
+import copy
 import struct
 
 import pytest
-from _descriptor_common import io_objid
+from _descriptor_common import io_objid, load_descriptor_spec
 from _ntfc_common import start_dawn
 from _proto_client_common import connect_client, parse_caps_blob
+from dawnpy.descriptor.reports.graph import build_descriptor_graph
+from dawnpy.descriptor.validation.compat import (
+    check_compatibility,
+    format_report,
+)
+from dawnpy.objectid import ObjectIdDecoder
 from dawnpy_serial.serial import DawnSerialProtocol
 
 SERIAL_PORT = "/tmp/ttyNX0"
 SERIAL_BAUD = 115200
 DESC_PATH = "descriptors/examples/dynamic_desc_slot0.yaml"
+SLOT1_DESC_PATH = "descriptors/examples/dynamic_desc_slot1.yaml"
 
 CAP_IO_ID = io_objid(DESC_PATH, "capabilities_io")
+
+# Capabilities blob header is 8 bytes; the IO class bitmap follows it.
+CAPS_HEADER_SIZE = 8
 
 
 def _new_serial_client():
@@ -29,6 +40,30 @@ def _read_caps_blob(client: DawnSerialProtocol, objid: int) -> bytes:
     if payload is None:
         raise RuntimeError(f"Failed to read capabilities IO 0x{objid:08X}")
     return payload
+
+
+def _descriptor_objids(rel_path: str) -> dict:
+    """Return {object id: ObjectID} for every object in a descriptor."""
+    spec = copy.deepcopy(load_descriptor_spec(rel_path))
+    graph = build_descriptor_graph(spec)
+    return {node.id: node.objid for node in graph.nodes if node.objid is not None}
+
+
+def _disable_io_class(blob: bytes, cls_id: int) -> bytes:
+    """Return a copy of ``blob`` with one IO class bit cleared."""
+    patched = bytearray(blob)
+    patched[CAPS_HEADER_SIZE + (cls_id // 8)] &= ~(1 << (cls_id % 8)) & 0xFF
+    return bytes(patched)
+
+
+def _fetch_caps_blob() -> bytes:
+    """Start Dawn and read the capabilities blob off the target."""
+    start_dawn(settle_s=0.3)
+    client = connect_client(_new_serial_client, timeout_s=8.0)
+    try:
+        return _read_caps_blob(client, CAP_IO_ID)
+    finally:
+        client.disconnect()
 
 
 class TestDynamicDescriptorCapabilities:
@@ -93,3 +128,59 @@ class TestDynamicDescriptorCapabilities:
             assert any(byte != 0 for byte in proto_payload)
         finally:
             client.disconnect()
+
+
+class TestDescriptorCompatibility:
+    """Check switchable descriptors against the target's advertised caps."""
+
+    pytestmark = [
+        pytest.mark.cmd_check("dawn_main"),
+        pytest.mark.dep_config("CONFIG_DAWN_PROTO_SERIAL"),
+        pytest.mark.dep_config("CONFIG_DAWN_IO_CAPABILITIES"),
+    ]
+
+    def test_slot1_descriptor_is_compatible(self):
+        """The descriptor this target switches to must be loadable."""
+        blob = _fetch_caps_blob()
+
+        objids = _descriptor_objids(SLOT1_DESC_PATH)
+        assert objids, "slot-1 descriptor produced no decodable objects"
+
+        result = check_compatibility(objids, blob, slot=1)
+
+        assert result.compatible, "\n".join(format_report(result))
+
+    def test_disabled_io_class_is_reported(self):
+        """Clearing a class the descriptor needs must block the upload."""
+        blob = _fetch_caps_blob()
+
+        objids = _descriptor_objids(SLOT1_DESC_PATH)
+        decoder = ObjectIdDecoder()
+        target = next(
+            (
+                (name, decoder.decode(objid))
+                for name, objid in sorted(objids.items())
+                if decoder.decode(objid).type_name == "IO"
+            ),
+            None,
+        )
+        assert target is not None, "no IO object in slot-1 descriptor"
+        name, decoded = target
+
+        result = check_compatibility(
+            objids, _disable_io_class(blob, decoded.cls), slot=1
+        )
+
+        assert not result.compatible
+        assert any(
+            issue.kind == "class" and issue.object_id == name for issue in result.issues
+        )
+
+    def test_slot_beyond_advertised_count_is_rejected(self):
+        """A slot index the target does not have must be rejected."""
+        blob = _fetch_caps_blob()
+
+        result = check_compatibility(_descriptor_objids(SLOT1_DESC_PATH), blob, slot=99)
+
+        assert not result.compatible
+        assert any(issue.kind == "slot" for issue in result.issues)
