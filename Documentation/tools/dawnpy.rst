@@ -71,6 +71,12 @@ Descriptor Management
 * ``desc-decode-caps``: Decodes a capabilities IO binary
   blob into human-readable sections (enabled classes, dtypes, flags, slot
   info).
+* ``desc-compat``: Checks a descriptor against a target's capabilities
+  IO blob and reports every object class or dtype the target was not
+  built with, plus slot index and slot size overflow. Exits non-zero when
+  the descriptor cannot be loaded. Use it before uploading a descriptor
+  to a running device, since a descriptor may be written long after the
+  firmware that has to run it.
 * ``desc-headers-check``: Validates runtime C++ header discovery and
   parsing (use ``--strict`` to also check ``cpp_helper`` / ``enum_prefix``
   references in handlers).
@@ -105,6 +111,16 @@ CLI usage examples::
     # Also accepts shell hexdump/xxd-like text files
     python -m dawnpy desc-decode-caps capabilities.bin \
       --hex-file capabilities_hexdump.txt
+
+    # Check a descriptor against a target's capabilities blob
+    python -m dawnpy desc-compat descriptor.yaml capabilities.bin
+
+    # Check against a target slot
+    python -m dawnpy desc-compat descriptor.yaml capabilities.bin --slot 1
+
+    # Capabilities blob as hex text, alternate descriptor slot key
+    python -m dawnpy desc-compat descriptor.yaml \
+      --hex-file capabilities.hex --descriptor descriptor1
 
     # Specify custom output path
     python -m dawnpy desc-gen descriptor.yaml -o output.cxx
