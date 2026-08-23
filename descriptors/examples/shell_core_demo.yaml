@@ -91,54 +91,6 @@ ios:
   config:
     device: 0
   subtype: gyro
-- &id013
-  id: gpi1
-  type: gpi
-  dtype: bool
-  config:
-    device: 0
-- &id014
-  id: gpi2
-  type: gpi
-  dtype: bool
-  config:
-    device: 1
-- &id015
-  id: gpi3
-  type: gpi
-  dtype: bool
-  config:
-    device: 2
-- &id016
-  id: gpi4
-  type: gpi
-  dtype: bool
-  config:
-    device: 3
-- &id017
-  id: gpo1
-  type: gpo
-  dtype: bool
-  config:
-    device: 4
-- &id018
-  id: gpo2
-  type: gpo
-  dtype: bool
-  config:
-    device: 5
-- &id019
-  id: gpo3
-  type: gpo
-  dtype: bool
-  config:
-    device: 6
-- &id020
-  id: gpo4
-  type: gpo
-  dtype: bool
-  config:
-    device: 7
 - &id035
   id: adc1
   type: adc_fetch
@@ -362,6 +314,9 @@ ios:
       - encoder_idx1
     allowed:
       - reset
+includes:
+- id: gpio
+  path: include_blocks/gpio_bank_common.yaml
 programs:
 - id: stats_min1
   type: statsmin
@@ -410,14 +365,14 @@ protocols:
   - *id001
   - *id005
   - *id008
-  - *id013
-  - *id014
-  - *id015
-  - *id016
-  - *id017
-  - *id018
-  - *id019
-  - *id020
+  - "@gpio.gpi1"
+  - "@gpio.gpi2"
+  - "@gpio.gpi3"
+  - "@gpio.gpi4"
+  - "@gpio.gpo1"
+  - "@gpio.gpo2"
+  - "@gpio.gpo3"
+  - "@gpio.gpo4"
   - *id035
   - *id038
   - *id039
