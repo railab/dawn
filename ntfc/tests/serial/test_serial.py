@@ -87,7 +87,14 @@ def _serial_binding_objids(rel_path):
     bindings = spec.get("bindings", [])
     out = []
     for binding in bindings:
-        io_id = binding.get("id")
+        # Anchored bindings expand to the IO mapping; bindings coming from
+        # an include block resolve to the plain object id.
+        if isinstance(binding, str):
+            io_id = binding
+        elif isinstance(binding, dict):
+            io_id = binding.get("id")
+        else:
+            continue
         if io_id is None:
             continue
         out.append(io_objid(rel_path, io_id))

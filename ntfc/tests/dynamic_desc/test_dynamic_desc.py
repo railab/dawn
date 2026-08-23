@@ -7,6 +7,7 @@
 
 import struct
 import subprocess
+import sys
 import tempfile
 import time
 from pathlib import Path
@@ -92,7 +93,9 @@ def _gen_descriptor_binary(yaml_rel_path: str) -> bytes:
     with tempfile.TemporaryDirectory(prefix="ntfc_descbin_") as tmp_dir:
         out_bin = Path(tmp_dir) / "descriptor.bin"
         cmd = [
-            "python",
+            # Same interpreter as the test run; a bare "python" picks up
+            # whichever one is first on PATH, which need not have dawnpy.
+            sys.executable,
             "-m",
             "dawnpy",
             "desc-bin",
