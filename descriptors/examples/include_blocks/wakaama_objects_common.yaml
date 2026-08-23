@@ -1,0 +1,135 @@
+metadata:
+  title: Wakaama LwM2M Common Objects Include Block
+  version: "1.0"
+  description: >
+    Reusable IO set backing the standard IPSO/OMA object mapping used by the
+    Wakaama LwM2M demos. Intended for inclusion from descriptors that supply
+    their own wakaama protocol config (endpoint, servers, device) and object
+    list.
+
+outputs:
+  - id: wakaama_temperature
+    ref: wakaama_temperature
+  - id: wakaama_humidity
+    ref: wakaama_humidity
+  - id: wakaama_generic_sensor
+    ref: wakaama_generic_sensor
+  - id: wakaama_digital_input
+    ref: wakaama_digital_input
+  - id: wakaama_digital_output
+    ref: wakaama_digital_output
+  - id: wakaama_analog_input
+    ref: wakaama_analog_input
+  - id: wakaama_analog_output
+    ref: wakaama_analog_output
+  - id: wakaama_switch
+    ref: wakaama_switch
+  - id: wakaama_dimmer
+    ref: wakaama_dimmer
+  - id: wakaama_counter
+    ref: wakaama_counter
+  - id: wakaama_blob
+    ref: wakaama_blob
+  - id: wakaama_firmware_package
+    ref: wakaama_firmware_package
+  - id: wakaama_firmware_state
+    ref: wakaama_firmware_state
+  - id: wakaama_firmware_result
+    ref: wakaama_firmware_result
+  - id: wakaama_firmware_update_trigger
+    ref: wakaama_firmware_update_trigger
+
+ios:
+  - id: wakaama_temperature
+    type: dummy
+    dtype: float
+    config:
+      init_value: 23.5
+
+  - id: wakaama_humidity
+    type: dummy
+    dtype: float
+    config:
+      init_value: 48.0
+
+  - id: wakaama_generic_sensor
+    type: dummy
+    dtype: float
+    config:
+      init_value: 12.25
+
+  - id: wakaama_digital_input
+    type: dummy
+    dtype: bool
+    config:
+      init_value: true
+
+  - id: wakaama_digital_output
+    type: dummy
+    dtype: bool
+    config:
+      init_value: false
+
+  - id: wakaama_analog_input
+    type: dummy
+    dtype: float
+    config:
+      init_value: 0.25
+
+  - id: wakaama_analog_output
+    type: dummy
+    dtype: float
+    config:
+      init_value: 0.75
+
+  - id: wakaama_switch
+    type: dummy
+    dtype: bool
+    config:
+      init_value: false
+
+  - id: wakaama_dimmer
+    type: dummy
+    dtype: uint8
+    config:
+      init_value: 33
+
+  - id: wakaama_counter
+    type: dummy
+    dtype: uint32
+    config:
+      init_value: 1234
+
+  - id: wakaama_blob
+    type: fileio
+    dtype: block
+    config:
+      path: "/tmp/dawn_wakaama_blob.bin"
+      perm: 2
+
+  - id: wakaama_firmware_package
+    type: fileio
+    dtype: block
+    config:
+      path: "/tmp/dawn_wakaama_firmware.bin"
+      perm: 2
+
+  - id: wakaama_firmware_state
+    type: dummy
+    dtype: uint8
+    config:
+      init_value: 0
+
+  - id: wakaama_firmware_result
+    type: dummy
+    dtype: uint8
+    config:
+      init_value: 0
+
+  - id: wakaama_firmware_update_trigger
+    type: trigger
+    config:
+      targets:
+        - wakaama_counter
+      allowed:
+        - reset
