@@ -14,7 +14,7 @@ config DAWN_SIM_OVERLAY
 config DAWN_SIM_TTY_ALIAS
 	bool "Alias /dev/ttyS1 to the sim host PTY (CONFIG_SIM_UART0_NAME)"
 	default n
-	select PSEUDOFS_SOFTLINKS
+	select FS_LINKS
 	---help---
 		Create a VFS symlink /dev/ttyS1 -> CONFIG_SIM_UART0_NAME at
 		bringup so descriptor YAML can hardcode the canonical NuttX
