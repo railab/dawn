@@ -560,6 +560,17 @@ Examples
   Required resources:
   ``/dev/uorb/sensor_humi0``, ``/dev/uorb/sensor_baro0``, ``ble``
 
+.. _descriptor-shell-nimble-env-thingy53:
+
+``descriptors/examples/shell_nimble_env_thingy53.yaml``
+  **Thingy:53 Shell and NimBLE Environmental Demo**
+
+  Provides shell access and NimBLE exposure for the Thingy:53 environmental
+  sensors with reset control.
+
+  Required resources:
+  ``/dev/uorb/sensor_humi0``, ``/dev/uorb/sensor_baro0``, ``ble``
+
 .. _descriptor-udp-basic:
 
 ``descriptors/examples/udp_basic.yaml``
