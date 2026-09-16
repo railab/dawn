@@ -19,7 +19,8 @@ Network-core support configuration for SoftDevice Controller HCI over RPMsg.
 shell
 -----
 
-Shell and NimBLE environmental example using ``shell_nimble_env_demo.yaml``.
+Shell and NimBLE environmental example using
+``shell_nimble_env_thingy53.yaml``.
 
 nimble_thingy53
 ---------------
