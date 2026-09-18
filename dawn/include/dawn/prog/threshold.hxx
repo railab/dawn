@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <cstdint>
 #include <cstring>
 #include <inttypes.h>
@@ -264,10 +265,18 @@ protected:
       }
   }
 
+  // Every sample of a batched source is evaluated, output is batched alike
+
+  bool isBatchAware() const override
+  {
+    return true;
+  }
+
   virtual bool validateOutputDtype(uint8_t inputDtype, uint8_t outputDtype) const = 0;
   virtual int emitOutput(CIOCommon *output,
                          uint8_t inputDtype,
                          size_t items,
+                         size_t batches,
                          io_ddata_t *ioData,
                          io_ddata_t *outputData) = 0;
 
@@ -318,13 +327,23 @@ private:
                    T lowT,
                    T highT)
   {
+    const size_t items = ioData->getItems();
+    const size_t batches = std::min(data->getBatch(), ioData->getBatch());
+    size_t b;
+    size_t i;
     int ret;
 
-    std::memcpy(ioData->getDataPtr(), data->getDataPtr(), ioData->getDataSize());
+    for (b = 0; b < batches; b++)
+      {
+        std::memcpy(ioData->getDataPtr(b), data->getDataPtr(b), ioData->getDataSize());
+        if (outputData->hasTimestamp() && data->hasTimestamp())
+          {
+            outputData->getTs(b) = data->getTs(b);
+          }
+      }
 
     const SObjectId::ObjectId outputId = output->getIdV();
     SState &st = state[outputId];
-    const size_t items = ioData->getItems();
 
     if (st.items != items || st.last.size() != items)
       {
@@ -332,17 +351,21 @@ private:
         st.last.assign(items, 0);
       }
 
-    for (size_t i = 0; i < items; i++)
-      {
-        const uint8_t prev = st.last[i];
-        const T x = ioData->get<T>(i);
-        const bool out = evaluate(x, lowT, highT, prev);
+    // Samples are evaluated in order so hysteresis carries across the batch
 
-        st.last[i] = out ? 1 : 0;
+    this->alerts.resize(items * batches);
+    for (b = 0; b < batches; b++)
+      {
+        for (i = 0; i < items; i++)
+          {
+            const bool out = evaluate(ioData->get<T>(i, b), lowT, highT, st.last[i]);
+
+            st.last[i] = out ? 1 : 0;
+            this->alerts[b * items + i] = st.last[i];
+          }
       }
 
-    this->alerts = st.last;
-    ret = emitOutput(output, data->getDtype(), items, ioData, outputData);
+    ret = emitOutput(output, data->getDtype(), items, batches, ioData, outputData);
     if (ret != OK)
       {
         DAWNERR("threshold: emit failed %d\n", ret);
@@ -424,15 +447,19 @@ protected:
   int emitOutput(CIOCommon *output,
                  uint8_t inputDtype,
                  size_t items,
+                 size_t batches,
                  io_ddata_t *ioData,
                  io_ddata_t *outputData) override
   {
     (void)inputDtype;
     (void)ioData;
 
-    for (size_t i = 0; i < items; i++)
+    for (size_t b = 0; b < batches; b++)
       {
-        outputData->get<uint8_t>(i) = this->alerts[i];
+        for (size_t i = 0; i < items; i++)
+          {
+            outputData->get<uint8_t>(i, b) = this->alerts[b * items + i];
+          }
       }
 
     return output->setData(*outputData);
@@ -506,6 +533,7 @@ protected:
   int emitOutput(CIOCommon *output,
                  uint8_t inputDtype,
                  size_t items,
+                 size_t batches,
                  io_ddata_t *ioData,
                  io_ddata_t *outputData) override
   {
@@ -514,70 +542,70 @@ protected:
 #ifdef CONFIG_DAWN_DTYPE_INT8
         case SObjectId::DTYPE_INT8:
           {
-            return emitOutputTyped<int8_t>(output, items, ioData, outputData);
+            return emitOutputTyped<int8_t>(output, items, batches, ioData, outputData);
           }
 #endif
 
 #ifdef CONFIG_DAWN_DTYPE_UINT8
         case SObjectId::DTYPE_UINT8:
           {
-            return emitOutputTyped<uint8_t>(output, items, ioData, outputData);
+            return emitOutputTyped<uint8_t>(output, items, batches, ioData, outputData);
           }
 #endif
 
 #ifdef CONFIG_DAWN_DTYPE_INT16
         case SObjectId::DTYPE_INT16:
           {
-            return emitOutputTyped<int16_t>(output, items, ioData, outputData);
+            return emitOutputTyped<int16_t>(output, items, batches, ioData, outputData);
           }
 #endif
 
 #ifdef CONFIG_DAWN_DTYPE_UINT16
         case SObjectId::DTYPE_UINT16:
           {
-            return emitOutputTyped<uint16_t>(output, items, ioData, outputData);
+            return emitOutputTyped<uint16_t>(output, items, batches, ioData, outputData);
           }
 #endif
 
 #ifdef CONFIG_DAWN_DTYPE_INT32
         case SObjectId::DTYPE_INT32:
           {
-            return emitOutputTyped<int32_t>(output, items, ioData, outputData);
+            return emitOutputTyped<int32_t>(output, items, batches, ioData, outputData);
           }
 #endif
 
 #ifdef CONFIG_DAWN_DTYPE_UINT32
         case SObjectId::DTYPE_UINT32:
           {
-            return emitOutputTyped<uint32_t>(output, items, ioData, outputData);
+            return emitOutputTyped<uint32_t>(output, items, batches, ioData, outputData);
           }
 #endif
 
 #ifdef CONFIG_DAWN_DTYPE_INT64
         case SObjectId::DTYPE_INT64:
           {
-            return emitOutputTyped<int64_t>(output, items, ioData, outputData);
+            return emitOutputTyped<int64_t>(output, items, batches, ioData, outputData);
           }
 #endif
 
 #ifdef CONFIG_DAWN_DTYPE_UINT64
         case SObjectId::DTYPE_UINT64:
           {
-            return emitOutputTyped<uint64_t>(output, items, ioData, outputData);
+            return emitOutputTyped<uint64_t>(output, items, batches, ioData, outputData);
           }
 #endif
 
 #ifdef CONFIG_DAWN_DTYPE_FLOAT
         case SObjectId::DTYPE_FLOAT:
           {
-            return emitOutputTyped<float>(output, items, ioData, outputData);
+            return emitOutputTyped<float>(output, items, batches, ioData, outputData);
           }
 #endif
 
 #ifdef CONFIG_DAWN_DTYPE_DOUBLE
         case SObjectId::DTYPE_DOUBLE:
           {
-            return emitOutputTyped<double>(output, items, ioData, outputData);
+            return emitOutputTyped<double>(output, items, batches, ioData, outputData);
           }
 #endif
 
@@ -590,17 +618,19 @@ protected:
 
 private:
   template<typename T>
-  int emitOutputTyped(CIOCommon *output, size_t items, io_ddata_t *ioData, io_ddata_t *outputData)
+  int emitOutputTyped(CIOCommon *output,
+                      size_t items,
+                      size_t batches,
+                      io_ddata_t *ioData,
+                      io_ddata_t *outputData)
   {
-    for (size_t i = 0; i < items; i++)
+    for (size_t b = 0; b < batches; b++)
       {
-        if (this->alerts[i] != 0)
+        for (size_t i = 0; i < items; i++)
           {
-            outputData->get<T>(i) = ioData->get<T>(i);
-          }
-        else
-          {
-            outputData->get<T>(i) = static_cast<T>(0);
+            const bool pass = this->alerts[b * items + i] != 0;
+
+            outputData->get<T>(i, b) = pass ? ioData->get<T>(i, b) : static_cast<T>(0);
           }
       }
 

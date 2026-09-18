@@ -141,6 +141,34 @@ static uint32_t g_bin_threshold_value_window_u16[] = {
   8,
 };
 
+static uint32_t g_bin_threshold_value_batch[] = {
+  CProgThresholdValue::objectId(4),
+  4,
+  CProgThresholdValue::cfgIdIOBind(2),
+  THRESH_SRC_I32,
+  THRESH_DST_I32,
+  CProgThresholdValue::cfgIdMode(),
+  CProgThresholdValue::MODE_ABOVE,
+  CProgThresholdValue::cfgIdLow(),
+  0,
+  CProgThresholdValue::cfgIdHigh(),
+  10,
+};
+
+static uint32_t g_bin_threshold_hyst_batch[] = {
+  CProgThreshold::objectId(5),
+  4,
+  CProgThreshold::cfgIdIOBind(2),
+  THRESH_SRC_I32,
+  THRESH_DST_BOOL,
+  CProgThreshold::cfgIdMode(),
+  CProgThreshold::MODE_HYSTERESIS,
+  CProgThreshold::cfgIdLow(),
+  8,
+  CProgThreshold::cfgIdHigh(),
+  12,
+};
+
 //***************************************************************************
 // Description: above-threshold mode writes true at and above the high limit.
 //***************************************************************************
@@ -410,6 +438,85 @@ static void test_prog_threshold_value_window_uint16()
   TEST_ASSERT_EQUAL(OK, prog.stop());
 }
 
+//***************************************************************************
+// Description: a batched source is evaluated per sample and the deferred
+// output takes the same batch; hysteresis state carries across the batch.
+//***************************************************************************
+
+static void test_prog_threshold_hysteresis_batched_input()
+{
+  CDescObject srcDesc(g_cfg_thresh_src_i32);
+  CIOVirt src(srcDesc);
+  CDescObject dstDesc(g_cfg_thresh_dst_bool);
+  CIOVirt dst(dstDesc);
+  CDescObject progDesc(g_bin_threshold_hyst_batch);
+  CProgThreshold prog(progDesc);
+  io_sdata_t<int32_t, 1, 4> in;
+  io_sdata_t<uint8_t, 1, 4> out;
+
+  TEST_ASSERT_EQUAL(OK, src.init());
+  TEST_ASSERT_EQUAL(OK, dst.init());
+  TEST_ASSERT_EQUAL(OK, src.initialize(1, 4, true));
+  TEST_ASSERT_EQUAL(OK, prog.configure());
+  prog.setObjectMapItem(THRESH_SRC_I32, &src);
+  prog.setObjectMapItem(THRESH_DST_BOOL, &dst);
+  TEST_ASSERT_EQUAL(OK, prog.init());
+  TEST_ASSERT_EQUAL(OK, prog.start());
+  TEST_ASSERT_EQUAL(true, dst.isBatch());
+
+  in(0, 0) = 13;
+  in(0, 1) = 10;
+  in(0, 2) = 8;
+  in(0, 3) = 10;
+  TEST_ASSERT_EQUAL(OK, src.setData(in));
+  TEST_ASSERT_EQUAL(OK, dst.getData(out, 4));
+  TEST_ASSERT_EQUAL(1, out(0, 0));
+  TEST_ASSERT_EQUAL(1, out(0, 1));
+  TEST_ASSERT_EQUAL(0, out(0, 2));
+  TEST_ASSERT_EQUAL(0, out(0, 3));
+
+  TEST_ASSERT_EQUAL(OK, prog.stop());
+}
+
+//***************************************************************************
+// Description: threshold-value on a batched source gates every sample, not
+// only batch 0.
+//***************************************************************************
+
+static void test_prog_threshold_value_batched_input()
+{
+  CDescObject srcDesc(g_cfg_thresh_src_i32);
+  CIOVirt src(srcDesc);
+  CDescObject dstDesc(g_cfg_thresh_dst_i32);
+  CIOVirt dst(dstDesc);
+  CDescObject progDesc(g_bin_threshold_value_batch);
+  CProgThresholdValue prog(progDesc);
+  io_sdata_t<int32_t, 1, 4> in;
+  io_sdata_t<int32_t, 1, 4> out;
+
+  TEST_ASSERT_EQUAL(OK, src.init());
+  TEST_ASSERT_EQUAL(OK, dst.init());
+  TEST_ASSERT_EQUAL(OK, src.initialize(1, 4, true));
+  TEST_ASSERT_EQUAL(OK, prog.configure());
+  prog.setObjectMapItem(THRESH_SRC_I32, &src);
+  prog.setObjectMapItem(THRESH_DST_I32, &dst);
+  TEST_ASSERT_EQUAL(OK, prog.init());
+  TEST_ASSERT_EQUAL(OK, prog.start());
+
+  in(0, 0) = 1;
+  in(0, 1) = 11;
+  in(0, 2) = 12;
+  in(0, 3) = 3;
+  TEST_ASSERT_EQUAL(OK, src.setData(in));
+  TEST_ASSERT_EQUAL(OK, dst.getData(out, 4));
+  TEST_ASSERT_EQUAL(0, out(0, 0));
+  TEST_ASSERT_EQUAL(11, out(0, 1));
+  TEST_ASSERT_EQUAL(12, out(0, 2));
+  TEST_ASSERT_EQUAL(0, out(0, 3));
+
+  TEST_ASSERT_EQUAL(OK, prog.stop());
+}
+
 extern "C"
 {
   int test_prog_threshold()
@@ -419,11 +526,13 @@ extern "C"
     DAWN_RUN_TEST(test_prog_threshold_above_int32);
     DAWN_RUN_TEST(test_prog_threshold_hysteresis_and_reset);
     DAWN_RUN_TEST(test_prog_threshold_window_float);
+    DAWN_RUN_TEST(test_prog_threshold_hysteresis_batched_input);
 #endif
 #ifdef CONFIG_DAWN_PROG_THRESHOLD_VALUE
     DAWN_RUN_TEST(test_prog_threshold_value_above_int32);
     DAWN_RUN_TEST(test_prog_threshold_value_hysteresis_float_reset);
     DAWN_RUN_TEST(test_prog_threshold_value_window_uint16);
+    DAWN_RUN_TEST(test_prog_threshold_value_batched_input);
 #endif
     return UNITY_END();
   }
