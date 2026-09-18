@@ -34,6 +34,8 @@ Input/output binding:
 
 - source IO must be notify-capable
 - destination must be a writable output IO with the same dtype as source
+- a batched source is evaluated sample by sample; a ``virt`` output is
+  batched alike, any other output gets the last sample's result
 
 Supported source dtypes:
 
@@ -43,7 +45,7 @@ Supported source dtypes:
 
 Reset behavior:
 
-- ``trigger(CMD_RESET)`` clears internal hysteresis state.
+- ``start()`` and ``trigger(CMD_RESET)`` clear internal hysteresis state.
 
 Configuration
 =============

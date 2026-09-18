@@ -4,6 +4,7 @@
 //
 
 #include "dawn/prog/threshold.hxx"
+#include "mocks/fake_iowriteonlymock.hxx"
 #include "test_process_common.hxx"
 
 using namespace dawn;
@@ -16,6 +17,12 @@ static constexpr auto THRESH_DST_I32 = CIOVirt::objectId(SObjectId::DTYPE_INT32,
 static constexpr auto THRESH_DST_F32 = CIOVirt::objectId(SObjectId::DTYPE_FLOAT, false, 56);
 static constexpr auto THRESH_SRC_U16 = CIOVirt::objectId(SObjectId::DTYPE_UINT16, false, 57);
 static constexpr auto THRESH_DST_U16 = CIOVirt::objectId(SObjectId::DTYPE_UINT16, false, 58);
+#ifdef CONFIG_DAWN_IO_TIMESTAMP
+static constexpr auto THRESH_SRC_I32_TS = CIOVirt::objectId(SObjectId::DTYPE_INT32, true, 60);
+static constexpr auto THRESH_DST_I32_TS = CIOVirt::objectId(SObjectId::DTYPE_INT32, true, 61);
+#endif
+static constexpr auto THRESH_DST_WRONLY =
+  CIOWriteOnlyScalarMock::objectId(SObjectId::DTYPE_BOOL, 59);
 
 static uint32_t g_cfg_thresh_src_i32[] = {
   THRESH_SRC_I32,
@@ -54,6 +61,11 @@ static uint32_t g_cfg_thresh_src_u16[] = {
 
 static uint32_t g_cfg_thresh_dst_u16[] = {
   THRESH_DST_U16,
+  0,
+};
+
+static uint32_t g_cfg_thresh_dst_wronly[] = {
+  THRESH_DST_WRONLY,
   0,
 };
 
@@ -139,6 +151,34 @@ static uint32_t g_bin_threshold_value_window_u16[] = {
   4,
   CProgThresholdValue::cfgIdHigh(),
   8,
+};
+
+static uint32_t g_bin_threshold_value_batch[] = {
+  CProgThresholdValue::objectId(4),
+  4,
+  CProgThresholdValue::cfgIdIOBind(2),
+  THRESH_SRC_I32,
+  THRESH_DST_I32,
+  CProgThresholdValue::cfgIdMode(),
+  CProgThresholdValue::MODE_ABOVE,
+  CProgThresholdValue::cfgIdLow(),
+  0,
+  CProgThresholdValue::cfgIdHigh(),
+  10,
+};
+
+static uint32_t g_bin_threshold_hyst_batch[] = {
+  CProgThreshold::objectId(5),
+  4,
+  CProgThreshold::cfgIdIOBind(2),
+  THRESH_SRC_I32,
+  THRESH_DST_BOOL,
+  CProgThreshold::cfgIdMode(),
+  CProgThreshold::MODE_HYSTERESIS,
+  CProgThreshold::cfgIdLow(),
+  8,
+  CProgThreshold::cfgIdHigh(),
+  12,
 };
 
 //***************************************************************************
@@ -410,6 +450,210 @@ static void test_prog_threshold_value_window_uint16()
   TEST_ASSERT_EQUAL(OK, prog.stop());
 }
 
+//***************************************************************************
+// Description: a batched source is evaluated per sample and the deferred
+// output takes the same batch; hysteresis state carries across the batch.
+//***************************************************************************
+
+static void test_prog_threshold_hysteresis_batched_input()
+{
+  CDescObject srcDesc(g_cfg_thresh_src_i32);
+  CIOVirt src(srcDesc);
+  CDescObject dstDesc(g_cfg_thresh_dst_bool);
+  CIOVirt dst(dstDesc);
+  CDescObject progDesc(g_bin_threshold_hyst_batch);
+  CProgThreshold prog(progDesc);
+  io_sdata_t<int32_t, 1, 4> in;
+  io_sdata_t<uint8_t, 1, 4> out;
+
+  TEST_ASSERT_EQUAL(OK, src.init());
+  TEST_ASSERT_EQUAL(OK, dst.init());
+  TEST_ASSERT_EQUAL(OK, src.initialize(1, 4, true));
+  TEST_ASSERT_EQUAL(OK, prog.configure());
+  prog.setObjectMapItem(THRESH_SRC_I32, &src);
+  prog.setObjectMapItem(THRESH_DST_BOOL, &dst);
+  TEST_ASSERT_EQUAL(OK, prog.init());
+  TEST_ASSERT_EQUAL(OK, prog.start());
+  TEST_ASSERT_EQUAL(true, dst.isBatch());
+
+  in(0, 0) = 13;
+  in(0, 1) = 10;
+  in(0, 2) = 8;
+  in(0, 3) = 10;
+  TEST_ASSERT_EQUAL(OK, src.setData(in));
+  TEST_ASSERT_EQUAL(OK, dst.getData(out, 4));
+  TEST_ASSERT_EQUAL(1, out(0, 0));
+  TEST_ASSERT_EQUAL(1, out(0, 1));
+  TEST_ASSERT_EQUAL(0, out(0, 2));
+  TEST_ASSERT_EQUAL(0, out(0, 3));
+
+  TEST_ASSERT_EQUAL(OK, prog.stop());
+}
+
+static uint32_t g_bin_threshold_hyst_batch_io[] = {
+  CProgThreshold::objectId(6),
+  4,
+  CProgThreshold::cfgIdIOBind(2),
+  THRESH_SRC_I32,
+  THRESH_DST_WRONLY,
+  CProgThreshold::cfgIdMode(),
+  CProgThreshold::MODE_HYSTERESIS,
+  CProgThreshold::cfgIdLow(),
+  8,
+  CProgThreshold::cfgIdHigh(),
+  12,
+};
+
+//***************************************************************************
+// Description: a batched source into a non-virt output publishes the result
+// of the last sample, matching the carried hysteresis state.
+//***************************************************************************
+
+static void test_prog_threshold_hysteresis_batched_to_io()
+{
+  CDescObject srcDesc(g_cfg_thresh_src_i32);
+  CIOVirt src(srcDesc);
+  CDescObject dstDesc(g_cfg_thresh_dst_wronly);
+  CIOWriteOnlyScalarMock dst(dstDesc);
+  CDescObject progDesc(g_bin_threshold_hyst_batch_io);
+  CProgThreshold prog(progDesc);
+  io_sdata_t<int32_t, 1, 4> in;
+
+  TEST_ASSERT_EQUAL(OK, src.init());
+  TEST_ASSERT_EQUAL(OK, dst.init());
+  TEST_ASSERT_EQUAL(OK, src.initialize(1, 4, true));
+  TEST_ASSERT_EQUAL(OK, prog.configure());
+  prog.setObjectMapItem(THRESH_SRC_I32, &src);
+  prog.setObjectMapItem(THRESH_DST_WRONLY, &dst);
+  TEST_ASSERT_EQUAL(OK, prog.init());
+  TEST_ASSERT_EQUAL(OK, prog.start());
+
+  in(0, 0) = 13;
+  in(0, 1) = 10;
+  in(0, 2) = 8;
+  in(0, 3) = 10;
+  TEST_ASSERT_EQUAL(OK, src.setData(in));
+  TEST_ASSERT_EQUAL(0, dst.getLastValue());
+
+  in(0, 0) = 8;
+  in(0, 1) = 13;
+  in(0, 2) = 10;
+  in(0, 3) = 10;
+  TEST_ASSERT_EQUAL(OK, src.setData(in));
+  TEST_ASSERT_EQUAL(1, dst.getLastValue());
+
+  TEST_ASSERT_EQUAL(OK, prog.stop());
+}
+
+//***************************************************************************
+// Description: threshold-value on a batched source gates every sample, not
+// only batch 0.
+//***************************************************************************
+
+static void test_prog_threshold_value_batched_input()
+{
+  CDescObject srcDesc(g_cfg_thresh_src_i32);
+  CIOVirt src(srcDesc);
+  CDescObject dstDesc(g_cfg_thresh_dst_i32);
+  CIOVirt dst(dstDesc);
+  CDescObject progDesc(g_bin_threshold_value_batch);
+  CProgThresholdValue prog(progDesc);
+  io_sdata_t<int32_t, 1, 4> in;
+  io_sdata_t<int32_t, 1, 4> out;
+
+  TEST_ASSERT_EQUAL(OK, src.init());
+  TEST_ASSERT_EQUAL(OK, dst.init());
+  TEST_ASSERT_EQUAL(OK, src.initialize(1, 4, true));
+  TEST_ASSERT_EQUAL(OK, prog.configure());
+  prog.setObjectMapItem(THRESH_SRC_I32, &src);
+  prog.setObjectMapItem(THRESH_DST_I32, &dst);
+  TEST_ASSERT_EQUAL(OK, prog.init());
+  TEST_ASSERT_EQUAL(OK, prog.start());
+
+  in(0, 0) = 1;
+  in(0, 1) = 11;
+  in(0, 2) = 12;
+  in(0, 3) = 3;
+  TEST_ASSERT_EQUAL(OK, src.setData(in));
+  TEST_ASSERT_EQUAL(OK, dst.getData(out, 4));
+  TEST_ASSERT_EQUAL(0, out(0, 0));
+  TEST_ASSERT_EQUAL(11, out(0, 1));
+  TEST_ASSERT_EQUAL(12, out(0, 2));
+  TEST_ASSERT_EQUAL(0, out(0, 3));
+
+  TEST_ASSERT_EQUAL(OK, prog.stop());
+}
+
+#ifdef CONFIG_DAWN_IO_TIMESTAMP
+static uint32_t g_cfg_thresh_src_i32_ts[] = {
+  THRESH_SRC_I32_TS,
+  0,
+};
+
+static uint32_t g_cfg_thresh_dst_i32_ts[] = {
+  THRESH_DST_I32_TS,
+  0,
+};
+
+static uint32_t g_bin_threshold_value_batch_ts[] = {
+  CProgThresholdValue::objectId(7),
+  4,
+  CProgThresholdValue::cfgIdIOBind(2),
+  THRESH_SRC_I32_TS,
+  THRESH_DST_I32_TS,
+  CProgThresholdValue::cfgIdMode(),
+  CProgThresholdValue::MODE_ABOVE,
+  CProgThresholdValue::cfgIdLow(),
+  0,
+  CProgThresholdValue::cfgIdHigh(),
+  10,
+};
+
+//***************************************************************************
+// Description: a timestamped (non-contiguous) batch takes the per-batch path.
+//***************************************************************************
+
+static void test_prog_threshold_value_batched_ts()
+{
+  CDescObject srcDesc(g_cfg_thresh_src_i32_ts);
+  CIOVirt src(srcDesc);
+  CDescObject dstDesc(g_cfg_thresh_dst_i32_ts);
+  CIOVirt dst(dstDesc);
+  CDescObject progDesc(g_bin_threshold_value_batch_ts);
+  CProgThresholdValue prog(progDesc);
+  io_sdata_t<int32_t, 1, 4, true> in;
+  io_sdata_t<int32_t, 1, 4, true> out;
+  size_t b;
+
+  TEST_ASSERT_EQUAL(OK, src.init());
+  TEST_ASSERT_EQUAL(OK, dst.init());
+  TEST_ASSERT_EQUAL(OK, src.initialize(1, 4, true));
+  TEST_ASSERT_EQUAL(OK, prog.configure());
+  prog.setObjectMapItem(THRESH_SRC_I32_TS, &src);
+  prog.setObjectMapItem(THRESH_DST_I32_TS, &dst);
+  TEST_ASSERT_EQUAL(OK, prog.init());
+  TEST_ASSERT_EQUAL(OK, prog.start());
+
+  in(0, 0) = 1;
+  in(0, 1) = 11;
+  in(0, 2) = 12;
+  in(0, 3) = 3;
+  for (b = 0; b < 4; b++)
+    {
+      in.getTs(b) = 1000 + b;
+    }
+
+  TEST_ASSERT_EQUAL(OK, src.setData(in));
+  TEST_ASSERT_EQUAL(OK, dst.getData(out, 4));
+  TEST_ASSERT_EQUAL(0, out(0, 0));
+  TEST_ASSERT_EQUAL(11, out(0, 1));
+  TEST_ASSERT_EQUAL(12, out(0, 2));
+  TEST_ASSERT_EQUAL(0, out(0, 3));
+
+  TEST_ASSERT_EQUAL(OK, prog.stop());
+}
+#endif
+
 extern "C"
 {
   int test_prog_threshold()
@@ -419,11 +663,17 @@ extern "C"
     DAWN_RUN_TEST(test_prog_threshold_above_int32);
     DAWN_RUN_TEST(test_prog_threshold_hysteresis_and_reset);
     DAWN_RUN_TEST(test_prog_threshold_window_float);
+    DAWN_RUN_TEST(test_prog_threshold_hysteresis_batched_input);
+    DAWN_RUN_TEST(test_prog_threshold_hysteresis_batched_to_io);
 #endif
 #ifdef CONFIG_DAWN_PROG_THRESHOLD_VALUE
     DAWN_RUN_TEST(test_prog_threshold_value_above_int32);
     DAWN_RUN_TEST(test_prog_threshold_value_hysteresis_float_reset);
     DAWN_RUN_TEST(test_prog_threshold_value_window_uint16);
+    DAWN_RUN_TEST(test_prog_threshold_value_batched_input);
+#  ifdef CONFIG_DAWN_IO_TIMESTAMP
+    DAWN_RUN_TEST(test_prog_threshold_value_batched_ts);
+#  endif
 #endif
     return UNITY_END();
   }

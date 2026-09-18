@@ -5,10 +5,11 @@
 
 #pragma once
 
+#include <algorithm>
 #include <cstdint>
 #include <cstring>
 #include <inttypes.h>
-#include <map>
+#include <new>
 #include <vector>
 
 #include "dawn/io/ddata.hxx"
@@ -45,16 +46,6 @@ public:
     , low(0)
     , high(0)
   {
-  }
-
-  int trigger(uint8_t cmd) override
-  {
-    if (cmd == CMD_RESET)
-      {
-        state.clear();
-      }
-
-    return CProgProcess::trigger(cmd);
   }
 
 protected:
@@ -112,13 +103,69 @@ protected:
     return OK;
   }
 
+  int bindStateAlloc(CIOCommon *src,
+                     CIOCommon *output,
+                     io_ddata_t *ioData,
+                     io_ddata_t *outputData,
+                     SBindState **state) override
+  {
+    const size_t items = ioData->getItems();
+    const size_t batches = ioData->getBatch();
+    SState *st;
+
+    (void)src;
+    (void)output;
+    (void)outputData;
+
+    st = new (std::nothrow) SState();
+    if (st == nullptr)
+      {
+        return -ENOMEM;
+      }
+
+    st->last.assign(items, 0);
+    st->alerts.assign(items * batches, 0);
+    if (st->last.size() != items || st->alerts.size() != items * batches)
+      {
+        delete st;
+        return -ENOMEM;
+      }
+
+    *state = st;
+    return OK;
+  }
+
   void handle(CIOCommon *output,
               io_ddata_t *data,
               io_ddata_t *ioData,
               io_ddata_t *outputData,
               bool &initsample) override
   {
-    (void)initsample;
+    handleWithState(output, data, ioData, outputData, initsample, nullptr);
+  }
+
+  void handleWithState(CIOCommon *output,
+                       io_ddata_t *data,
+                       io_ddata_t *ioData,
+                       io_ddata_t *outputData,
+                       bool &initsample,
+                       void *state) override
+  {
+    SState *st = static_cast<SState *>(state);
+
+    if (st == nullptr)
+      {
+        DAWNERR("threshold: missing state\n");
+        return;
+      }
+
+    // Reset is deferred to the callback so it never races with evaluation
+
+    if (initsample)
+      {
+        std::fill(st->last.begin(), st->last.end(), 0);
+        initsample = false;
+      }
 
     if (!validateOutputDtype(data->getDtype(), outputData->getDtype()))
       {
@@ -134,6 +181,7 @@ protected:
         case SObjectId::DTYPE_INT8:
           {
             handleTyped<int8_t>(output,
+                                st,
                                 data,
                                 ioData,
                                 outputData,
@@ -147,6 +195,7 @@ protected:
         case SObjectId::DTYPE_UINT8:
           {
             handleTyped<uint8_t>(output,
+                                 st,
                                  data,
                                  ioData,
                                  outputData,
@@ -160,6 +209,7 @@ protected:
         case SObjectId::DTYPE_INT16:
           {
             handleTyped<int16_t>(output,
+                                 st,
                                  data,
                                  ioData,
                                  outputData,
@@ -173,6 +223,7 @@ protected:
         case SObjectId::DTYPE_UINT16:
           {
             handleTyped<uint16_t>(output,
+                                  st,
                                   data,
                                   ioData,
                                   outputData,
@@ -186,6 +237,7 @@ protected:
         case SObjectId::DTYPE_INT32:
           {
             handleTyped<int32_t>(output,
+                                 st,
                                  data,
                                  ioData,
                                  outputData,
@@ -199,6 +251,7 @@ protected:
         case SObjectId::DTYPE_UINT32:
           {
             handleTyped<uint32_t>(output,
+                                  st,
                                   data,
                                   ioData,
                                   outputData,
@@ -212,6 +265,7 @@ protected:
         case SObjectId::DTYPE_INT64:
           {
             handleTyped<int64_t>(output,
+                                 st,
                                  data,
                                  ioData,
                                  outputData,
@@ -225,6 +279,7 @@ protected:
         case SObjectId::DTYPE_UINT64:
           {
             handleTyped<uint64_t>(output,
+                                  st,
                                   data,
                                   ioData,
                                   outputData,
@@ -237,8 +292,13 @@ protected:
 #ifdef CONFIG_DAWN_DTYPE_FLOAT
         case SObjectId::DTYPE_FLOAT:
           {
-            handleTyped<float>(
-              output, data, ioData, outputData, SObjectCfg::cfgToF(low), SObjectCfg::cfgToF(high));
+            handleTyped<float>(output,
+                               st,
+                               data,
+                               ioData,
+                               outputData,
+                               SObjectCfg::cfgToF(low),
+                               SObjectCfg::cfgToF(high));
             break;
           }
 #endif
@@ -247,6 +307,7 @@ protected:
         case SObjectId::DTYPE_DOUBLE:
           {
             handleTyped<double>(output,
+                                st,
                                 data,
                                 ioData,
                                 outputData,
@@ -264,24 +325,53 @@ protected:
       }
   }
 
+  // Every sample of a batched source is evaluated
+
+  bool isBatchAware() const override
+  {
+    return true;
+  }
+
   virtual bool validateOutputDtype(uint8_t inputDtype, uint8_t outputDtype) const = 0;
+
+  /**
+   * @brief Publish the evaluated batches to the output.
+   *
+   * @param[in] output Output IO.
+   * @param[in] inputDtype Source data type.
+   * @param[in] items Elements per batch.
+   * @param[in] first First source batch to publish.
+   * @param[in] batches Number of batches to publish.
+   * @param[in] alerts Alert flags, items per source batch.
+   * @param[in] ioData Source samples.
+   * @param[in] outputData Output buffer.
+   * @return OK on success, or error code from the output.
+   */
+
   virtual int emitOutput(CIOCommon *output,
                          uint8_t inputDtype,
                          size_t items,
+                         size_t first,
+                         size_t batches,
+                         const uint8_t *alerts,
                          io_ddata_t *ioData,
                          io_ddata_t *outputData) = 0;
 
 private:
-  struct SState
+  /** @brief Per-binding state, sized once in bindStateAlloc(). */
+
+  struct SState final : public SBindState
   {
-    size_t items = 0;
     std::vector<uint8_t> last;
+    std::vector<uint8_t> alerts;
   };
 
-  template<typename T>
-  bool evaluate(T x, T lowT, T highT, uint8_t prev) const
+  /** @brief Evaluate one sample in mode M given the previous alert state. */
+
+  template<uint32_t M, typename T>
+  static bool evalMode(T x, T lowT, T highT, uint8_t prev)
   {
-    switch (mode)
+    switch (M)
       {
         case MODE_ABOVE:
           return x >= highT;
@@ -310,39 +400,132 @@ private:
       }
   }
 
+  /**
+   * @brief Evaluate nb batches of items samples in mode M.
+   *
+   * Samples are walked in order so the state in last carries across
+   * batches; alerts get one flag per sample.
+   */
+
+  template<uint32_t M, typename T>
+  static void
+  evalLoop(const T *x, size_t nb, size_t items, T lowT, T highT, uint8_t *last, uint8_t *alerts)
+  {
+    size_t b;
+    size_t i;
+
+    for (b = 0; b < nb; b++)
+      {
+        for (i = 0; i < items; i++)
+          {
+            last[i] = evalMode<M>(x[b * items + i], lowT, highT, last[i]) ? 1 : 0;
+            alerts[b * items + i] = last[i];
+          }
+      }
+  }
+
+  /** @brief Evaluate a run of samples, resolving the mode once per run. */
+
+  template<typename T>
+  void evalRun(const T *x, size_t nb, size_t items, T lowT, T highT, uint8_t *last, uint8_t *alerts)
+    const
+  {
+    switch (mode)
+      {
+        case MODE_ABOVE:
+          evalLoop<MODE_ABOVE>(x, nb, items, lowT, highT, last, alerts);
+          break;
+
+        case MODE_BELOW:
+          evalLoop<MODE_BELOW>(x, nb, items, lowT, highT, last, alerts);
+          break;
+
+        case MODE_WINDOW:
+          evalLoop<MODE_WINDOW>(x, nb, items, lowT, highT, last, alerts);
+          break;
+
+        case MODE_HYSTERESIS:
+          evalLoop<MODE_HYSTERESIS>(x, nb, items, lowT, highT, last, alerts);
+          break;
+
+        default:
+          std::memset(alerts, 0, nb * items);
+          break;
+      }
+  }
+
+  /** @brief Copy, evaluate and publish one source buffer of type T. */
+
   template<typename T>
   void handleTyped(CIOCommon *output,
+                   SState *st,
                    io_ddata_t *data,
                    io_ddata_t *ioData,
                    io_ddata_t *outputData,
                    T lowT,
                    T highT)
   {
+    const size_t items = ioData->getItems();
+    const size_t batches = std::min(data->getBatch(), ioData->getBatch());
+    const size_t outBatches = std::min(batches, outputData->getBatch());
+    const size_t first = batches - outBatches;
+    const size_t flat = contiguousCount(ioData, batches, items);
+    uint8_t *alerts = st->alerts.data();
+    size_t b;
     int ret;
 
-    std::memcpy(ioData->getDataPtr(), data->getDataPtr(), ioData->getDataSize());
+    // One pass when both sides are contiguous, else one per batch
 
-    const SObjectId::ObjectId outputId = output->getIdV();
-    SState &st = state[outputId];
-    const size_t items = ioData->getItems();
-
-    if (st.items != items || st.last.size() != items)
+    if (flat != 0 && contiguousCount(data, batches, items) == flat)
       {
-        st.items = items;
-        st.last.assign(items, 0);
+        std::memcpy(ioData->getDataPtr(0), data->getDataPtr(0), flat * sizeof(T));
+      }
+    else
+      {
+        for (b = 0; b < batches; b++)
+          {
+            std::memcpy(ioData->getDataPtr(b), data->getDataPtr(b), ioData->getDataSize());
+          }
       }
 
-    for (size_t i = 0; i < items; i++)
-      {
-        const uint8_t prev = st.last[i];
-        const T x = ioData->get<T>(i);
-        const bool out = evaluate(x, lowT, highT, prev);
+    // An output holding fewer batches gets the latest samples
 
-        st.last[i] = out ? 1 : 0;
+    if (outputData->hasTimestamp() && data->hasTimestamp())
+      {
+        for (b = 0; b < outBatches; b++)
+          {
+            outputData->getTs(b) = data->getTs(first + b);
+          }
       }
 
-    this->alerts = st.last;
-    ret = emitOutput(output, data->getDtype(), items, ioData, outputData);
+    // Samples are evaluated in order so hysteresis carries across the batch
+
+    if (flat != 0)
+      {
+        evalRun(static_cast<const T *>(ioData->getDataPtr(0)),
+                batches,
+                items,
+                lowT,
+                highT,
+                st->last.data(),
+                alerts);
+      }
+    else
+      {
+        for (b = 0; b < batches; b++)
+          {
+            evalRun(static_cast<const T *>(ioData->getDataPtr(b)),
+                    1,
+                    items,
+                    lowT,
+                    highT,
+                    st->last.data(),
+                    alerts + b * items);
+          }
+      }
+
+    ret =
+      emitOutput(output, data->getDtype(), items, first, outBatches, alerts, ioData, outputData);
     if (ret != OK)
       {
         DAWNERR("threshold: emit failed %d\n", ret);
@@ -353,10 +536,6 @@ protected:
   uint32_t mode;
   SObjectCfg::ObjectCfgData_t low;
   SObjectCfg::ObjectCfgData_t high;
-  std::vector<uint8_t> alerts;
-
-private:
-  std::map<SObjectId::ObjectId, SState> state;
 };
 
 /**
@@ -424,15 +603,27 @@ protected:
   int emitOutput(CIOCommon *output,
                  uint8_t inputDtype,
                  size_t items,
+                 size_t first,
+                 size_t batches,
+                 const uint8_t *alerts,
                  io_ddata_t *ioData,
                  io_ddata_t *outputData) override
   {
     (void)inputDtype;
     (void)ioData;
 
-    for (size_t i = 0; i < items; i++)
+    if (contiguousCount(outputData, batches, items) != 0)
       {
-        outputData->get<uint8_t>(i) = this->alerts[i];
+        std::memcpy(outputData->getDataPtr(0), alerts + first * items, batches * items);
+        return output->setData(*outputData);
+      }
+
+    for (size_t b = 0; b < batches; b++)
+      {
+        for (size_t i = 0; i < items; i++)
+          {
+            outputData->get<uint8_t>(i, b) = alerts[(first + b) * items + i];
+          }
       }
 
     return output->setData(*outputData);
@@ -506,6 +697,9 @@ protected:
   int emitOutput(CIOCommon *output,
                  uint8_t inputDtype,
                  size_t items,
+                 size_t first,
+                 size_t batches,
+                 const uint8_t *alerts,
                  io_ddata_t *ioData,
                  io_ddata_t *outputData) override
   {
@@ -514,70 +708,80 @@ protected:
 #ifdef CONFIG_DAWN_DTYPE_INT8
         case SObjectId::DTYPE_INT8:
           {
-            return emitOutputTyped<int8_t>(output, items, ioData, outputData);
+            return emitOutputTyped<int8_t>(
+              output, items, first, batches, alerts, ioData, outputData);
           }
 #endif
 
 #ifdef CONFIG_DAWN_DTYPE_UINT8
         case SObjectId::DTYPE_UINT8:
           {
-            return emitOutputTyped<uint8_t>(output, items, ioData, outputData);
+            return emitOutputTyped<uint8_t>(
+              output, items, first, batches, alerts, ioData, outputData);
           }
 #endif
 
 #ifdef CONFIG_DAWN_DTYPE_INT16
         case SObjectId::DTYPE_INT16:
           {
-            return emitOutputTyped<int16_t>(output, items, ioData, outputData);
+            return emitOutputTyped<int16_t>(
+              output, items, first, batches, alerts, ioData, outputData);
           }
 #endif
 
 #ifdef CONFIG_DAWN_DTYPE_UINT16
         case SObjectId::DTYPE_UINT16:
           {
-            return emitOutputTyped<uint16_t>(output, items, ioData, outputData);
+            return emitOutputTyped<uint16_t>(
+              output, items, first, batches, alerts, ioData, outputData);
           }
 #endif
 
 #ifdef CONFIG_DAWN_DTYPE_INT32
         case SObjectId::DTYPE_INT32:
           {
-            return emitOutputTyped<int32_t>(output, items, ioData, outputData);
+            return emitOutputTyped<int32_t>(
+              output, items, first, batches, alerts, ioData, outputData);
           }
 #endif
 
 #ifdef CONFIG_DAWN_DTYPE_UINT32
         case SObjectId::DTYPE_UINT32:
           {
-            return emitOutputTyped<uint32_t>(output, items, ioData, outputData);
+            return emitOutputTyped<uint32_t>(
+              output, items, first, batches, alerts, ioData, outputData);
           }
 #endif
 
 #ifdef CONFIG_DAWN_DTYPE_INT64
         case SObjectId::DTYPE_INT64:
           {
-            return emitOutputTyped<int64_t>(output, items, ioData, outputData);
+            return emitOutputTyped<int64_t>(
+              output, items, first, batches, alerts, ioData, outputData);
           }
 #endif
 
 #ifdef CONFIG_DAWN_DTYPE_UINT64
         case SObjectId::DTYPE_UINT64:
           {
-            return emitOutputTyped<uint64_t>(output, items, ioData, outputData);
+            return emitOutputTyped<uint64_t>(
+              output, items, first, batches, alerts, ioData, outputData);
           }
 #endif
 
 #ifdef CONFIG_DAWN_DTYPE_FLOAT
         case SObjectId::DTYPE_FLOAT:
           {
-            return emitOutputTyped<float>(output, items, ioData, outputData);
+            return emitOutputTyped<float>(
+              output, items, first, batches, alerts, ioData, outputData);
           }
 #endif
 
 #ifdef CONFIG_DAWN_DTYPE_DOUBLE
         case SObjectId::DTYPE_DOUBLE:
           {
-            return emitOutputTyped<double>(output, items, ioData, outputData);
+            return emitOutputTyped<double>(
+              output, items, first, batches, alerts, ioData, outputData);
           }
 #endif
 
@@ -589,18 +793,42 @@ protected:
   }
 
 private:
+  /** @brief Publish source samples that raised an alert, 0 elsewhere. */
+
   template<typename T>
-  int emitOutputTyped(CIOCommon *output, size_t items, io_ddata_t *ioData, io_ddata_t *outputData)
+  int emitOutputTyped(CIOCommon *output,
+                      size_t items,
+                      size_t first,
+                      size_t batches,
+                      const uint8_t *alerts,
+                      io_ddata_t *ioData,
+                      io_ddata_t *outputData)
   {
-    for (size_t i = 0; i < items; i++)
+    const size_t n = batches * items;
+
+    if (contiguousCount(outputData, batches, items) == n &&
+        contiguousCount(ioData, first + batches, items) != 0)
       {
-        if (this->alerts[i] != 0)
+        const T *in = static_cast<const T *>(ioData->getDataPtr(0)) + first * items;
+        const uint8_t *pass = alerts + first * items;
+        T *out = static_cast<T *>(outputData->getDataPtr(0));
+
+        for (size_t k = 0; k < n; k++)
           {
-            outputData->get<T>(i) = ioData->get<T>(i);
+            out[k] = pass[k] != 0 ? in[k] : static_cast<T>(0);
           }
-        else
+
+        return output->setData(*outputData);
+      }
+
+    for (size_t b = 0; b < batches; b++)
+      {
+        for (size_t i = 0; i < items; i++)
           {
-            outputData->get<T>(i) = static_cast<T>(0);
+            const size_t src = first + b;
+            const bool pass = alerts[src * items + i] != 0;
+
+            outputData->get<T>(i, b) = pass ? ioData->get<T>(i, src) : static_cast<T>(0);
           }
       }
 
