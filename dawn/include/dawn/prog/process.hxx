@@ -142,6 +142,7 @@ private:
     io_ddata_t *ioData = nullptr;
     io_ddata_t *outputData = nullptr;
     SBindState *state = nullptr;
+    size_t batch = 1;
     bool initsample = false;
     bool active = false;
   };
@@ -196,6 +197,18 @@ protected:
   virtual int configureExtraCfgItem(const CDescObject &desc,
                                     const SObjectCfg::SObjectCfgItem *item,
                                     size_t &offset);
+
+  /**
+   * @brief Whether handle() consumes every batch of a batched source.
+   *
+   * When true the per-binding buffers and a deferred virt output take the
+   * source notify batch; otherwise they hold one sample (batch 0 only).
+   */
+
+  virtual bool isBatchAware() const
+  {
+    return false;
+  }
 
   /**
    * @brief Process incoming sample.

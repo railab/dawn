@@ -86,6 +86,10 @@ if(CONFIG_DAWN_IO_ENCODER_INDEX)
   list(APPEND SRCS test_encoder_index.cxx)
 endif()
 
+if(CONFIG_DAWN_IO_POT)
+  list(APPEND SRCS test_pot.cxx)
+endif()
+
 if(CONFIG_DAWN_IO_GPI)
   list(APPEND SRCS test_gpi.cxx)
 endif()

@@ -17,6 +17,15 @@ using namespace dawn;
 
 static const char g_prefix_data[] = "/data/";
 static const char g_prefix_tmp[] = "/tmp/";
+static const char g_prefix_dev[] = CONFIG_DAWN_IO_FILE_DEV_PREFIX;
+
+// Device-node prefix is board-configurable; an empty one disables it.
+
+static bool pathIsDev(const char *path)
+{
+  return sizeof(g_prefix_dev) > 1 &&
+         std::strncmp(path, g_prefix_dev, sizeof(g_prefix_dev) - 1) == 0;
+}
 
 int CIOFile::configureDesc(const CDescObject &desc)
 {
@@ -63,7 +72,8 @@ int CIOFile::configureDesc(const CDescObject &desc)
                 }
 
               if (std::strncmp(path, g_prefix_data, sizeof(g_prefix_data) - 1) != 0 &&
-                  std::strncmp(path, g_prefix_tmp, sizeof(g_prefix_tmp) - 1) != 0)
+                  std::strncmp(path, g_prefix_tmp, sizeof(g_prefix_tmp) - 1) != 0 &&
+                  !pathIsDev(path))
                 {
                   DAWNERR("path not in allowed directory: %s\n", path);
                   return -EACCES;
@@ -143,34 +153,74 @@ int CIOFile::configure()
       return -errno;
     }
 
-  // Determine file size for readable files
-
-  fsize = 0;
-  if (isRead())
+  ret = fstat(fd, &st);
+  if (ret < 0)
     {
-      ret = fstat(fd, &st);
-      if (ret < 0)
-        {
-          DAWNERR("fstat failed for %s: %d\n", path, errno);
-          close(fd);
-          fd = -1;
-          return -errno;
-        }
-
-      fsize = (size_t)st.st_size;
+      DAWNERR("fstat failed for %s: %d\n", path, errno);
+      close(fd);
+      fd = -1;
+      return -errno;
     }
-  else if (perm == IO_FILE_PERM_WRITE_ONCE)
+
+  // Under the device prefix only char or block device nodes are allowed
+
+  devNode = S_ISCHR(st.st_mode) || S_ISBLK(st.st_mode);
+
+  if (!devNode && pathIsDev(path))
     {
-      ret = fstat(fd, &st);
-      if (ret < 0)
+      DAWNERR("not a device node: %s\n", path);
+      close(fd);
+      fd = -1;
+      return -EACCES;
+    }
+
+  // Device nodes report a zero st_size, so probe with SEEK_END; they have
+  // a fixed size and cannot be truncated.
+
+  fsize = (size_t)st.st_size;
+
+  if (fsize == 0 && devNode)
+    {
+      off_t end = lseek(fd, 0, SEEK_END);
+      if (end > 0)
         {
-          DAWNERR("fstat failed for %s: %d\n", path, errno);
-          close(fd);
-          fd = -1;
-          return -errno;
+          fsize = (size_t)end;
         }
 
-      writeOnceLocked = st.st_size > 0;
+      lseek(fd, 0, SEEK_SET);
+    }
+
+  // A device node has a fixed size, so it cannot tell whether it was
+  // written before - write-once is then enforced per session only.
+
+  writeOnceLocked = perm == IO_FILE_PERM_WRITE_ONCE && !devNode && fsize > 0;
+
+  // A write-only regular file starts empty from the IO point of view
+
+  if (perm == IO_FILE_PERM_WRITE && !devNode)
+    {
+      fsize = 0;
+    }
+
+  return OK;
+}
+
+int CIOFile::truncateFile()
+{
+  int ret;
+
+  // Device nodes have no truncate operation
+
+  if (devNode)
+    {
+      return OK;
+    }
+
+  ret = ftruncate(fd, 0);
+  if (ret < 0)
+    {
+      DAWNERR("ftruncate failed: %d\n", errno);
+      return -EIO;
     }
 
   return OK;
@@ -228,11 +278,10 @@ int CIOFile::setDataImpl(IODataCmn &data)
       return -EPERM;
     }
 
-  ret = ftruncate(fd, 0);
+  ret = truncateFile();
   if (ret < 0)
     {
-      DAWNERR("ftruncate failed: %d\n", errno);
-      return -EIO;
+      return ret;
     }
 
   if (lseek(fd, 0, SEEK_SET) < 0)
@@ -248,7 +297,12 @@ int CIOFile::setDataImpl(IODataCmn &data)
       return -EIO;
     }
 
-  fsize = (size_t)nwritten;
+  // A device node keeps its fixed size
+
+  if (!devNode)
+    {
+      fsize = (size_t)nwritten;
+    }
 
   if (perm == IO_FILE_PERM_WRITE_ONCE)
     {
@@ -302,11 +356,10 @@ int CIOFile::setDataAtImpl(IODataCmn &data, size_t offset)
 
   if (offset == 0)
     {
-      ret = ftruncate(fd, 0);
+      ret = truncateFile();
       if (ret < 0)
         {
-          DAWNERR("ftruncate failed: %d\n", errno);
-          return -EIO;
+          return ret;
         }
     }
 
@@ -324,7 +377,7 @@ int CIOFile::setDataAtImpl(IODataCmn &data, size_t offset)
     }
 
   endpos = offset + (size_t)nwritten;
-  if (offset == 0 || endpos > fsize)
+  if (!devNode && (offset == 0 || endpos > fsize))
     {
       fsize = endpos;
     }

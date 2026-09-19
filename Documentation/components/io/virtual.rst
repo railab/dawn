@@ -43,6 +43,13 @@ Initialization Contract
 becomes usable only after some component defines its runtime shape by calling
 ``initialize(dim, batch, notify)``.
 
+Batch semantics follow ``initialize(dim, batch, notify)``: ``setData()``
+must carry at least ``batch`` samples (a longer source, e.g. a batched
+notifier buffer into a single-slot virt, stores its first ``batch``),
+``getData(len)`` accepts any ``len <= batch``, a single-batch virt
+replicates its value into every requested slot, and with timestamps
+enabled each batch keeps its own timestamp.
+
 Descriptors must not configure ``virt`` shape directly. In particular, there is
 no YAML ``virt.config.dim`` field. Shape is owned by the producing program,
 protocol, or application code that can validate the whole edge contract. Keep

@@ -195,6 +195,10 @@ public:
     IO_CLASS_ENCODER = 85,       ///< Quadrature encoder (position)
     IO_CLASS_ENCODER_INDEX = 86, ///< Quadrature encoder (position+index)
 
+    // Digital potentiometer
+
+    IO_CLASS_POT = 87, ///< Digital potentiometer wiper
+
     // Battery (fuel gauge)
 
     IO_CLASS_BATTERY_VOLTAGE = 90, ///< Battery voltage (fuel gauge)
@@ -731,6 +735,13 @@ protected:
   /** @brief Notifier interface pointer, bound during initialization. */
 
   IIONotifier *notifier;
+
+  /** @brief Set notifier batch count for IOs batched at runtime. */
+
+  void setNotifyBatch(size_t batch)
+  {
+    notifyBatch = (batch == 0) ? 1 : batch;
+  }
 #endif
 
   /**

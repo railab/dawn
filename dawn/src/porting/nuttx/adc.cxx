@@ -160,12 +160,44 @@ int adc_get_samples_count(int fd)
 }
 
 //***************************************************************************
+// Name: adc_read_len
+//***************************************************************************
+
+size_t adc_read_len(size_t req)
+{
+  // The driver picks the record format from the length - only whole int32
+  // samples make sense here (req=0 would underflow below)
+
+  if (req == 0 || req % sizeof(dawn::porting::adc_read_s) != 0)
+    {
+      DAWNERR("invalid ADC read length %zu\n", req);
+      return 0;
+    }
+
+  // The NuttX ADC driver returns channel+int32 records for a length that
+  // is a multiple of 5, so keep the request off that multiple
+
+  if (req % 5 == 0)
+    {
+      req -= sizeof(dawn::porting::adc_read_s);
+    }
+
+  return req;
+}
+
+//***************************************************************************
 // Name: adc_read
 //***************************************************************************
 
 int adc_read(int fd, dawn::porting::adc_read_s *adc, size_t len)
 {
   ssize_t ret;
+
+  len = adc_read_len(len);
+  if (len == 0)
+    {
+      return -EINVAL;
+    }
 
   // Read data from FIFO
   // NOTE: we read data without channel information!

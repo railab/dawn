@@ -55,11 +55,18 @@ int CIOVirt::deinit()
 
 int CIOVirt::getDataImpl(IODataCmn &data, size_t len)
 {
+  size_t b;
+
   // Not initialized yet
 
   if (!iodata)
     {
       return -EACCES;
+    }
+
+  if (blen > 1 && len > blen)
+    {
+      return -EINVAL;
     }
 
   for (size_t i = 0; i < len; i++)
@@ -75,16 +82,97 @@ int CIOVirt::getDataImpl(IODataCmn &data, size_t len)
 
       mutex.lock();
 
+      // Single-batch storage replicates its value into every slot
+
+      b = blen > 1 ? i : 0;
+
 #ifdef CONFIG_DAWN_IO_TIMESTAMP
-      data.getTs(i) = ts;
+      data.getTs(i) = iodata->hasTs ? iodata->getTs(b) : ts;
 #endif
 
-      // We use batch=1 storage for iodata now
-
-      std::memcpy(data.getDataPtr(i), iodata->getDataPtr(0), dlen * tlen);
+      std::memcpy(data.getDataPtr(i), iodata->getDataPtr(b), dlen * tlen);
 
       mutex.unlock();
     }
+
+  return OK;
+}
+
+void CIOVirt::copyBatches(uint8_t *dst,
+                          size_t dstStride,
+                          const uint8_t *src,
+                          size_t srcStride,
+                          size_t n)
+{
+  size_t size = dlen * tlen;
+
+  // Neither side padded (no timestamps) - one flat copy
+
+  if (dstStride == size && srcStride == size)
+    {
+      std::memcpy(dst, src, size * n);
+      return;
+    }
+
+  for (size_t b = 0; b < n; b++)
+    {
+      std::memcpy(dst + b * dstStride, src + b * srcStride, size);
+    }
+}
+
+size_t CIOVirt::batchStride(IODataCmn &data)
+{
+  if (data.getBatch() < 2)
+    {
+      return dlen * tlen;
+    }
+
+  return static_cast<uint8_t *>(data.getDataPtr(1)) - static_cast<uint8_t *>(data.getDataPtr(0));
+}
+
+int CIOVirt::store(const void *src, size_t stride, IODataCmn *tsSrc)
+{
+  size_t b;
+
+  mutex.lock();
+
+#ifdef CONFIG_DAWN_IO_TIMESTAMP
+  if (isTimestamp())
+    {
+      ts = getTimestamp();
+    }
+#endif
+
+  copyBatches(static_cast<uint8_t *>(iodata->getDataPtr(0)),
+              iodata->off,
+              static_cast<const uint8_t *>(src),
+              stride,
+              blen);
+
+  // Source timestamps are kept per batch, otherwise stamp with now
+
+  if (iodata->hasTs)
+    {
+      for (b = 0; b < blen; b++)
+        {
+          if (tsSrc != nullptr && tsSrc->hasTimestamp())
+            {
+              iodata->getTs(b) = tsSrc->getTs(b);
+            }
+#ifdef CONFIG_DAWN_IO_TIMESTAMP
+          else
+            {
+              iodata->getTs(b) = ts;
+            }
+#endif
+        }
+    }
+
+  mutex.unlock();
+
+#ifdef CONFIG_DAWN_IO_NOTIFY
+  sendNotify(iodata);
+#endif
 
   return OK;
 }
@@ -100,9 +188,18 @@ int CIOVirt::setDataImpl(IODataCmn &data)
       return -EACCES;
     }
 
-  // Set IO data
+  // A shorter source would be read past its end; a longer one (batched
+  // notifier buffer into a single-slot virt) stores its first blen batches
 
-  ret = setVal(data.getDataPtr(), dlen * tlen);
+  if (data.getBatch() < blen)
+    {
+      DAWNERR("virt batch mismatch: expected %zu got %zu\n", blen, data.getBatch());
+      return -EINVAL;
+    }
+
+  // Single-slot storage is stamped on write, batches keep the source stamps
+
+  ret = store(data.getDataPtr(0), batchStride(data), blen > 1 ? &data : nullptr);
 
   // Notify provider
 
@@ -126,7 +223,7 @@ int CIOVirt::getFd() const
 
 size_t CIOVirt::getDataSize() const
 {
-  // Data size
+  // Size of a single data item (batches are handled in setVal/getVal)
 
   return dlen * tlen;
 }
@@ -191,7 +288,8 @@ int CIOVirt::initialize(size_t dim, size_t batch, bool notify)
 
   noteSupport = notify;
   dlen = dim;
-  data = new (std::nothrow) io_ddata_t(tlen, dim, batch, getDtype());
+  blen = batch;
+  data = new (std::nothrow) io_ddata_t(tlen, dim, batch, getDtype(), isTimestamp());
   if (data == nullptr || !data->isAllocated())
     {
       delete data;
@@ -205,6 +303,7 @@ int CIOVirt::initialize(size_t dim, size_t batch, bool notify)
   mutex.unlock();
 
 #ifdef CONFIG_DAWN_IO_NOTIFY
+  setNotifyBatch(batch);
   bindNotifier(this);
 #endif
 
@@ -238,11 +337,15 @@ int CIOVirt::getVal(void *v, size_t d)
       return -EACCES;
     }
 
-  DAWNASSERT(dlen * tlen == d, "invalid input");
+  DAWNASSERT(dlen * tlen * blen == d, "invalid input");
 
   mutex.lock();
 
-  std::memcpy(v, iodata->getDataPtr(), d);
+  copyBatches(static_cast<uint8_t *>(v),
+              dlen * tlen,
+              static_cast<const uint8_t *>(iodata->getDataPtr(0)),
+              iodata->off,
+              blen);
 
   mutex.unlock();
 
@@ -258,26 +361,7 @@ int CIOVirt::setVal(const void *v, size_t d)
       return -EACCES;
     }
 
-  DAWNASSERT(dlen * tlen == d, "invalid input");
+  DAWNASSERT(dlen * tlen * blen == d, "invalid input");
 
-  mutex.lock();
-
-  std::memcpy(iodata->getDataPtr(), v, d);
-
-#ifdef CONFIG_DAWN_IO_TIMESTAMP
-  if (isTimestamp())
-    {
-      ts = getTimestamp();
-    }
-#endif
-
-  mutex.unlock();
-
-#ifdef CONFIG_DAWN_IO_NOTIFY
-  // Set notification
-
-  sendNotify(iodata);
-#endif
-
-  return OK;
+  return store(v, dlen * tlen, nullptr);
 }
