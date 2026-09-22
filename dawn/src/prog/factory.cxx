@@ -107,6 +107,14 @@
 #  include "dawn/prog/vecpack.hxx"
 #endif
 
+#ifdef CONFIG_DAWN_PROG_BITMERGE
+#  include "dawn/prog/bitmerge.hxx"
+#endif
+
+#ifdef CONFIG_DAWN_PROG_SATURATE
+#  include "dawn/prog/saturate.hxx"
+#endif
+
 #ifdef CONFIG_DAWN_PROG_VECSPLIT
 #  include "dawn/prog/vecsplit.hxx"
 #endif
@@ -271,6 +279,16 @@ CProgCommon *CProgFactory::create(CDescObject &desc)
 #ifdef CONFIG_DAWN_PROG_VECPACK
       case CProgCommon::PROG_CLASS_VECPACK:
         return new CProgVecPack(desc);
+#endif
+
+#ifdef CONFIG_DAWN_PROG_BITMERGE
+      case CProgCommon::PROG_CLASS_BITMERGE:
+        return new CProgBitMerge(desc);
+#endif
+
+#ifdef CONFIG_DAWN_PROG_SATURATE
+      case CProgCommon::PROG_CLASS_SATURATE:
+        return new CProgSaturate(desc);
 #endif
 
 #ifdef CONFIG_DAWN_PROG_VECSPLIT
