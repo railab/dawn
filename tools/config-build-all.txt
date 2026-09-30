@@ -50,6 +50,11 @@ boards/arm/nrf53/nrf5340-dk/configs/nimble_ntfc_custom -D CMAKE_POLICY_VERSION_M
 boards/arm/nrf53/nrf5340-dk/configs/nimble_sensor_producer -D CMAKE_POLICY_VERSION_MINIMUM=3.5
 boards/arm/nrf53/nrf5340-dk/configs/rpmsghci_sdc_cpunet -D CMAKE_POLICY_VERSION_MINIMUM=3.5
 
+boards/arm/nrf54l/nrf54lm20-dk/configs/nimble_ntfc
+boards/arm/nrf54l/nrf54lm20-dk/configs/nimble_ntfc_buffer
+boards/arm/nrf54l/nrf54lm20-dk/configs/nimble_ntfc_custom
+boards/arm/nrf54l/nrf54lm20-dk/configs/nimble_sensor_producer
+
 boards/arm/nrf91/nrf9160-dk/configs/wakaama
 
 boards/arm/nrf91/thingy91/configs/miniboot_s
