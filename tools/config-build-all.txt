@@ -55,6 +55,8 @@ boards/arm/nrf54l/nrf54lm20-dk/configs/nimble_ntfc_buffer
 boards/arm/nrf54l/nrf54lm20-dk/configs/nimble_ntfc_custom
 boards/arm/nrf54l/nrf54lm20-dk/configs/nimble_sensor_producer
 
+boards/arm/nrf54l/nrf54l15-tag/configs/nimble
+
 boards/arm/nrf91/nrf9160-dk/configs/wakaama
 
 boards/arm/nrf91/thingy91/configs/miniboot_s
