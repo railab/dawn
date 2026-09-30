@@ -1,0 +1,17 @@
+config:
+  cwd: './external'
+  build_dir: './build'
+
+product:
+  name: "dawn-nrf54lm20dk-nimble-sensor-producer"
+  cores:
+    core0:
+      name: 'main'
+      device: 'serial'
+      exec_path: '/dev/ttyACM1'
+      exec_args: '115200,n,8,1'
+      defconfig: '../../boards/arm/nrf54l/nrf54lm20-dk/configs/nimble_sensor_producer'
+      flash: 'nrfutil device program --firmware $IMAGE_HEX'
+      reboot: 'nrfutil device reset'
+      dcmake:
+        CMAKE_SUPPRESS_DEVELOPER_WARNINGS: "ON"

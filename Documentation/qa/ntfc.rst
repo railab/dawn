@@ -20,6 +20,9 @@ manifests so the CI suite stays independent of physical hardware:
 * ``ntfc/manifest-nrf5340dk.yaml`` - hardware-in-the-loop NimBLE sessions
   for the Nordic nRF5340-DK. **Not** run by default; opt in with
   ``--ntfc-list``.
+* ``ntfc/manifest-nrf54lm20dk.yaml`` - hardware-in-the-loop NimBLE
+  sessions for the Nordic nRF54LM20-DK. **Not** run by default; opt in
+  with ``--ntfc-list``.
 * ``ntfc/manifest-nucleo-c071rb.yaml`` - hardware-in-the-loop Modbus
   RTU session for the STM32 Nucleo-C071RB. **Not** run by default; opt
   in with ``--ntfc-list``.
@@ -43,6 +46,10 @@ Targets
   (BlueZ + L2CAP CoC). The NTFC config builds and flashes both cores,
   but the host-side test session interacts only with the application
   core shell.
+* **nrf54lm20-dk** - real hardware. A connected Nordic nRF54LM20-DK over
+  USB, ``nrfutil`` for flashing/reset, and a BLE-capable Linux host
+  (BlueZ + L2CAP CoC). Single core; SoftDevice Controller runs on the
+  same core as NimBLE.
 * **nucleo-c071rb** - real hardware. A connected STM32 Nucleo-C071RB
   over USB for ST-LINK flashing and console, plus a host Modbus RTU
   adapter wired to the board USART1 RS485 pins through a compatible
@@ -138,23 +145,23 @@ Test Suites
      - Runtime descriptor upload, slot switch validation, and
        rollback to slot 0 over serial.
    * - ``nimble_ntfc``
-     - nrf52840-dk, nrf5340-dk
+     - nrf52840-dk, nrf5340-dk, nrf54lm20-dk
      - NimBLE all-services hardware target using fake GPIO,
        ``dummy_notify`` sensor values, BAS battery notifications, and OTS
        file transfer. Pulls ``dawnpy-ble`` for the GATT/L2CAP CoC client.
    * - ``nimble_ntfc_custom``
-     - nrf52840-dk, nrf5340-dk
+     - nrf52840-dk, nrf5340-dk, nrf54lm20-dk
      - Minimal descriptor-defined custom GATT service. Verifies the custom
        service/characteristic UUIDs are advertised and checks BLE write/read
        round-trip on a 32-bit characteristic payload.
    * - ``nimble_ntfc_buffer``
-     - nrf52840-dk, nrf5340-dk
+     - nrf52840-dk, nrf5340-dk, nrf54lm20-dk
      - Hardware NimBLE custom-service buffer test. Captures 1024 timestamp
        samples into ``CProgBuffer``, exposes the selected buffer window over a
        descriptor-defined GATT characteristic, and verifies 32-sample bulk
        reads configured by ``buffer.chunk_size``.
    * - ``nimble_sensor_producer``
-     - nrf52840-dk, nrf5340-dk
+     - nrf52840-dk, nrf5340-dk, nrf54lm20-dk
      - BLE writes into Dawn ``sensor_producer`` IOs and confirms a parallel
        NuttX ``usensor_reader`` app receives the published
        ``/dev/uorb/sensor_*`` updates.
@@ -174,6 +181,10 @@ Running
    # hardware-in-the-loop manifest (nRF5340-DK + BLE)
    dawnpy-tests --ntfc-only \
        --ntfc-list ntfc/manifest-nrf5340dk.yaml
+
+   # hardware-in-the-loop manifest (nRF54LM20-DK + BLE)
+   dawnpy-tests --ntfc-only \
+       --ntfc-list ntfc/manifest-nrf54lm20dk.yaml
 
    # hardware-in-the-loop manifest (Nucleo-C071RB + Modbus RTU)
    dawnpy-tests --ntfc-only \
