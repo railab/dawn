@@ -1,0 +1,111 @@
+metadata:
+  title: nRF54L15 TAG Environmental NimBLE Demo
+  version: "1.0"
+  description: >
+    Exposes the nRF54L15 TAG BME688 environmental sensors over the standard
+    Environmental Sensing (ESS) and Dawn IMDS services, and the supply voltage
+    (SAADC internal VDD input) as a battery level over BAS.
+  os_required:
+    - /dev/uorb/sensor_humi0
+    - /dev/uorb/sensor_ambient_temp0
+    - /dev/uorb/sensor_baro0
+    - /dev/adc0
+    - ble
+
+ios:
+  - &humidity
+    id: humidity1
+    type: sensor
+    dtype: float
+    config:
+      device: 0
+    subtype: hum
+  - &temp
+    id: temp1
+    type: sensor
+    dtype: float
+    config:
+      device: 0
+    subtype: atemp
+  - &barometer
+    id: barometer1
+    type: sensor
+    dtype: float
+    config:
+      device: 0
+    subtype: baro
+
+  # VDD: 12-bit, 3.6 V full scale -> V = raw * 3.6 / 4096.
+  - &adc_vdd
+    id: adc_vdd
+    type: adc_fetch
+    dtype: int32
+    config:
+      device: 0
+  - &vdd_raw
+    id: vdd_raw
+    type: virt
+    dtype: int32
+  - &bat_pct
+    id: bat_pct
+    type: virt
+    dtype: float
+  - &bat_level
+    id: bat_level
+    type: virt
+    dtype: uint8
+
+programs:
+  - id: bat_sampling
+    type: sampling
+    config:
+      sources:
+        - *adc_vdd
+      outputs:
+        - *vdd_raw
+      interval: 1000000
+  - id: bat_scale
+    type: adjust
+    dtype: float
+    config:
+      inputs:
+        - *vdd_raw
+      outputs:
+        - *bat_pct
+      params:
+        scale: 0.08795    # CR2032: 2.0 V (2276) = 0 %, 3.0 V (3413) = 100 %
+        offset: -200.2
+  - id: bat_to_level
+    type: adjust
+    dtype: uint8
+    config:
+      inputs:
+        - *bat_pct
+      outputs:
+        - *bat_level
+      params:
+        scale: 1
+        offset: 0
+
+protocols:
+  - id: nimble1
+    type: nimble
+    config:
+      gap_name: dawn-tag
+      services:
+        dis:
+          enabled: true
+        bas:
+          battery_level: *bat_level
+        ess:
+          characteristics:
+            - type: humidity
+              data: *humidity
+            - type: temperature
+              data: *temp
+            - type: pressure
+              data: *barometer
+        imds:
+          humidity: *humidity
+          temperature: *temp
+          pressure: *barometer
