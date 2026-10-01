@@ -838,19 +838,13 @@ int CProtoNxscope::nxscopeChannelsCreate()
 };
 
 #ifdef CONFIG_DAWN_IO_NOTIFY
-template<typename T, CProtoNxscope::nxscope_put_t<T> Put>
+template<uint8_t Type>
 int CProtoNxscope::putBatch(struct nxscope_s *nxs, uint8_t chan, io_ddata_t *data, uint8_t dim)
 {
-  int ret = OK;
+  // One put per batch; the batch offset includes timestamp padding
 
-  // Address each batch through the buffer so timestamp padding is honoured
-
-  for (size_t i = 0; i < data->getBatch() && ret >= 0; i++)
-    {
-      ret = Put(nxs, chan, static_cast<T *>(data->getDataPtr(i)), dim);
-    }
-
-  return ret;
+  return nxscope_put_samples(
+    nxs, Type, chan, data->getDataPtr(0), dim, data->getBatch(), data->off);
 }
 #endif
 
@@ -875,11 +869,11 @@ int CProtoNxscope::sampleTyped(CProtoNxscope *obj, SProtoNxscopeIochan *iochan)
 }
 #endif
 
-template<typename T, CProtoNxscope::nxscope_put_t<T> Put>
+template<typename T, CProtoNxscope::nxscope_put_t<T> Put, uint8_t Type>
 void CProtoNxscope::bindTyped(SProtoNxscopeIochan &iochan)
 {
 #ifdef CONFIG_DAWN_IO_NOTIFY
-  iochan.put = &putBatch<T, Put>;
+  iochan.put = &putBatch<Type>;
 #endif
 #ifdef CONFIG_DAWN_PROTO_NXSCOPE_SAMPLE_THREAD
   iochan.sample = &sampleTyped<T, Put>;
@@ -893,7 +887,7 @@ int CProtoNxscope::bindChannelCallbacks(SProtoNxscopeIochan &iochan, uint8_t dty
 #ifdef CONFIG_DAWN_DTYPE_UINT8
       case SObjectId::DTYPE_UINT8:
         {
-          bindTyped<uint8_t, nxscope_put_vuint8>(iochan);
+          bindTyped<uint8_t, nxscope_put_vuint8, NXSCOPE_TYPE_UINT8>(iochan);
           break;
         }
 #endif
@@ -901,7 +895,7 @@ int CProtoNxscope::bindChannelCallbacks(SProtoNxscopeIochan &iochan, uint8_t dty
 #ifdef CONFIG_DAWN_DTYPE_INT8
       case SObjectId::DTYPE_INT8:
         {
-          bindTyped<int8_t, nxscope_put_vint8>(iochan);
+          bindTyped<int8_t, nxscope_put_vint8, NXSCOPE_TYPE_INT8>(iochan);
           break;
         }
 #endif
@@ -909,7 +903,7 @@ int CProtoNxscope::bindChannelCallbacks(SProtoNxscopeIochan &iochan, uint8_t dty
 #ifdef CONFIG_DAWN_DTYPE_UINT16
       case SObjectId::DTYPE_UINT16:
         {
-          bindTyped<uint16_t, nxscope_put_vuint16>(iochan);
+          bindTyped<uint16_t, nxscope_put_vuint16, NXSCOPE_TYPE_UINT16>(iochan);
           break;
         }
 #endif
@@ -917,7 +911,7 @@ int CProtoNxscope::bindChannelCallbacks(SProtoNxscopeIochan &iochan, uint8_t dty
 #ifdef CONFIG_DAWN_DTYPE_INT16
       case SObjectId::DTYPE_INT16:
         {
-          bindTyped<int16_t, nxscope_put_vint16>(iochan);
+          bindTyped<int16_t, nxscope_put_vint16, NXSCOPE_TYPE_INT16>(iochan);
           break;
         }
 #endif
@@ -925,7 +919,7 @@ int CProtoNxscope::bindChannelCallbacks(SProtoNxscopeIochan &iochan, uint8_t dty
 #ifdef CONFIG_DAWN_DTYPE_INT32
       case SObjectId::DTYPE_INT32:
         {
-          bindTyped<int32_t, nxscope_put_vint32>(iochan);
+          bindTyped<int32_t, nxscope_put_vint32, NXSCOPE_TYPE_INT32>(iochan);
           break;
         }
 #endif
@@ -933,7 +927,7 @@ int CProtoNxscope::bindChannelCallbacks(SProtoNxscopeIochan &iochan, uint8_t dty
 #ifdef CONFIG_DAWN_DTYPE_UINT32
       case SObjectId::DTYPE_UINT32:
         {
-          bindTyped<uint32_t, nxscope_put_vuint32>(iochan);
+          bindTyped<uint32_t, nxscope_put_vuint32, NXSCOPE_TYPE_UINT32>(iochan);
           break;
         }
 #endif
@@ -941,7 +935,7 @@ int CProtoNxscope::bindChannelCallbacks(SProtoNxscopeIochan &iochan, uint8_t dty
 #ifdef CONFIG_DAWN_DTYPE_UINT64
       case SObjectId::DTYPE_UINT64:
         {
-          bindTyped<uint64_t, nxscope_put_vuint64>(iochan);
+          bindTyped<uint64_t, nxscope_put_vuint64, NXSCOPE_TYPE_UINT64>(iochan);
           break;
         }
 #endif
@@ -949,7 +943,7 @@ int CProtoNxscope::bindChannelCallbacks(SProtoNxscopeIochan &iochan, uint8_t dty
 #ifdef CONFIG_DAWN_DTYPE_FLOAT
       case SObjectId::DTYPE_FLOAT:
         {
-          bindTyped<float, nxscope_put_vfloat>(iochan);
+          bindTyped<float, nxscope_put_vfloat, NXSCOPE_TYPE_FLOAT>(iochan);
           break;
         }
 #endif

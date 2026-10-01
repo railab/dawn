@@ -198,11 +198,19 @@ private:
   template<typename T>
   using nxscope_put_t = int (*)(struct nxscope_s *, uint8_t, T *, uint8_t);
 
-  template<typename T, nxscope_put_t<T> Put>
+  /** @brief Bind the put and sample callbacks of a channel of type T. */
+
+  template<typename T, nxscope_put_t<T> Put, uint8_t Type>
   void bindTyped(SProtoNxscopeIochan &iochan);
 
 #ifdef CONFIG_DAWN_IO_NOTIFY
-  template<typename T, nxscope_put_t<T> Put>
+  /**
+   * @brief Put every batch of a notified buffer with one nxscope call.
+   *
+   * @return nxscope_put_samples() result.
+   */
+
+  template<uint8_t Type>
   static int putBatch(struct nxscope_s *nxs, uint8_t chan, io_ddata_t *data, uint8_t dim);
 #endif
 
