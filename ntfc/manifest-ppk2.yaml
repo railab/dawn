@@ -1,0 +1,21 @@
+options:
+  fail_fast: false
+  parallel: false
+
+# Real-hardware NTFC sessions for the Nordic Power Profiler Kit II.
+#
+# Needs the PPK2 on USB and an SWD probe on its debug header (nrfutil).
+# Set PPK2_SN to the probe serial number when more probes are connected.
+# Run explicitly with:
+#
+#   dawnpy-tests --ntfc-only --ntfc-list ntfc/manifest-ppk2.yaml
+#
+# Current/voltage accuracy tests are skipped on an uncalibrated board
+# (tools/examples/ppk2/ppk2.py cal).
+
+sessions:
+
+  - name: "ppk2-nxscope-ntfc"
+    confpath: ntfc/configs/ppk2/nxscope_ntfc/config.yaml
+    testpath: ntfc/tests/ppk2_nxscope
+    resources: [hw-ppk2]
