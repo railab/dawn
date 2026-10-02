@@ -1,16 +1,19 @@
-// dawn/tests/proto/test_nxscope_dummy.cxx
+// dawn/tests/proto/test_proto_nxscope_dummy_dummy.cxx
 //
 // SPDX-License-Identifier: Apache-2.0
 //
 
+#include <cstring>
+#include <fcntl.h>
+#include <pthread.h>
+#include <sys/stat.h>
+#include <unistd.h>
+
 #include "dawn/io/dummy_notify.hxx"
 #include "dawn/io/notifier.hxx"
 #include "dawn/proto/nxscope/dummy.hxx"
+#include "logging/nxscope/nxscope.h"
 #include "test_common.hxx"
-
-#include <cstring>
-
-#include <logging/nxscope/nxscope.h>
 
 using namespace dawn;
 
@@ -186,7 +189,7 @@ static void nxsAssertSame(SNxsPair &p)
 // documented wire layout (channel id, little-endian value).
 //***************************************************************************
 
-static void test_nxscope_put_samples_int16()
+static void test_proto_nxscope_dummy_put_samples_int16()
 {
   SNxsPair p;
   int16_t v[40];
@@ -219,7 +222,7 @@ static void test_nxscope_put_samples_int16()
 // batches) and several channels interleaved keep the per-sample layout.
 //***************************************************************************
 
-static void test_nxscope_put_samples_stride_mixed()
+static void test_proto_nxscope_dummy_put_samples_stride_mixed()
 {
   struct SPad
   {
@@ -283,7 +286,7 @@ static void test_nxscope_put_samples_stride_mixed()
 // carries over to the next block, as with per-sample puts.
 //***************************************************************************
 
-static void test_nxscope_put_samples_divider()
+static void test_proto_nxscope_dummy_put_samples_divider()
 {
   SNxsPair p;
   int16_t v[12];
@@ -321,7 +324,7 @@ static void test_nxscope_put_samples_divider()
 // flags the overflow and returns -ENOBUFS, like per-sample puts.
 //***************************************************************************
 
-static void test_nxscope_put_samples_overflow()
+static void test_proto_nxscope_dummy_put_samples_overflow()
 {
   SNxsPair p;
   int16_t v[50];
@@ -353,7 +356,7 @@ static void test_nxscope_put_samples_overflow()
 // returns -EAGAIN.
 //***************************************************************************
 
-static void test_nxscope_put_samples_inactive()
+static void test_proto_nxscope_dummy_put_samples_inactive()
 {
   SNxsPair p;
   int16_t v[4] = {1, 2, 3, 4};
@@ -376,6 +379,345 @@ static void test_nxscope_put_samples_inactive()
   nxsPairDeinit(p);
 }
 
+//***************************************************************************
+// nxscope send paths: frames must reach the interface whole and valid when
+// the interface writes short, fails, or for critical channels.
+//***************************************************************************
+
+static uint8_t g_cap[8][4096];
+static size_t g_caplen[8];
+static int g_capn;
+static int g_capfail;
+static int g_cappart;
+
+static int capSend(struct nxscope_intf_s *intf, uint8_t *buff, int len)
+{
+  (void)intf;
+
+  if (g_capfail > 0)
+    {
+      g_capfail--;
+      return -EAGAIN;
+    }
+
+  if (g_cappart > 0 && g_cappart < len)
+    {
+      len = g_cappart;
+      g_cappart = 0;
+    }
+
+  if (g_capn < 8)
+    {
+      std::memcpy(g_cap[g_capn], buff, len);
+      g_caplen[g_capn] = len;
+    }
+
+  g_capn++;
+  return len;
+}
+
+static int capRecv(struct nxscope_intf_s *intf, uint8_t *buff, int len)
+{
+  (void)intf;
+  (void)buff;
+  (void)len;
+  return 0;
+}
+
+static struct nxscope_intf_ops_s g_capops = {capSend, capRecv};
+
+static void nxsCapInit(struct nxscope_s *s,
+                       struct nxscope_intf_s *intf,
+                       struct nxscope_proto_s *proto,
+                       size_t len,
+                       size_t crilen)
+{
+  struct nxscope_cfg_s cfg;
+  union nxscope_chinfo_type_u u;
+
+  std::memset(&cfg, 0, sizeof(cfg));
+  cfg.intf_cmd = intf;
+  cfg.intf_stream = intf;
+  cfg.proto_cmd = proto;
+  cfg.proto_stream = proto;
+  cfg.channels = 2;
+  cfg.streambuf_len = len;
+  cfg.rxbuf_len = 32;
+  cfg.cribuf_len = crilen;
+  TEST_ASSERT_EQUAL(OK, nxscope_init(s, &cfg));
+  TEST_ASSERT_EQUAL(OK, nxscope_chan_init(s, 0, g_nxs_name, NXSCOPE_TYPE_INT16, 1, 0));
+  u.u8 = 0;
+  u.s.dtype = NXSCOPE_TYPE_UINT8;
+  u.s.cri = 1;
+  TEST_ASSERT_EQUAL(OK, nxscope_chan_init(s, 1, g_nxs_name, u.u8, 1, 0));
+  TEST_ASSERT_EQUAL(OK, nxscope_chan_all_en(s, true));
+  TEST_ASSERT_EQUAL(OK, nxscope_stream_start(s, true));
+}
+
+// Assert buf holds exactly one valid stream frame; return its data
+
+static uint8_t *nxsAssertFrame(struct nxscope_proto_s *proto,
+                               uint8_t *buf,
+                               size_t len,
+                               size_t *dlen)
+{
+  struct nxscope_frame_s frame;
+
+  TEST_ASSERT_EQUAL(OK, proto->ops->frame_get(proto, buf, len, &frame));
+  TEST_ASSERT_EQUAL(NXSCOPE_HDRID_STREAM, frame.id);
+  TEST_ASSERT_EQUAL(len, frame.drop);
+  *dlen = frame.dlen;
+  return frame.data;
+}
+
+struct SFifoRx
+{
+  int fd;
+  uint8_t buf[4096];
+  size_t len;
+  size_t want;
+};
+
+static void *fifoReader(void *arg)
+{
+  SFifoRx *rx = static_cast<SFifoRx *>(arg);
+  int tries;
+  ssize_t n;
+
+  for (tries = 0; tries < 2000 && rx->len < rx->want; tries++)
+    {
+      n = read(rx->fd, &rx->buf[rx->len], std::min<size_t>(256, sizeof(rx->buf) - rx->len));
+      if (n > 0)
+        {
+          rx->len += n;
+        }
+
+      usleep(1000);
+    }
+
+  return nullptr;
+}
+
+//***************************************************************************
+// Description: a frame larger than the free space of a non-blocking serial
+// interface goes out in parts over repeated flushes and arrives whole.
+//***************************************************************************
+
+static void test_proto_nxscope_dummy_ser_short_write()
+{
+  static char path[] = "/dev/nxsfifo";
+  struct nxscope_intf_s cintf;
+  struct nxscope_intf_s sintf;
+  struct nxscope_ser_cfg_s scfg;
+  struct nxscope_proto_s proto;
+  struct nxscope_s ref;
+  struct nxscope_s s;
+  static SFifoRx rx;
+  pthread_t th;
+  int16_t v;
+  int i;
+
+  std::memset(&cintf, 0, sizeof(cintf));
+  cintf.ops = &g_capops;
+  cintf.initialized = true;
+  TEST_ASSERT_EQUAL(OK, nxscope_proto_ser_init(&proto, nullptr));
+  nxsCapInit(&ref, &cintf, &proto, 4096, 64);
+
+  unlink(path);
+  TEST_ASSERT_EQUAL(OK, mkfifo(path, 0666));
+  rx.fd = open(path, O_RDONLY | O_NONBLOCK);
+  TEST_ASSERT_TRUE(rx.fd >= 0);
+  std::memset(&scfg, 0, sizeof(scfg));
+  scfg.path = path;
+  scfg.nonblock = true;
+  TEST_ASSERT_EQUAL(OK, nxscope_ser_init(&sintf, &scfg));
+  nxsCapInit(&s, &sintf, &proto, 4096, 64);
+
+  for (i = 0; i < 900; i++)
+    {
+      v = static_cast<int16_t>(i * 7);
+      TEST_ASSERT_EQUAL(OK, nxscope_put_int16(&ref, 0, v));
+      TEST_ASSERT_EQUAL(OK, nxscope_put_int16(&s, 0, v));
+    }
+
+  g_capn = 0;
+  g_capfail = 0;
+  TEST_ASSERT_TRUE(nxscope_stream(&ref) >= 0);
+  TEST_ASSERT_EQUAL(1, g_capn);
+
+  rx.len = 0;
+  rx.want = g_caplen[0];
+  TEST_ASSERT_EQUAL(0, pthread_create(&th, nullptr, fifoReader, &rx));
+
+  // Flush as a user loop does: a partial send is completed later
+
+  for (i = 0; i < 200 && nxscope_stream(&s) < 0; i++)
+    {
+      usleep(1000);
+    }
+
+  TEST_ASSERT_TRUE(i > 0);
+  TEST_ASSERT_TRUE(i < 200);
+  pthread_join(th, nullptr);
+
+  TEST_ASSERT_EQUAL(g_caplen[0], rx.len);
+  TEST_ASSERT_EQUAL_MEMORY(g_cap[0], rx.buf, g_caplen[0]);
+
+  nxscope_deinit(&s);
+  nxscope_deinit(&ref);
+  nxscope_ser_deinit(&sintf);
+  close(rx.fd);
+  unlink(path);
+}
+
+//***************************************************************************
+// Description: a stream frame whose send failed is resent unchanged;
+// samples put meanwhile are dropped and flagged in the next frame.
+//***************************************************************************
+
+static void test_proto_nxscope_dummy_stream_retry()
+{
+  struct nxscope_intf_s cintf;
+  struct nxscope_proto_s proto;
+  struct nxscope_s s;
+  static uint8_t first[64];
+  size_t firstlen;
+  size_t dlen;
+  uint8_t *data;
+  int i;
+
+  std::memset(&cintf, 0, sizeof(cintf));
+  cintf.ops = &g_capops;
+  cintf.initialized = true;
+  TEST_ASSERT_EQUAL(OK, nxscope_proto_ser_init(&proto, nullptr));
+  nxsCapInit(&s, &cintf, &proto, 512, 64);
+
+  for (i = 0; i < 4; i++)
+    {
+      TEST_ASSERT_EQUAL(OK, nxscope_put_int16(&s, 0, static_cast<int16_t>(i)));
+    }
+
+  g_capn = 0;
+  g_capfail = 1;
+  TEST_ASSERT_TRUE(nxscope_stream(&s) < 0);
+  firstlen = s.stream_i;
+  std::memcpy(first, s.streambuf, firstlen);
+  nxsAssertFrame(&proto, first, firstlen, &dlen);
+
+  // Puts while the frame waits for its retry
+
+  for (i = 0; i < 3; i++)
+    {
+      nxscope_put_int16(&s, 0, static_cast<int16_t>(100 + i));
+    }
+
+  TEST_ASSERT_TRUE(nxscope_stream(&s) >= 0);
+  TEST_ASSERT_EQUAL(1, g_capn);
+  TEST_ASSERT_EQUAL(firstlen, g_caplen[0]);
+  TEST_ASSERT_EQUAL_MEMORY(first, g_cap[0], firstlen);
+
+  TEST_ASSERT_EQUAL(OK, nxscope_put_int16(&s, 0, 200));
+  TEST_ASSERT_TRUE(nxscope_stream(&s) >= 0);
+  TEST_ASSERT_EQUAL(2, g_capn);
+  data = nxsAssertFrame(&proto, g_cap[1], g_caplen[1], &dlen);
+  TEST_ASSERT_EQUAL(NXSCOPE_STREAM_FLAGS_OVERFLOW, data[0] & NXSCOPE_STREAM_FLAGS_OVERFLOW);
+  TEST_ASSERT_EQUAL(1 + 3, dlen);
+
+  nxscope_deinit(&s);
+}
+
+//***************************************************************************
+// Description: a critical channel sends its sample at once as one valid
+// stream frame, and a failed critical send leaves the stream intact.
+//***************************************************************************
+
+static void test_proto_nxscope_dummy_critical_channel()
+{
+  struct nxscope_intf_s cintf;
+  struct nxscope_proto_s proto;
+  struct nxscope_s s;
+  size_t before;
+  size_t dlen;
+  uint8_t *data;
+
+  std::memset(&cintf, 0, sizeof(cintf));
+  cintf.ops = &g_capops;
+  cintf.initialized = true;
+  TEST_ASSERT_EQUAL(OK, nxscope_proto_ser_init(&proto, nullptr));
+
+  // Frame: header 4, flags 1, channel 1, uint8 1, CRC 2
+
+  nxsCapInit(&s, &cintf, &proto, 512, 9);
+  before = s.stream_i;
+
+  g_capn = 0;
+  g_capfail = 0;
+  TEST_ASSERT_EQUAL(OK, nxscope_put_uint8(&s, 1, 0x42));
+  TEST_ASSERT_EQUAL(before, s.stream_i);
+  TEST_ASSERT_EQUAL(1, g_capn);
+  data = nxsAssertFrame(&proto, g_cap[0], g_caplen[0], &dlen);
+  TEST_ASSERT_EQUAL(3, dlen);
+  TEST_ASSERT_EQUAL_HEX8(0x00, data[0]);
+  TEST_ASSERT_EQUAL_HEX8(0x01, data[1]);
+  TEST_ASSERT_EQUAL_HEX8(0x42, data[2]);
+
+  // A failed critical send must not mark the stream frame for retry
+
+  g_capfail = 1;
+  TEST_ASSERT_TRUE(nxscope_put_uint8(&s, 1, 0x43) < 0);
+  TEST_ASSERT_EQUAL(OK, nxscope_put_int16(&s, 0, 0x1234));
+  g_capn = 0;
+  TEST_ASSERT_TRUE(nxscope_stream(&s) >= 0);
+  TEST_ASSERT_EQUAL(1, g_capn);
+  data = nxsAssertFrame(&proto, g_cap[0], g_caplen[0], &dlen);
+  TEST_ASSERT_EQUAL(1 + 3, dlen);
+
+  nxscope_deinit(&s);
+}
+
+//***************************************************************************
+// Description: a stream frame sent only in part is completed by the retry,
+// so the interface carries one whole frame.
+//***************************************************************************
+
+static void test_proto_nxscope_dummy_stream_partial()
+{
+  struct nxscope_intf_s cintf;
+  struct nxscope_proto_s proto;
+  struct nxscope_s s;
+  static uint8_t whole[64];
+  size_t len;
+  size_t dlen;
+  int i;
+
+  std::memset(&cintf, 0, sizeof(cintf));
+  cintf.ops = &g_capops;
+  cintf.initialized = true;
+  TEST_ASSERT_EQUAL(OK, nxscope_proto_ser_init(&proto, nullptr));
+  nxsCapInit(&s, &cintf, &proto, 512, 64);
+
+  for (i = 0; i < 4; i++)
+    {
+      TEST_ASSERT_EQUAL(OK, nxscope_put_int16(&s, 0, static_cast<int16_t>(i)));
+    }
+
+  g_capn = 0;
+  g_capfail = 0;
+  g_cappart = 7;
+  TEST_ASSERT_TRUE(nxscope_stream(&s) < 0);
+  TEST_ASSERT_TRUE(nxscope_stream(&s) >= 0);
+  TEST_ASSERT_EQUAL(2, g_capn);
+
+  len = g_caplen[0] + g_caplen[1];
+  TEST_ASSERT_EQUAL(7, g_caplen[0]);
+  std::memcpy(whole, g_cap[0], g_caplen[0]);
+  std::memcpy(&whole[g_caplen[0]], g_cap[1], g_caplen[1]);
+  nxsAssertFrame(&proto, whole, len, &dlen);
+  TEST_ASSERT_EQUAL(1 + 4 * 3, dlen);
+
+  nxscope_deinit(&s);
+}
+
 extern "C"
 {
   int test_proto_nxscope_dummy()
@@ -384,11 +726,15 @@ extern "C"
 
     DAWN_RUN_TEST(test_proto_nxscope_dummy_idle_no_thread);
     DAWN_RUN_TEST(test_proto_nxscope_dummy_lifecycle);
-    DAWN_RUN_TEST(test_nxscope_put_samples_int16);
-    DAWN_RUN_TEST(test_nxscope_put_samples_stride_mixed);
-    DAWN_RUN_TEST(test_nxscope_put_samples_divider);
-    DAWN_RUN_TEST(test_nxscope_put_samples_overflow);
-    DAWN_RUN_TEST(test_nxscope_put_samples_inactive);
+    DAWN_RUN_TEST(test_proto_nxscope_dummy_put_samples_int16);
+    DAWN_RUN_TEST(test_proto_nxscope_dummy_put_samples_stride_mixed);
+    DAWN_RUN_TEST(test_proto_nxscope_dummy_put_samples_divider);
+    DAWN_RUN_TEST(test_proto_nxscope_dummy_put_samples_overflow);
+    DAWN_RUN_TEST(test_proto_nxscope_dummy_put_samples_inactive);
+    DAWN_RUN_TEST(test_proto_nxscope_dummy_ser_short_write);
+    DAWN_RUN_TEST(test_proto_nxscope_dummy_stream_retry);
+    DAWN_RUN_TEST(test_proto_nxscope_dummy_critical_channel);
+    DAWN_RUN_TEST(test_proto_nxscope_dummy_stream_partial);
 
     return UNITY_END();
   }
