@@ -80,9 +80,13 @@ void CStreamNotifier::thread()
           return -EINVAL;
         }
 
-      // Read data with configured batch count
+      // Read data with configured batch count; skip callbacks when the IO
+      // has no valid data (e.g. a filtered-out record)
 
-      self->io->getData(*self->data, self->batch);
+      if (self->io->getData(*self->data, self->batch) < 0)
+        {
+          return OK;
+        }
 
       // Dispatch to all registered callbacks
 

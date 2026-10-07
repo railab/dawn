@@ -119,6 +119,7 @@ void CIONotifier::thread()
     {
       CIONotifier *self;
       size_t i;
+      int ret;
       int j;
 
       if (priv == nullptr || pollfds == nullptr || nfds == 0 || pollRet <= 0)
@@ -141,14 +142,18 @@ void CIONotifier::thread()
         {
           if (pollfds[i].revents & POLLIN)
             {
-              // Read data with configured batch count
-              self->vnote[i].user[0].io->getData(*self->vnote[i].data, self->vnote[i].batch);
+              // Read data with configured batch count; skip callbacks when
+              // the IO has no valid data (e.g. a filtered-out record)
+              ret = self->vnote[i].user[0].io->getData(*self->vnote[i].data, self->vnote[i].batch);
 
-              for (SIONotifier &user : self->vnote[i].user)
+              if (ret >= 0)
                 {
-                  if (user.cb)
+                  for (SIONotifier &user : self->vnote[i].user)
                     {
-                      user.cb(user.priv, self->vnote[i].data);
+                      if (user.cb)
+                        {
+                          user.cb(user.priv, self->vnote[i].data);
+                        }
                     }
                 }
 

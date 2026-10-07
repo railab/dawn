@@ -295,6 +295,64 @@ static void test_io_notifier_reject_new_registration_after_start()
 }
 
 //***************************************************************************
+// Description: callbacks are skipped when getData() fails for a ready fd;
+// a successful IO on the same notifier still dispatches.
+//***************************************************************************
+
+class CIODummyNotifyReject : public CIODummyNotify
+{
+public:
+  explicit CIODummyNotifyReject(CDescObject &desc)
+    : CIODummyNotify(desc)
+  {
+  }
+
+  int getDataImpl(IODataCmn &data, size_t len) override
+  {
+    CIODummyNotify::getDataImpl(data, len);
+    return -EAGAIN;
+  }
+};
+
+static void test_io_notifier_skip_on_getdata_error()
+{
+  CDescObject desc2(g_cfg_valid_io2);
+  CDescObject desc4(g_cfg_valid_io4);
+  CIODummyNotifyReject reject(desc2);
+  CIODummyNotify mock4(desc4);
+  CIONotifier notifier;
+  IIONotifier::SIONotifier n;
+
+  g_callback1_cntr = 0;
+  g_callback4_cntr = 0;
+
+  TEST_ASSERT_EQUAL(OK, reject.configure());
+  TEST_ASSERT_EQUAL(OK, reject.init());
+  TEST_ASSERT_EQUAL(OK, mock4.configure());
+  TEST_ASSERT_EQUAL(OK, mock4.init());
+
+  n.io = &reject;
+  n.priv = nullptr;
+  n.cb = notifier_callback1;
+  n.prio = 0;
+  TEST_ASSERT_EQUAL(OK, notifier.regNotifier(n));
+  n.io = &mock4;
+  n.cb = notifier_callback4;
+  TEST_ASSERT_EQUAL(OK, notifier.regNotifier(n));
+
+  notifier.start();
+  TEST_ASSERT_EQUAL(OK, reject.start());
+  TEST_ASSERT_EQUAL(OK, mock4.start());
+  usleep(6000);
+  TEST_ASSERT_EQUAL(OK, reject.stop());
+  TEST_ASSERT_EQUAL(OK, mock4.stop());
+  notifier.stop();
+
+  TEST_ASSERT_EQUAL(0, g_callback1_cntr);
+  TEST_ASSERT_EQUAL(1, g_callback4_cntr);
+}
+
+//***************************************************************************
 // Description: notifier thread applies configured worker priority.
 //***************************************************************************
 
@@ -368,6 +426,7 @@ extern "C"
     DAWN_RUN_TEST(test_io_notifier_per_io_isolation);
     DAWN_RUN_TEST(test_io_notifier_bind_set);
     DAWN_RUN_TEST(test_io_notifier_reject_new_registration_after_start);
+    DAWN_RUN_TEST(test_io_notifier_skip_on_getdata_error);
     DAWN_RUN_TEST(test_io_notifier_applies_configured_thread_priority);
 
     return UNITY_END();
