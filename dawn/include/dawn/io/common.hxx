@@ -625,7 +625,7 @@ public:
 
   constexpr static SObjectCfg::ObjectCfgId cfgIdCmn(bool rw,
                                                     uint8_t dtype,
-                                                    uint8_t size,
+                                                    uint16_t size,
                                                     uint8_t id)
   {
     return SObjectCfg::objectCfg(

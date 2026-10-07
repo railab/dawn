@@ -89,7 +89,7 @@ public:
 
   constexpr static SObjectCfg::ObjectCfgId cfgIdAllocObj(size_t n = 1)
   {
-    return CIOTrigger::cfgId(false, static_cast<uint8_t>(n), IO_TRIGGER_CFG_ALLOCOBJ);
+    return CIOTrigger::cfgId(false, static_cast<uint16_t>(n), IO_TRIGGER_CFG_ALLOCOBJ);
   }
 
   constexpr static SObjectCfg::ObjectCfgId cfgIdAllowed()
@@ -97,7 +97,7 @@ public:
     return CIOTrigger::cfgId(false, 1, IO_TRIGGER_CFG_ALLOWED);
   }
 
-  constexpr static SObjectCfg::ObjectCfgId cfgId(bool rw, uint8_t size, uint8_t id)
+  constexpr static SObjectCfg::ObjectCfgId cfgId(bool rw, uint16_t size, uint8_t id)
   {
     return SObjectCfg::objectCfg(
       SObjectId::OBJTYPE_IO, CIOCommon::IO_CLASS_TRIGGER, SObjectId::DTYPE_UINT8, rw, size, id);

@@ -89,7 +89,7 @@ public:
       SObjectId::OBJTYPE_PROTO, CProtoCommon::PROTO_CLASS_NIMBLE_PRPH, SObjectId::DTYPE_ANY, 0, id);
   }
 
-  static SObjectCfg::ObjectCfgId cfgId(bool rw, uint8_t dtype, uint8_t size, uint8_t id)
+  static SObjectCfg::ObjectCfgId cfgId(bool rw, uint8_t dtype, uint16_t size, uint8_t id)
   {
     return SObjectCfg::objectCfg(
       SObjectId::OBJTYPE_PROTO, CProtoCommon::PROTO_CLASS_NIMBLE_PRPH, dtype, rw, size, id);
