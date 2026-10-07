@@ -87,7 +87,7 @@ public:
 
   constexpr static SObjectCfg::ObjectCfgId cfgIdAllocObj(size_t n = 1)
   {
-    return CIOControl::cfgId(false, static_cast<uint8_t>(n), IO_CONTROL_CFG_ALLOCOBJ);
+    return CIOControl::cfgId(false, static_cast<uint16_t>(n), IO_CONTROL_CFG_ALLOCOBJ);
   }
 
   constexpr static SObjectCfg::ObjectCfgId cfgIdAllowed()
@@ -95,7 +95,7 @@ public:
     return CIOControl::cfgId(false, 1, IO_CONTROL_CFG_ALLOWED);
   }
 
-  constexpr static SObjectCfg::ObjectCfgId cfgId(bool rw, uint8_t size, uint8_t id)
+  constexpr static SObjectCfg::ObjectCfgId cfgId(bool rw, uint16_t size, uint8_t id)
   {
     return SObjectCfg::objectCfg(
       SObjectId::OBJTYPE_IO, CIOCommon::IO_CLASS_CONTROL, SObjectId::DTYPE_UINT8, rw, size, id);

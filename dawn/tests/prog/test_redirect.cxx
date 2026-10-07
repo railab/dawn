@@ -158,6 +158,17 @@ static void test_prog_redirect_forward_nonzero()
   TEST_ASSERT_EQUAL(OK, prog.stop());
 }
 
+//***************************************************************************
+// Description: IOBIND cfg size keeps all 10 bits (two words per pair).
+//***************************************************************************
+
+static void test_prog_redirect_bind_size()
+{
+  TEST_ASSERT_EQUAL(255, SObjectCfg::objectCfgGetSize(CProgRedirect::cfgIdIOBind(255)));
+  TEST_ASSERT_EQUAL(256, SObjectCfg::objectCfgGetSize(CProgRedirect::cfgIdIOBind(256)));
+  TEST_ASSERT_EQUAL(1022, SObjectCfg::objectCfgGetSize(CProgRedirect::cfgIdIOBind(1022)));
+}
+
 extern "C"
 {
   int test_prog_redirect()
@@ -167,6 +178,7 @@ extern "C"
     DAWN_RUN_TEST(test_prog_redirect_lifecycle_no_thread);
     DAWN_RUN_TEST(test_prog_redirect_forward_zero);
     DAWN_RUN_TEST(test_prog_redirect_forward_nonzero);
+    DAWN_RUN_TEST(test_prog_redirect_bind_size);
 
     return UNITY_END();
   }

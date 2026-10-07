@@ -61,7 +61,7 @@ public:
                                id);
   }
 
-  constexpr static SObjectCfg::ObjectCfgId cfgId(bool rw, uint8_t dtype, uint8_t size, uint8_t id)
+  constexpr static SObjectCfg::ObjectCfgId cfgId(bool rw, uint8_t dtype, uint16_t size, uint8_t id)
   {
     return SObjectCfg::objectCfg(
       SObjectId::OBJTYPE_PROTO, CProtoCommon::PROTO_CLASS_NXSCOPE_SERIAL, dtype, rw, size, id);

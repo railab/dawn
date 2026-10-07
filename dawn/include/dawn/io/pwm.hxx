@@ -85,7 +85,7 @@ public:
     return ObjectIdHelper::create(ts, inst);
   }
 
-  constexpr static SObjectCfg::ObjectCfgId cfgId(bool rw, uint8_t dtype, uint8_t size, uint8_t id)
+  constexpr static SObjectCfg::ObjectCfgId cfgId(bool rw, uint8_t dtype, uint16_t size, uint8_t id)
   {
     return SObjectCfg::objectCfg(
       SObjectId::OBJTYPE_IO, CIOCommon::IO_CLASS_PWM, dtype, rw, size, id);

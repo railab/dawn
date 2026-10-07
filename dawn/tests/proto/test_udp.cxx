@@ -271,6 +271,17 @@ static void test_proto_udp_set_then_get_roundtrip()
   TEST_ASSERT_EQUAL(OK, udp.stop());
 }
 
+//***************************************************************************
+// Description: IOBIND cfg size keeps all 10 bits (one word per binding).
+//***************************************************************************
+
+static void test_proto_udp_bind_size()
+{
+  TEST_ASSERT_EQUAL(255, SObjectCfg::objectCfgGetSize(CProtoUdp::cfgIdIOBind(255)));
+  TEST_ASSERT_EQUAL(256, SObjectCfg::objectCfgGetSize(CProtoUdp::cfgIdIOBind(256)));
+  TEST_ASSERT_EQUAL(1022, SObjectCfg::objectCfgGetSize(CProtoUdp::cfgIdIOBind(1022)));
+}
+
 extern "C"
 {
   int test_proto_udp()
@@ -289,6 +300,7 @@ extern "C"
     DAWN_RUN_TEST(test_proto_udp_ping);
     DAWN_RUN_TEST(test_proto_udp_list_ios);
     DAWN_RUN_TEST(test_proto_udp_set_then_get_roundtrip);
+    DAWN_RUN_TEST(test_proto_udp_bind_size);
 
     close(g_udp_fd);
 
