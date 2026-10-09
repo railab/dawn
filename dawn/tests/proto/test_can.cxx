@@ -988,6 +988,52 @@ static void test_proto_can_host_env()
 }
 
 //***************************************************************************
+// Description: can_read returns exactly one frame even when several short
+//              frames are queued in the RX FIFO.
+//***************************************************************************
+
+static void test_proto_can_read_one_frame_per_read()
+{
+  dawn::porting::canmsg_s msg;
+  int ret;
+  int fd;
+
+  fd = open(CAN_DEVPATH, O_RDWR | O_NONBLOCK);
+  TEST_ASSERT(fd > 0);
+  TEST_ASSERT_EQUAL(OK, can_init(fd));
+
+  can_drain_fd(g_can_fd);
+  can_drain_fd(fd);
+
+  // Two 1-byte frames back-to-back land in the FIFO in the same RX cycle.
+
+  msg.len = 1;
+  msg.id = 0x21;
+  msg.data[0] = 0xa1;
+  TEST_ASSERT(can_send(g_can_fd, &msg) > 0);
+
+  msg.id = 0x22;
+  msg.data[0] = 0xa2;
+  TEST_ASSERT(can_send(g_can_fd, &msg) > 0);
+
+  usleep(50000);
+
+  ret = can_read(fd, &msg);
+  TEST_ASSERT(ret > 0);
+  TEST_ASSERT_EQUAL(0x21, msg.id);
+  TEST_ASSERT_EQUAL(1, msg.len);
+  TEST_ASSERT_EQUAL(0xa1, msg.data[0]);
+
+  ret = can_read(fd, &msg);
+  TEST_ASSERT(ret > 0);
+  TEST_ASSERT_EQUAL(0x22, msg.id);
+  TEST_ASSERT_EQUAL(1, msg.len);
+  TEST_ASSERT_EQUAL(0xa2, msg.data[0]);
+
+  close(fd);
+}
+
+//***************************************************************************
 // Description: push proto runs through start -> hasThread -> stop.
 //***************************************************************************
 
@@ -2553,10 +2599,12 @@ extern "C"
 
     g_can_fd = open(CAN_DEVPATH, O_RDWR | O_NONBLOCK);
     TEST_ASSERT(g_can_fd > 0);
+    TEST_ASSERT_EQUAL(OK, can_init(g_can_fd));
 
     // Run tests
 
     DAWN_RUN_TEST(test_proto_can_host_env);
+    DAWN_RUN_TEST(test_proto_can_read_one_frame_per_read);
 
     DAWN_RUN_TEST(test_proto_can_push_lifecycle);
     DAWN_RUN_TEST(test_proto_can_push_bool);

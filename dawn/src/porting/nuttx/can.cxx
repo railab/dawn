@@ -58,6 +58,21 @@ void can_close(int fd)
 
 int can_init(int fd)
 {
+  unsigned int msgalign = 0;
+  int ret;
+
+  /* The upper half packs as many queued messages as fit into the read
+   * buffer. Alignment 0 makes read() return exactly one message, which is
+   * what can_read() expects.
+   */
+
+  ret = ioctl(fd, CANIOC_SET_MSGALIGN, &msgalign);
+  if (ret < 0)
+    {
+      DAWNERR("CANIOC_SET_MSGALIGN failed %d\n", -errno);
+      return -errno;
+    }
+
   return OK;
 }
 

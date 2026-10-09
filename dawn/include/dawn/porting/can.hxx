@@ -50,6 +50,8 @@ void can_close(int fd);
 /**
  * @brief Initialize CAN device.
  *
+ * Configures the descriptor so that can_read() returns one message per call.
+ *
  * @param fd File descriptor.
  * @return OK on success, negative error code on failure.
  */
