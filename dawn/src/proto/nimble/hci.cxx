@@ -5,6 +5,8 @@
 
 #include "dawn/proto/nimble/hci.hxx"
 
+#include <unistd.h>
+
 using namespace dawn;
 
 extern "C"

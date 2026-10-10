@@ -5,6 +5,8 @@
 
 #include "dawn/proto/modbus/rtu.hxx"
 
+#include <unistd.h>
+
 #include "dawn/io/common.hxx"
 
 using namespace dawn;

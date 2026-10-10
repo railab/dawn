@@ -9,6 +9,7 @@
 #include <cstring>
 #include <new>
 #include <time.h>
+#include <unistd.h>
 
 #include "dawn/io/common.hxx"
 #include "dawn/io/ddata.hxx"

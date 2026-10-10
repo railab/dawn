@@ -5,6 +5,8 @@
 
 #include "dawn/proto/nimble/host.hxx"
 
+#include <unistd.h>
+
 #include "modbus/mb.h"
 #include "modbus/mbport.h"
 #include "nimble/nimble_port.h"
