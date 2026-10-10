@@ -17,6 +17,7 @@ experimental, or placeholder configurations.
    ST Nucleo H743ZI <nucleo-h743zi>
    ST STM32F4 Discovery <stm32f4discovery>
    Nordic nRF52840-DK <nrf52840-dk>
+   Nordic Power Profiler Kit II <ppk2>
    Nordic nRF5340-DK <nrf5340-dk>
    Nordic nRF54LM20-DK <nrf54lm20-dk>
    Nordic nRF54L15 TAG <nrf54l15-tag>
@@ -36,4 +37,3 @@ Ideas for later
 - Arduino Portenta
 - Something for low power
 - Something from Espressif
-- Power Profiler Kit II

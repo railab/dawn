@@ -15,6 +15,7 @@ namespace dawn
 // Forward declaration
 
 class CIOCommon;
+struct io_ddata_t;
 
 /**
  * @brief Base class for all PROG (processing) objects.
@@ -121,6 +122,8 @@ public:
     PROG_CLASS_IOMUX = 32,
     PROG_CLASS_IODEMUX = 33,
     PROG_CLASS_AHRS = 34,
+    PROG_CLASS_BITMERGE = 35,
+    PROG_CLASS_SATURATE = 36,
 
     /** @brief User-defined PROG types start here. */
 
@@ -149,6 +152,33 @@ public:
   explicit CProgCommon(CDescObject &desc);
 
 protected:
-  int prepareWritableTarget(CIOCommon *io, size_t dim, bool notify);
+  /**
+   * @brief Check a writable output; shape a deferred virt output or check
+   *        an already shaped one.
+   *
+   * @param[in] io Output IO.
+   * @param[in] dim Virt output data dimension.
+   * @param[in] notify Whether the virt output notifies.
+   * @param[in] batch Virt output batch count.
+   * @return OK on success, -EINVAL for a missing, read-only or mismatched IO.
+   */
+
+  int prepareWritableTarget(CIOCommon *io, size_t dim, bool notify, size_t batch = 1);
+
+  /**
+   * @brief Count elements of the first nbatch batches stored back to back.
+   *
+   * Lets a caller walk the batches as one plain array instead of one batch
+   * at a time.
+   *
+   * @param[in] d Data buffer.
+   * @param[in] nbatch Number of batches.
+   * @param[in] nitems Elements per batch.
+   * @return nbatch * nitems when contiguous (nitems for one batch), 0 when
+   *         nitems differs from the buffer or batches are padded by
+   *         timestamps or alignment.
+   */
+
+  static size_t contiguousCount(io_ddata_t *d, size_t nbatch, size_t nitems);
 };
 } // Namespace dawn

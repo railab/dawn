@@ -104,6 +104,18 @@ uint32_t g_bin_sampling_generic_target[] = {
   CProgSampling::cfgIdIOInterval(),
   10000};
 
+// Interval zero: sampling disabled until the host sets one.
+
+uint32_t g_bin_sampling_disabled[] = {
+  CProgSampling::objectId(2),
+  2,
+  CProgSampling::cfgIdIOBind(2),
+  SAMPLING_DUMMYIO2,
+  SAMPLING_DUMMY_OUT,
+  CProgSampling::cfgIdIOInterval(),
+  0,
+};
+
 // Configure + init the three source dummies, three virt IOs, and the
 // sampling program; bind everything and finalize sampling init.  Caller
 // drives start/stop and the post-stop assertions.
@@ -214,6 +226,64 @@ static void test_prog_sampling_writes_generic_output()
   TEST_ASSERT_EQUAL(OK, sampling.deinit());
 }
 
+// Configure + init src2 -> target with the disabled (interval 0) program.
+
+#define SAMPLING_DISABLED_FIXTURE                         \
+  CDescObject desc2(g_cfg_dummy2);                        \
+  CIODummy src2(desc2);                                   \
+  CDescObject descout(g_cfg_dummy_out);                   \
+  CIODummy target(descout);                               \
+  CDescObject descs(g_bin_sampling_disabled);             \
+  CProgSampling sampling(descs);                          \
+  io_sdata_t<int32_t, 1, 1> data;                         \
+  TEST_ASSERT_EQUAL(OK, src2.configure());                \
+  TEST_ASSERT_EQUAL(OK, target.configure());              \
+  TEST_ASSERT_EQUAL(OK, src2.init());                     \
+  TEST_ASSERT_EQUAL(OK, target.init());                   \
+  TEST_ASSERT_EQUAL(OK, sampling.configure());            \
+  sampling.setObjectMapItem(SAMPLING_DUMMYIO2, &src2);    \
+  sampling.setObjectMapItem(SAMPLING_DUMMY_OUT, &target); \
+  TEST_ASSERT_EQUAL(OK, sampling.init())
+
+//***************************************************************************
+// Description: a zero interval idles the thread; the target is never written.
+//***************************************************************************
+
+static void test_prog_sampling_interval_zero_idles()
+{
+  SAMPLING_DISABLED_FIXTURE;
+
+  TEST_ASSERT_EQUAL(OK, sampling.start());
+  usleep(60000);
+  TEST_ASSERT_EQUAL(OK, sampling.stop());
+
+  TEST_ASSERT_EQUAL(OK, target.getData(data, 1));
+  TEST_ASSERT_EQUAL(0, *static_cast<int32_t *>(data.getDataPtr()));
+
+  TEST_ASSERT_EQUAL(OK, sampling.deinit());
+}
+
+//***************************************************************************
+// Description: the interval is runtime-writable; a non-zero value written
+// through setObjConfig resumes sampling within the idle poll period.
+//***************************************************************************
+
+static void test_prog_sampling_runtime_interval_update()
+{
+  SAMPLING_DISABLED_FIXTURE;
+  uint32_t interval = 10000;
+
+  TEST_ASSERT_EQUAL(OK, sampling.start());
+  TEST_ASSERT_EQUAL(OK, sampling.setObjConfig(CProgSampling::cfgIdIOInterval(), &interval, 1));
+  usleep(CProgSampling::INTERVAL_IDLE + 60000);
+  TEST_ASSERT_EQUAL(OK, sampling.stop());
+
+  TEST_ASSERT_EQUAL(OK, target.getData(data, 1));
+  TEST_ASSERT_EQUAL(11, *static_cast<int32_t *>(data.getDataPtr()));
+
+  TEST_ASSERT_EQUAL(OK, sampling.deinit());
+}
+
 extern "C"
 {
   int test_prog_sampling()
@@ -223,6 +293,8 @@ extern "C"
     DAWN_RUN_TEST(test_prog_sampling_lifecycle);
     DAWN_RUN_TEST(test_prog_sampling_writes_virt_ios);
     DAWN_RUN_TEST(test_prog_sampling_writes_generic_output);
+    DAWN_RUN_TEST(test_prog_sampling_interval_zero_idles);
+    DAWN_RUN_TEST(test_prog_sampling_runtime_interval_update);
 
     return UNITY_END();
   }

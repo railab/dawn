@@ -1,0 +1,23 @@
+config:
+  cwd: './external'
+  build_dir: './build'
+
+# NSH console on the first CDC/ACM port, nxscope on the second.
+# The by-id paths survive the USB re-enumeration after reset.
+
+product:
+  name: "dawn-ppk2-nxscope-ntfc"
+  ppk2:
+    nxscope_port: '/dev/serial/by-id/usb-Railab_PPK2_Dawn_0101-if02'
+  cores:
+    core0:
+      name: 'main'
+      device: 'serial'
+      exec_path: '/dev/serial/by-id/usb-Railab_PPK2_Dawn_0101-if00'
+      exec_args: '115200,n,8,1'
+      defconfig: '../../boards/arm/nrf52/ppk2/configs/nxscope_ntfc'
+      flash: 'sh ntfc/configs/ppk2/flash.sh $IMAGE_HEX'
+      reboot: 'sh ntfc/configs/ppk2/flash.sh reset'
+      boot_timeout: 20
+      dcmake:
+        CMAKE_SUPPRESS_DEVELOPER_WARNINGS: "ON"
