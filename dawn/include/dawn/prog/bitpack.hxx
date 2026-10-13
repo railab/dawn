@@ -96,12 +96,17 @@ private:
     SObjectId::ObjectId ioId;
     uint32_t bit;
     io_ddata_t *currentData;
+    uint8_t dtype;               ///< Input dtype, cached at init.
+    size_t size;                 ///< Input element size, cached at init.
+    size_t nbits;                ///< Input logical bits, cached at init.
   };
 
   CIOCommon *output;             ///< Output IO.
   SObjectId::ObjectId outputId;  ///< Output IO ObjectId.
   std::vector<SBitInput> inputs; ///< Configured bit inputs.
   io_ddata_t *outputData;        ///< Scratch buffer for packed output.
+  uint8_t outDtype;              ///< Output dtype, cached at init.
+  size_t outSize;                ///< Output element size, cached at init.
   bool active;                   ///< Activation flag.
   bool registered;               ///< Whether input notifiers are registered.
 
