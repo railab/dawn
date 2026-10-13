@@ -24,6 +24,8 @@ CProgBitPack::CProgBitPack(CDescObject &desc)
   , output(nullptr)
   , outputId(0)
   , outputData(nullptr)
+  , outDtype(SObjectId::DTYPE_ANY)
+  , outSize(0)
   , active(false)
   , registered(false)
 {
@@ -43,6 +45,9 @@ int CProgBitPack::allocInput(SObjectId::ObjectId ioId, uint32_t bit)
   inp.ioId = ioId;
   inp.bit = bit;
   inp.currentData = nullptr;
+  inp.dtype = SObjectId::DTYPE_ANY;
+  inp.size = 0;
+  inp.nbits = 0;
 
   inputs.push_back(inp);
   setObjectMapItem(ioId, nullptr);
@@ -167,7 +172,12 @@ int CProgBitPack::init()
           return -EINVAL;
         }
 
+      // The update runs per notification; cache what it needs per bit
+
       inputs[i].io = io;
+      inputs[i].dtype = io->getDtype();
+      inputs[i].size = io->getDtypeSize();
+      inputs[i].nbits = getLogicalBits(io);
       inputs[i].currentData = inputs[i].io->ddata_alloc(1);
       if (inputs[i].currentData == nullptr)
         {
@@ -175,8 +185,7 @@ int CProgBitPack::init()
           return -ENOMEM;
         }
 
-      requiredBits =
-        std::max(requiredBits, static_cast<size_t>(inputs[i].bit) + getLogicalBits(inputs[i].io));
+      requiredBits = std::max(requiredBits, static_cast<size_t>(inputs[i].bit) + inputs[i].nbits);
     }
 
   io = getIO(outputId);
@@ -186,8 +195,10 @@ int CProgBitPack::init()
       return -EIO;
     }
   output = io;
+  outDtype = output->getDtype();
+  outSize = output->getDtypeSize();
 
-  if (!isBitwiseDtype(output->getDtype()))
+  if (!isBitwiseDtype(outDtype))
     {
       DAWNERR("bitpack: output 0x%" PRIx32 " unsupported dtype %u\n", outputId, output->getDtype());
       return -EINVAL;
@@ -345,12 +356,16 @@ void CProgBitPack::updateOutput()
 
       inputs[i].io->getData(*inputs[i].currentData, 1);
 
-      for (bit = 0; bit < getLogicalBits(inputs[i].io); bit++)
+      for (bit = 0; bit < inputs[i].nbits; bit++)
         {
-          if (readLogicalBit(inputs[i].io, inputs[i].currentData->getDataPtr(), bit))
+          if (readLogicalBit(
+                inputs[i].dtype, inputs[i].size, inputs[i].currentData->getDataPtr(), bit))
             {
-              writeLogicalBit(
-                output, outputData->getDataPtr(), static_cast<size_t>(inputs[i].bit) + bit, true);
+              writeLogicalBit(outDtype,
+                              outSize,
+                              outputData->getDataPtr(),
+                              static_cast<size_t>(inputs[i].bit) + bit,
+                              true);
             }
         }
     }
