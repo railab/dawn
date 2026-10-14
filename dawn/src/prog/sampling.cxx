@@ -7,6 +7,7 @@
 
 #include <new>
 #include <sched.h>
+#include <time.h>
 
 #include "dawn/debug.hxx"
 #include "dawn/io/common.hxx"
@@ -124,10 +125,22 @@ int CProgSampling::onSetObjConfig(SObjectCfg::ObjectCfgId objcfg, uint32_t *data
   return OK;
 }
 
+// Advance an absolute deadline by us microseconds
+
+static void deadlineAdd(struct timespec &ts, uint32_t us)
+{
+  ts.tv_nsec += static_cast<long>(us % 1000000) * 1000L;
+  ts.tv_sec += us / 1000000 + ts.tv_nsec / 1000000000L;
+  ts.tv_nsec %= 1000000000L;
+}
+
 void CProgSampling::thread()
 {
   SSamplingBind *b;
+  struct timespec next;
+  struct timespec now;
   uint32_t period;
+  bool armed = false;
   size_t i;
   int ret;
 
@@ -135,6 +148,13 @@ void CProgSampling::thread()
 
   do
     {
+      period = interval;
+      if (period != 0 && !armed)
+        {
+          clock_gettime(CLOCK_MONOTONIC, &next);
+          armed = true;
+        }
+
       // Sample all source IOs and push to targets
 
       for (i = 0; i < binds.size(); i++)
@@ -155,18 +175,28 @@ void CProgSampling::thread()
             }
         }
 
-      // Wait for the next interval; zero samples back to back, for sources
-      // whose read blocks
+      // Zero samples back to back, for sources whose read blocks
 
-      period = interval;
       if (period == 0)
         {
+          armed = false;
           sched_yield();
+          continue;
         }
-      else
+
+      // Deadlines step by the interval, so sampling work and timer rounding
+      // do not stretch the period. A late sample is caught up on the next
+      // wakeup; only a stall of a second or more restarts the schedule.
+
+      deadlineAdd(next, period);
+      clock_gettime(CLOCK_MONOTONIC, &now);
+      if (now.tv_sec > next.tv_sec + 1 ||
+          (now.tv_sec == next.tv_sec + 1 && now.tv_nsec > next.tv_nsec))
         {
-          usleep(period);
+          next = now;
         }
+
+      clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &next, nullptr);
     }
   while (!threadCtl.shouldQuit());
 }

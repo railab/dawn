@@ -51,6 +51,10 @@ YAML
            - output1
          interval: 100000
 
+Samples are scheduled on absolute deadlines, so the sampling work does not
+stretch the period; the resolution is the system tick
+(``CONFIG_USEC_PER_TICK``).
+
 Runtime configuration
 =====================
 
@@ -74,7 +78,7 @@ Brainstorming & Future Ideas
 ============================
 
 - Configurable thread priority.
-- Hardware timer trigger instead of ``usleep`` for tighter timing.
+- Hardware timer trigger instead of the system tick for tighter timing.
 
 Doxygen
 =======
