@@ -73,6 +73,18 @@ int CProgSampling::configureDesc(const CDescObject &desc)
               break;
             }
 
+          case PROG_SAMPLING_CFG_PRIORITY:
+            {
+              if (item->cfgid.s.size != 1)
+                {
+                  DAWNERR("Invalid PRIORITY size %d\n", item->cfgid.s.size);
+                  return -EINVAL;
+                }
+
+              priority = static_cast<int>(item->data[0]);
+              break;
+            }
+
           default:
             {
               DAWNERR("Unsupported sampling config 0x%08" PRIx32 "\n", item->cfgid.v);
@@ -319,6 +331,7 @@ int CProgSampling::doStart()
 {
   // Start sampling thread
 
+  threadCtl.setThreadPriority(priority);
   threadCtl.setThreadFunc([this]() { thread(); });
   return threadCtl.threadStart();
 }

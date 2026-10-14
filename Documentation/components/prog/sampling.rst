@@ -50,10 +50,12 @@ YAML
            - src1
            - output1
          interval: 100000
+         priority: 110     # optional, 0 = default thread priority
 
 Samples are scheduled on absolute deadlines, so the sampling work does not
 stretch the period; the resolution is the system tick
-(``CONFIG_USEC_PER_TICK``).
+(``CONFIG_USEC_PER_TICK``). ``priority`` sets the sampling thread priority,
+like the ``notify`` priority of an IO.
 
 Runtime configuration
 =====================

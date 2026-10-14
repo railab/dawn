@@ -36,12 +36,14 @@ public:
     PROG_SAMPLING_CFG_FIRST = 0,
     PROG_SAMPLING_CFG_IOBIND = 1,   ///< I/O binding configuration.
     PROG_SAMPLING_CFG_INTERVAL = 2, ///< Sampling interval (microseconds).
+    PROG_SAMPLING_CFG_PRIORITY = 3, ///< Sampling thread priority (0 = default).
     PROG_SAMPLING_CFG_LAST = 31
   };
 
   CProgSampling(CDescObject &desc)
     : CProgCommon(desc)
     , interval(INTERVAL_DEFAULT)
+    , priority(CThreadedObject::THREAD_PRIORITY_DEFAULT)
   {
   }
 
@@ -88,6 +90,11 @@ public:
     return CProgSampling::cfgId(true, 1, PROG_SAMPLING_CFG_INTERVAL);
   }
 
+  constexpr static SObjectCfg::ObjectCfgId cfgIdPriority()
+  {
+    return CProgSampling::cfgId(false, 1, PROG_SAMPLING_CFG_PRIORITY);
+  }
+
 private:
   struct SSamplingBind
   {
@@ -100,6 +107,7 @@ private:
 
   std::vector<SSamplingBind *> binds; ///< Sampling bindings table.
   std::atomic<uint32_t> interval;     ///< Sampling interval in microseconds.
+  int priority;                       ///< Sampling thread priority (0 = default).
   CThreadedObject threadCtl;          ///< Thread management object.
 
   int configureDesc(const CDescObject &desc);

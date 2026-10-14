@@ -367,6 +367,67 @@ static void test_prog_sampling_keeps_rate()
   TEST_ASSERT_EQUAL(OK, sampling.deinit());
 }
 
+// Sampling thread above the default priority.
+
+uint32_t g_bin_sampling_prio[] = {
+  CProgSampling::objectId(5),
+  3,
+  CProgSampling::cfgIdIOBind(2),
+  SAMPLING_DUMMYIO2,
+  SAMPLING_DUMMY_OUT,
+  CProgSampling::cfgIdIOInterval(),
+  10000,
+  CProgSampling::cfgIdPriority(),
+  110,
+};
+
+// Priority item with two words.
+
+uint32_t g_bin_sampling_prio_bad[] = {
+  CProgSampling::objectId(6),
+  1,
+  CProgSampling::cfgId(false, 2, CProgSampling::PROG_SAMPLING_CFG_PRIORITY),
+  110,
+  0,
+};
+
+//***************************************************************************
+// Description: a configured thread priority is accepted and sampling runs;
+// a malformed priority item is rejected.
+//***************************************************************************
+
+static void test_prog_sampling_priority()
+{
+  CDescObject desc2(g_cfg_dummy2);
+  CIODummy src2(desc2);
+  CDescObject descout(g_cfg_dummy_out);
+  CIODummy target(descout);
+  CDescObject descs(g_bin_sampling_prio);
+  CProgSampling sampling(descs);
+  CDescObject descbad(g_bin_sampling_prio_bad);
+  CProgSampling bad(descbad);
+
+  TEST_ASSERT_EQUAL(OK, src2.configure());
+  TEST_ASSERT_EQUAL(OK, target.configure());
+  TEST_ASSERT_EQUAL(OK, src2.init());
+  TEST_ASSERT_EQUAL(OK, target.init());
+  TEST_ASSERT_EQUAL(OK, sampling.configure());
+  sampling.setObjectMapItem(SAMPLING_DUMMYIO2, &src2);
+  sampling.setObjectMapItem(SAMPLING_DUMMY_OUT, &target);
+  TEST_ASSERT_EQUAL(OK, sampling.init());
+  target.resetStats();
+
+  TEST_ASSERT_EQUAL(-EINVAL, bad.configure());
+
+  TEST_ASSERT_EQUAL(OK, sampling.start());
+  usleep(60000);
+  TEST_ASSERT_EQUAL(OK, sampling.stop());
+
+  TEST_ASSERT_TRUE(target.getStats().write_count > 0);
+
+  TEST_ASSERT_EQUAL(OK, sampling.deinit());
+}
+
 extern "C"
 {
   int test_prog_sampling()
@@ -379,6 +440,7 @@ extern "C"
     DAWN_RUN_TEST(test_prog_sampling_interval_zero_back_to_back);
     DAWN_RUN_TEST(test_prog_sampling_runtime_interval_update);
     DAWN_RUN_TEST(test_prog_sampling_keeps_rate);
+    DAWN_RUN_TEST(test_prog_sampling_priority);
 
     return UNITY_END();
   }
