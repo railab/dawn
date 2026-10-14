@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <cstdint>
 #include <cstring>
 #include <inttypes.h>
@@ -264,6 +265,13 @@ protected:
       }
   }
 
+  // Every sample of a batched source is evaluated
+
+  bool isBatchAware() const override
+  {
+    return true;
+  }
+
   virtual bool validateOutputDtype(uint8_t inputDtype, uint8_t outputDtype) const = 0;
   virtual int emitOutput(CIOCommon *output,
                          uint8_t inputDtype,
@@ -318,9 +326,8 @@ private:
                    T lowT,
                    T highT)
   {
+    const size_t batches = std::min(data->getBatch(), ioData->getBatch());
     int ret;
-
-    std::memcpy(ioData->getDataPtr(), data->getDataPtr(), ioData->getDataSize());
 
     const SObjectId::ObjectId outputId = output->getIdV();
     SState &st = state[outputId];
@@ -332,16 +339,23 @@ private:
         st.last.assign(items, 0);
       }
 
-    for (size_t i = 0; i < items; i++)
-      {
-        const uint8_t prev = st.last[i];
-        const T x = ioData->get<T>(i);
-        const bool out = evaluate(x, lowT, highT, prev);
+    // Samples are evaluated in order so hysteresis carries across the batch
 
-        st.last[i] = out ? 1 : 0;
+    this->alerts.resize(batches * items);
+
+    for (size_t b = 0; b < batches; b++)
+      {
+        std::memcpy(ioData->getDataPtr(b), data->getDataPtr(b), ioData->getDataSize());
+
+        for (size_t i = 0; i < items; i++)
+          {
+            const T x = ioData->get<T>(i, b);
+
+            st.last[i] = evaluate(x, lowT, highT, st.last[i]) ? 1 : 0;
+            this->alerts[b * items + i] = st.last[i];
+          }
       }
 
-    this->alerts = st.last;
     ret = emitOutput(output, data->getDtype(), items, ioData, outputData);
     if (ret != OK)
       {
@@ -353,7 +367,14 @@ protected:
   uint32_t mode;
   SObjectCfg::ObjectCfgData_t low;
   SObjectCfg::ObjectCfgData_t high;
-  std::vector<uint8_t> alerts;
+  std::vector<uint8_t> alerts; ///< Alert per sample, items per batch.
+
+  /** @brief First alert batch for an output holding fewer batches. */
+
+  size_t firstBatch(size_t items, io_ddata_t *outputData) const
+  {
+    return alerts.size() / items - outputData->getBatch();
+  }
 
 private:
   std::map<SObjectId::ObjectId, SState> state;
@@ -427,12 +448,17 @@ protected:
                  io_ddata_t *ioData,
                  io_ddata_t *outputData) override
   {
+    const size_t first = firstBatch(items, outputData);
+
     (void)inputDtype;
     (void)ioData;
 
-    for (size_t i = 0; i < items; i++)
+    for (size_t b = 0; b < outputData->getBatch(); b++)
       {
-        outputData->get<uint8_t>(i) = this->alerts[i];
+        for (size_t i = 0; i < items; i++)
+          {
+            outputData->get<uint8_t>(i, b) = this->alerts[(first + b) * items + i];
+          }
       }
 
     return output->setData(*outputData);
@@ -592,15 +618,22 @@ private:
   template<typename T>
   int emitOutputTyped(CIOCommon *output, size_t items, io_ddata_t *ioData, io_ddata_t *outputData)
   {
-    for (size_t i = 0; i < items; i++)
+    const size_t first = firstBatch(items, outputData);
+
+    for (size_t b = 0; b < outputData->getBatch(); b++)
       {
-        if (this->alerts[i] != 0)
+        for (size_t i = 0; i < items; i++)
           {
-            outputData->get<T>(i) = ioData->get<T>(i);
-          }
-        else
-          {
-            outputData->get<T>(i) = static_cast<T>(0);
+            const size_t src = first + b;
+
+            if (this->alerts[src * items + i] != 0)
+              {
+                outputData->get<T>(i, b) = ioData->get<T>(i, src);
+              }
+            else
+              {
+                outputData->get<T>(i, b) = static_cast<T>(0);
+              }
           }
       }
 

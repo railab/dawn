@@ -28,6 +28,8 @@ Input/output binding:
 
 - source IO must be notify-capable
 - destination must be a writable output IO with ``DTYPE_BOOL``
+- a batched source is evaluated sample by sample; a ``virt`` output is
+  batched alike, any other output gets the last sample's result
 
 Supported source dtypes:
 
