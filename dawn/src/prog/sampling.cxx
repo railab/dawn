@@ -6,6 +6,7 @@
 #include "dawn/prog/sampling.hxx"
 
 #include <new>
+#include <sched.h>
 
 #include "dawn/debug.hxx"
 #include "dawn/io/common.hxx"
@@ -107,9 +108,26 @@ int CProgSampling::allocObject(SObjectId::ObjectId srcId, SObjectId::ObjectId ta
   return OK;
 }
 
+int CProgSampling::onSetObjConfig(SObjectCfg::ObjectCfgId objcfg, uint32_t *data, size_t len)
+{
+  if (SObjectCfg::objectCfgGetId(objcfg) != PROG_SAMPLING_CFG_INTERVAL)
+    {
+      return OK;
+    }
+
+  if (data == nullptr || len != 1)
+    {
+      return -EINVAL;
+    }
+
+  interval = *data;
+  return OK;
+}
+
 void CProgSampling::thread()
 {
   SSamplingBind *b;
+  uint32_t period;
   size_t i;
   int ret;
 
@@ -137,9 +155,18 @@ void CProgSampling::thread()
             }
         }
 
-      // Wait for next interval
+      // Wait for the next interval; zero samples back to back, for sources
+      // whose read blocks
 
-      usleep(interval);
+      period = interval;
+      if (period == 0)
+        {
+          sched_yield();
+        }
+      else
+        {
+          usleep(period);
+        }
     }
   while (!threadCtl.shouldQuit());
 }
