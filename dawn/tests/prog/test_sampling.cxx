@@ -214,6 +214,112 @@ static void test_prog_sampling_writes_generic_output()
   TEST_ASSERT_EQUAL(OK, sampling.deinit());
 }
 
+uint32_t g_bin_sampling_zero[] = {
+  CProgSampling::objectId(2),
+  2,
+  CProgSampling::cfgIdIOBind(2),
+  SAMPLING_DUMMYIO2,
+  SAMPLING_DUMMY_OUT,
+  CProgSampling::cfgIdIOInterval(),
+  0,
+};
+
+// Dummy source whose read blocks for one system tick
+
+class CIOBlockingDummy : public CIODummy
+{
+public:
+  using CIODummy::CIODummy;
+
+  int getDataImpl(IODataCmn &data, size_t len) override
+  {
+    usleep(CONFIG_USEC_PER_TICK);
+    return CIODummy::getDataImpl(data, len);
+  }
+};
+
+//***************************************************************************
+// Description: a zero interval samples back to back: the blocking read
+// alone paces the loop.
+//***************************************************************************
+
+static void test_prog_sampling_interval_zero_back_to_back()
+{
+  CDescObject desc2(g_cfg_dummy2);
+  CIOBlockingDummy src2(desc2);
+  CDescObject descout(g_cfg_dummy_out);
+  CIODummy target(descout);
+  CDescObject descs(g_bin_sampling_zero);
+  CProgSampling sampling(descs);
+
+  TEST_ASSERT_EQUAL(OK, src2.configure());
+  TEST_ASSERT_EQUAL(OK, target.configure());
+  TEST_ASSERT_EQUAL(OK, src2.init());
+  TEST_ASSERT_EQUAL(OK, target.init());
+  TEST_ASSERT_EQUAL(OK, sampling.configure());
+  sampling.setObjectMapItem(SAMPLING_DUMMYIO2, &src2);
+  sampling.setObjectMapItem(SAMPLING_DUMMY_OUT, &target);
+  TEST_ASSERT_EQUAL(OK, sampling.init());
+  target.resetStats();
+
+  // ~20 reads in 20 ticks; any wait between reads would cut that down
+
+  TEST_ASSERT_EQUAL(OK, sampling.start());
+  usleep(20 * CONFIG_USEC_PER_TICK);
+  TEST_ASSERT_EQUAL(OK, sampling.stop());
+
+  TEST_ASSERT_TRUE(target.getStats().write_count >= 10);
+
+  TEST_ASSERT_EQUAL(OK, sampling.deinit());
+}
+
+uint32_t g_bin_sampling_slow[] = {
+  CProgSampling::objectId(3),
+  2,
+  CProgSampling::cfgIdIOBind(2),
+  SAMPLING_DUMMYIO2,
+  SAMPLING_DUMMY_OUT,
+  CProgSampling::cfgIdIOInterval(),
+  200000,
+};
+
+//***************************************************************************
+// Description: the interval is runtime-writable; a shorter one written
+// through setObjConfig applies after the current period.
+//***************************************************************************
+
+static void test_prog_sampling_runtime_interval_update()
+{
+  CDescObject desc2(g_cfg_dummy2);
+  CIODummy src2(desc2);
+  CDescObject descout(g_cfg_dummy_out);
+  CIODummy target(descout);
+  CDescObject descs(g_bin_sampling_slow);
+  CProgSampling sampling(descs);
+  uint32_t interval = 5000;
+
+  TEST_ASSERT_EQUAL(OK, src2.configure());
+  TEST_ASSERT_EQUAL(OK, target.configure());
+  TEST_ASSERT_EQUAL(OK, src2.init());
+  TEST_ASSERT_EQUAL(OK, target.init());
+  TEST_ASSERT_EQUAL(OK, sampling.configure());
+  sampling.setObjectMapItem(SAMPLING_DUMMYIO2, &src2);
+  sampling.setObjectMapItem(SAMPLING_DUMMY_OUT, &target);
+  TEST_ASSERT_EQUAL(OK, sampling.init());
+  target.resetStats();
+
+  TEST_ASSERT_EQUAL(OK, sampling.start());
+  TEST_ASSERT_EQUAL(OK, sampling.setObjConfig(CProgSampling::cfgIdIOInterval(), &interval, 1));
+  usleep(300000);
+  TEST_ASSERT_EQUAL(OK, sampling.stop());
+
+  // 200 ms alone gives 2 samples; the new 5 ms interval many more
+
+  TEST_ASSERT_TRUE(target.getStats().write_count >= 10);
+
+  TEST_ASSERT_EQUAL(OK, sampling.deinit());
+}
+
 extern "C"
 {
   int test_prog_sampling()
@@ -223,6 +329,8 @@ extern "C"
     DAWN_RUN_TEST(test_prog_sampling_lifecycle);
     DAWN_RUN_TEST(test_prog_sampling_writes_virt_ios);
     DAWN_RUN_TEST(test_prog_sampling_writes_generic_output);
+    DAWN_RUN_TEST(test_prog_sampling_interval_zero_back_to_back);
+    DAWN_RUN_TEST(test_prog_sampling_runtime_interval_update);
 
     return UNITY_END();
   }

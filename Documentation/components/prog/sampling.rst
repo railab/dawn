@@ -51,6 +51,14 @@ YAML
            - output1
          interval: 100000
 
+Runtime configuration
+=====================
+
+``interval`` is runtime-writable (``cfgIdIOInterval`` is rw) when the item is
+present in the descriptor; a new value applies after the current period.
+Zero samples back to back, only yielding between cycles; use it with sources
+whose read blocks.
+
 External Control
 ================
 

@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include <atomic>
 #include <vector>
 
 #include "dawn/common/thread.hxx"
@@ -56,6 +57,7 @@ public:
   int configure() override;
   int init() override;
   int deinit() override;
+  int onSetObjConfig(SObjectCfg::ObjectCfgId objcfg, uint32_t *data, size_t len) override;
   int doStart() override;
   int doStop() override;
   bool hasThread() const override;
@@ -97,7 +99,7 @@ private:
   };
 
   std::vector<SSamplingBind *> binds; ///< Sampling bindings table.
-  uint32_t interval;                  ///< Sampling interval in microseconds.
+  std::atomic<uint32_t> interval;     ///< Sampling interval in microseconds.
   CThreadedObject threadCtl;          ///< Thread management object.
 
   int configureDesc(const CDescObject &desc);
