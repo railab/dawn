@@ -20,6 +20,10 @@ The output object is producer-owned by the program path. During ``init()``,
 ``CProgProcess`` initializes deferred ``virt`` outputs when needed and
 validates configured writable outputs against the resolved source shape.
 
+By default only batch 0 of a batched source is handled. A program that
+overrides ``isBatchAware()`` gets the whole notify batch; a ``virt`` output
+takes the same batch, other outputs hold one sample.
+
 A common pattern is to use the ``CProgProcessTemplate``, which allows
 implementing the processing logic once and applying it to different
 data types (like integers or floats) through a simple policy class.

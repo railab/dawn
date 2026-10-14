@@ -57,6 +57,38 @@ private:
     initsample = false;
   }
 };
+//***************************************************************************
+// Description: test implementation opting in to whole notify batches.
+//***************************************************************************
+
+class CProgProcessBatchImpl : public CProgProcessTestImpl
+{
+public:
+  using CProgProcessTestImpl::CProgProcessTestImpl;
+
+  size_t seenBatch = 0;
+
+protected:
+  bool isBatchAware() const override
+  {
+    return true;
+  }
+
+private:
+  void handle(CIOCommon *output,
+              io_ddata_t *data,
+              io_ddata_t *ioData,
+              io_ddata_t *outputData,
+              bool &initsample) override
+  {
+    (void)output;
+    (void)data;
+    (void)outputData;
+
+    seenBatch = ioData->getBatch();
+    initsample = false;
+  }
+};
 } // namespace dawn
 
 using CTestProgProcessImpl = dawn::CProgProcessTestImpl;
@@ -271,6 +303,83 @@ static void test_prog_process_generic_output()
   TEST_ASSERT_EQUAL(OK, ret);
 }
 
+static uint32_t g_cfg_process_batch_src[] = {
+  PROCESS_VIRTIO2,
+  0,
+};
+
+static uint32_t g_cfg_process_batch_out[] = {
+  PROCESS_VIRTIO1,
+  0,
+};
+
+uint32_t g_bin_process_batch[] = {
+  CTestProgProcessImpl::objectId(2),
+  1,
+  CTestProgProcessImpl::cfgIdIOBind(),
+  PROCESS_VIRTIO2,
+  PROCESS_VIRTIO1,
+};
+
+//***************************************************************************
+// Description: a batch-aware program gets the whole source notify batch and
+// its deferred virt output takes the same batch; others get batch 0 only.
+//***************************************************************************
+
+static void test_prog_process_batch_aware()
+{
+  CDescObject srcDesc(g_cfg_process_batch_src);
+  CIOVirt src(srcDesc);
+  CDescObject outDesc(g_cfg_process_batch_out);
+  CIOVirt out(outDesc);
+  CDescObject progDesc(g_bin_process_batch);
+  dawn::CProgProcessBatchImpl prog(progDesc);
+  io_sdata_t<int32_t, 1, 4> in;
+
+  TEST_ASSERT_EQUAL(OK, src.init());
+  TEST_ASSERT_EQUAL(OK, out.init());
+  TEST_ASSERT_EQUAL(OK, src.initialize(1, 4, true));
+  TEST_ASSERT_EQUAL(OK, prog.configure());
+  prog.setObjectMapItem(PROCESS_VIRTIO2, &src);
+  prog.setObjectMapItem(PROCESS_VIRTIO1, &out);
+  TEST_ASSERT_EQUAL(OK, prog.init());
+  TEST_ASSERT_EQUAL(4, out.getNotifyBatch());
+  TEST_ASSERT_EQUAL(OK, prog.start());
+
+  TEST_ASSERT_EQUAL(OK, src.setData(in));
+  TEST_ASSERT_EQUAL(4, prog.seenBatch);
+
+  TEST_ASSERT_EQUAL(OK, prog.stop());
+}
+
+static uint32_t g_cfg_process_plain_out[] = {
+  PROCESS_VIRTIO1,
+  0,
+};
+
+//***************************************************************************
+// Description: without the opt-in a deferred virt output holds one sample.
+//***************************************************************************
+
+static void test_prog_process_batch_default()
+{
+  CDescObject srcDesc(g_cfg_process_batch_src);
+  CIOVirt src(srcDesc);
+  CDescObject outDesc(g_cfg_process_plain_out);
+  CIOVirt out(outDesc);
+  CDescObject progDesc(g_bin_process_batch);
+  CTestProgProcessImpl prog(progDesc);
+
+  TEST_ASSERT_EQUAL(OK, src.init());
+  TEST_ASSERT_EQUAL(OK, out.init());
+  TEST_ASSERT_EQUAL(OK, src.initialize(1, 4, true));
+  TEST_ASSERT_EQUAL(OK, prog.configure());
+  prog.setObjectMapItem(PROCESS_VIRTIO2, &src);
+  prog.setObjectMapItem(PROCESS_VIRTIO1, &out);
+  TEST_ASSERT_EQUAL(OK, prog.init());
+  TEST_ASSERT_EQUAL(1, out.getNotifyBatch());
+}
+
 extern "C"
 {
   int test_prog_process()
@@ -280,6 +389,10 @@ extern "C"
     DAWN_RUN_TEST(test_prog_process_state);
     DAWN_RUN_TEST(test_prog_process_start_stop_updates);
     DAWN_RUN_TEST(test_prog_process_generic_output);
+#ifdef CONFIG_DAWN_IO_NOTIFY
+    DAWN_RUN_TEST(test_prog_process_batch_aware);
+    DAWN_RUN_TEST(test_prog_process_batch_default);
+#endif
     return UNITY_END();
   }
 }
