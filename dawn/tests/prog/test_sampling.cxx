@@ -320,6 +320,53 @@ static void test_prog_sampling_runtime_interval_update()
   TEST_ASSERT_EQUAL(OK, sampling.deinit());
 }
 
+// 20 ms interval, a multiple of the system tick, for the rate check.
+
+uint32_t g_bin_sampling_rate[] = {
+  CProgSampling::objectId(4),
+  2,
+  CProgSampling::cfgIdIOBind(2),
+  SAMPLING_DUMMYIO2,
+  SAMPLING_DUMMY_OUT,
+  CProgSampling::cfgIdIOInterval(),
+  20000,
+};
+
+//***************************************************************************
+// Description: the period does not drift: work time and timer rounding do
+// not add to the interval, so 1 s at 20 ms gives ~50 samples, not ~33.
+//***************************************************************************
+
+static void test_prog_sampling_keeps_rate()
+{
+  CDescObject desc2(g_cfg_dummy2);
+  CIODummy src2(desc2);
+  CDescObject descout(g_cfg_dummy_out);
+  CIODummy target(descout);
+  CDescObject descs(g_bin_sampling_rate);
+  CProgSampling sampling(descs);
+  size_t writes;
+
+  TEST_ASSERT_EQUAL(OK, src2.configure());
+  TEST_ASSERT_EQUAL(OK, target.configure());
+  TEST_ASSERT_EQUAL(OK, src2.init());
+  TEST_ASSERT_EQUAL(OK, target.init());
+  TEST_ASSERT_EQUAL(OK, sampling.configure());
+  sampling.setObjectMapItem(SAMPLING_DUMMYIO2, &src2);
+  sampling.setObjectMapItem(SAMPLING_DUMMY_OUT, &target);
+  TEST_ASSERT_EQUAL(OK, sampling.init());
+  target.resetStats();
+
+  TEST_ASSERT_EQUAL(OK, sampling.start());
+  usleep(1000000);
+  TEST_ASSERT_EQUAL(OK, sampling.stop());
+
+  writes = target.getStats().write_count;
+  TEST_ASSERT_TRUE_MESSAGE(writes >= 47 && writes <= 52, "sampling rate drifted");
+
+  TEST_ASSERT_EQUAL(OK, sampling.deinit());
+}
+
 extern "C"
 {
   int test_prog_sampling()
@@ -331,6 +378,7 @@ extern "C"
     DAWN_RUN_TEST(test_prog_sampling_writes_generic_output);
     DAWN_RUN_TEST(test_prog_sampling_interval_zero_back_to_back);
     DAWN_RUN_TEST(test_prog_sampling_runtime_interval_update);
+    DAWN_RUN_TEST(test_prog_sampling_keeps_rate);
 
     return UNITY_END();
   }
