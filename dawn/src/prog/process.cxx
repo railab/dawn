@@ -163,9 +163,22 @@ int CProgProcess::bindPrepare(SProcessBind *bind)
 
   dim = bind->src->getDataDim();
 
+  // Batch-aware programs process and publish whole notifier buffers
+
+#ifdef CONFIG_DAWN_IO_NOTIFY
+  bind->batch = isBatchAware() ? bind->src->getNotifyBatch() : 1;
+#endif
+
+  // Only a virt output can carry the batch, real IO writes batch 0 only
+
+  if (bind->output->getCls() == CIOCommon::IO_CLASS_VIRT)
+    {
+      bind->outBatch = bind->batch;
+    }
+
   // Initialize deferred virtual outputs and validate configured targets.
 
-  ret = prepareWritableTarget(bind->output, dim, true);
+  ret = prepareWritableTarget(bind->output, dim, true, bind->outBatch);
   if (ret != OK)
     {
       DAWNERR("Failed to initialize output IO (error %d)\n", ret);
@@ -228,13 +241,13 @@ int CProgProcess::init()
           return ret;
         }
 
-      bind.ioData = bind.src->ddata_alloc(1);
+      bind.ioData = bind.src->ddata_alloc(bind.batch);
       if (!bind.ioData)
         {
           return -ENOMEM;
         }
 
-      bind.outputData = bind.output->ddata_alloc(1);
+      bind.outputData = bind.output->ddata_alloc(bind.outBatch);
       if (!bind.outputData)
         {
           delete bind.ioData;
