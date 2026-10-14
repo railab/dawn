@@ -428,6 +428,120 @@ static void test_prog_sampling_priority()
   TEST_ASSERT_EQUAL(OK, sampling.deinit());
 }
 
+// Auto-start off: sampling waits for trigger1.
+
+uint32_t g_bin_sampling_manual[] = {
+  CProgSampling::objectId(7),
+  3,
+  CProgSampling::cfgIdIOBind(2),
+  SAMPLING_DUMMYIO2,
+  SAMPLING_DUMMY_OUT,
+  CProgSampling::cfgIdIOInterval(),
+  5000,
+  CProgSampling::cfgIdFlags(),
+  0,
+};
+
+// Unknown flag bit.
+
+uint32_t g_bin_sampling_flags_bad[] = {
+  CProgSampling::objectId(8),
+  1,
+  CProgSampling::cfgIdFlags(),
+  0x2,
+};
+
+//***************************************************************************
+// Description: with auto-start off nothing is sampled until trigger1;
+// trigger2 stops sampling while the program keeps running.
+//***************************************************************************
+
+static void test_prog_sampling_trigger_start_stop()
+{
+  CDescObject desc2(g_cfg_dummy2);
+  CIODummy src2(desc2);
+  CDescObject descout(g_cfg_dummy_out);
+  CIODummy target(descout);
+  CDescObject descs(g_bin_sampling_manual);
+  CProgSampling sampling(descs);
+  size_t writes;
+
+  TEST_ASSERT_EQUAL(OK, src2.configure());
+  TEST_ASSERT_EQUAL(OK, target.configure());
+  TEST_ASSERT_EQUAL(OK, src2.init());
+  TEST_ASSERT_EQUAL(OK, target.init());
+  TEST_ASSERT_EQUAL(OK, sampling.configure());
+  sampling.setObjectMapItem(SAMPLING_DUMMYIO2, &src2);
+  sampling.setObjectMapItem(SAMPLING_DUMMY_OUT, &target);
+  TEST_ASSERT_EQUAL(OK, sampling.init());
+  target.resetStats();
+
+  TEST_ASSERT_EQUAL(OK, sampling.start());
+  usleep(50000);
+  TEST_ASSERT_EQUAL(0, target.getStats().write_count);
+
+  TEST_ASSERT_EQUAL(OK, sampling.trigger(CObject::CMD_TRIGGER1));
+  usleep(50000);
+  TEST_ASSERT_TRUE(target.getStats().write_count > 0);
+
+  TEST_ASSERT_EQUAL(OK, sampling.trigger(CObject::CMD_TRIGGER2));
+  usleep(20000);
+  writes = target.getStats().write_count;
+  usleep(50000);
+  TEST_ASSERT_EQUAL(writes, target.getStats().write_count);
+  TEST_ASSERT_TRUE(sampling.hasThread());
+
+  TEST_ASSERT_EQUAL(-ENOTSUP, sampling.trigger(CObject::CMD_TRIGGER3));
+
+  // Stop while waiting for a trigger must not hang
+
+  TEST_ASSERT_EQUAL(OK, sampling.stop());
+  TEST_ASSERT_FALSE(sampling.hasThread());
+
+  TEST_ASSERT_EQUAL(OK, sampling.deinit());
+}
+
+//***************************************************************************
+// Description: a restart applies the auto-start flag again; an unknown
+// flag bit is rejected.
+//***************************************************************************
+
+static void test_prog_sampling_flags()
+{
+  CDescObject desc2(g_cfg_dummy2);
+  CIODummy src2(desc2);
+  CDescObject descout(g_cfg_dummy_out);
+  CIODummy target(descout);
+  CDescObject descs(g_bin_sampling_manual);
+  CProgSampling sampling(descs);
+  CDescObject descbad(g_bin_sampling_flags_bad);
+  CProgSampling bad(descbad);
+
+  TEST_ASSERT_EQUAL(OK, src2.configure());
+  TEST_ASSERT_EQUAL(OK, target.configure());
+  TEST_ASSERT_EQUAL(OK, src2.init());
+  TEST_ASSERT_EQUAL(OK, target.init());
+  TEST_ASSERT_EQUAL(OK, sampling.configure());
+  sampling.setObjectMapItem(SAMPLING_DUMMYIO2, &src2);
+  sampling.setObjectMapItem(SAMPLING_DUMMY_OUT, &target);
+  TEST_ASSERT_EQUAL(OK, sampling.init());
+  target.resetStats();
+
+  TEST_ASSERT_EQUAL(-EINVAL, bad.configure());
+
+  TEST_ASSERT_EQUAL(OK, sampling.start());
+  TEST_ASSERT_EQUAL(OK, sampling.trigger(CObject::CMD_TRIGGER1));
+  TEST_ASSERT_EQUAL(OK, sampling.stop());
+
+  target.resetStats();
+  TEST_ASSERT_EQUAL(OK, sampling.start());
+  usleep(50000);
+  TEST_ASSERT_EQUAL(0, target.getStats().write_count);
+  TEST_ASSERT_EQUAL(OK, sampling.stop());
+
+  TEST_ASSERT_EQUAL(OK, sampling.deinit());
+}
+
 extern "C"
 {
   int test_prog_sampling()
@@ -441,6 +555,8 @@ extern "C"
     DAWN_RUN_TEST(test_prog_sampling_runtime_interval_update);
     DAWN_RUN_TEST(test_prog_sampling_keeps_rate);
     DAWN_RUN_TEST(test_prog_sampling_priority);
+    DAWN_RUN_TEST(test_prog_sampling_trigger_start_stop);
+    DAWN_RUN_TEST(test_prog_sampling_flags);
 
     return UNITY_END();
   }

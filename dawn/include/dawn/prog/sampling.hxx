@@ -6,6 +6,7 @@
 #pragma once
 
 #include <atomic>
+#include <semaphore.h>
 #include <vector>
 
 #include "dawn/common/thread.hxx"
@@ -37,14 +38,24 @@ public:
     PROG_SAMPLING_CFG_IOBIND = 1,   ///< I/O binding configuration.
     PROG_SAMPLING_CFG_INTERVAL = 2, ///< Sampling interval (microseconds).
     PROG_SAMPLING_CFG_PRIORITY = 3, ///< Sampling thread priority (0 = default).
+    PROG_SAMPLING_CFG_FLAGS = 4,    ///< Behavior flags.
     PROG_SAMPLING_CFG_LAST = 31
+  };
+
+  enum
+  {
+    FLAG_AUTO_START = (1u << 0), ///< Sample from start, without a trigger.
   };
 
   CProgSampling(CDescObject &desc)
     : CProgCommon(desc)
     , interval(INTERVAL_DEFAULT)
     , priority(CThreadedObject::THREAD_PRIORITY_DEFAULT)
+    , flags(FLAG_AUTO_START)
+    , active(false)
+    , stopping(false)
   {
+    sem_init(&wakeup, 0, 0);
   }
 
   ~CProgSampling() override;
@@ -63,6 +74,7 @@ public:
   int doStart() override;
   int doStop() override;
   bool hasThread() const override;
+  int trigger(uint8_t cmd) override;
 
   constexpr static SObjectId::ObjectId objectId(uint16_t inst)
   {
@@ -95,6 +107,11 @@ public:
     return CProgSampling::cfgId(false, 1, PROG_SAMPLING_CFG_PRIORITY);
   }
 
+  constexpr static SObjectCfg::ObjectCfgId cfgIdFlags()
+  {
+    return CProgSampling::cfgId(false, 1, PROG_SAMPLING_CFG_FLAGS);
+  }
+
 private:
   struct SSamplingBind
   {
@@ -108,6 +125,10 @@ private:
   std::vector<SSamplingBind *> binds; ///< Sampling bindings table.
   std::atomic<uint32_t> interval;     ///< Sampling interval in microseconds.
   int priority;                       ///< Sampling thread priority (0 = default).
+  uint32_t flags;                     ///< FLAG_* behavior flags.
+  std::atomic<bool> active;           ///< Sampling enabled (trigger1/2).
+  std::atomic<bool> stopping;         ///< Thread stop requested.
+  sem_t wakeup;                       ///< Wakes the thread while inactive.
   CThreadedObject threadCtl;          ///< Thread management object.
 
   int configureDesc(const CDescObject &desc);

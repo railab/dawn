@@ -51,6 +51,7 @@ YAML
            - output1
          interval: 100000
          priority: 110     # optional, 0 = default thread priority
+         flags: 1          # optional, bit0 = auto-start (default 1)
 
 Samples are scheduled on absolute deadlines, so the sampling work does not
 stretch the period; the resolution is the system tick
@@ -74,7 +75,13 @@ ControlIO: supported.
 When stopped, the sampling thread is stopped and outputs are not updated.
 When started again, periodic sampling resumes.
 
-TriggerIO: not supported.
+TriggerIO: supported.
+
+- ``trigger1`` starts sampling.
+- ``trigger2`` stops sampling without stopping the program object.
+
+With ``flags`` bit0 (auto-start) cleared, sampling waits for ``trigger1``
+after the program starts.
 
 Brainstorming & Future Ideas
 ============================

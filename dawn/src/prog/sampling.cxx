@@ -85,6 +85,18 @@ int CProgSampling::configureDesc(const CDescObject &desc)
               break;
             }
 
+          case PROG_SAMPLING_CFG_FLAGS:
+            {
+              if (item->cfgid.s.size != 1 || (item->data[0] & ~FLAG_AUTO_START) != 0)
+                {
+                  DAWNERR("Invalid FLAGS item\n");
+                  return -EINVAL;
+                }
+
+              flags = item->data[0];
+              break;
+            }
+
           default:
             {
               DAWNERR("Unsupported sampling config 0x%08" PRIx32 "\n", item->cfgid.v);
@@ -160,6 +172,20 @@ void CProgSampling::thread()
 
   do
     {
+      // Stopped by trigger: wait without sampling until started again
+
+      if (!active)
+        {
+          armed = false;
+          sem_wait(&wakeup);
+          if (stopping)
+            {
+              break;
+            }
+
+          continue;
+        }
+
       period = interval;
       if (period != 0 && !armed)
         {
@@ -216,6 +242,7 @@ void CProgSampling::thread()
 CProgSampling::~CProgSampling()
 {
   deinit();
+  sem_destroy(&wakeup);
 }
 
 int CProgSampling::configure()
@@ -329,6 +356,15 @@ int CProgSampling::init()
 
 int CProgSampling::doStart()
 {
+  // Drop wakeups left from the previous run
+
+  while (sem_trywait(&wakeup) == 0)
+    {
+    }
+
+  active = (flags & FLAG_AUTO_START) != 0;
+  stopping = false;
+
   // Start sampling thread
 
   threadCtl.setThreadPriority(priority);
@@ -338,7 +374,29 @@ int CProgSampling::doStart()
 
 int CProgSampling::doStop()
 {
+  // Wake the thread if it waits for a trigger
+
+  stopping = true;
+  sem_post(&wakeup);
   return threadCtl.threadStop();
+}
+
+int CProgSampling::trigger(uint8_t cmd)
+{
+  switch (cmd)
+    {
+      case CMD_TRIGGER1:
+        active = true;
+        sem_post(&wakeup);
+        return OK;
+
+      case CMD_TRIGGER2:
+        active = false;
+        return OK;
+
+      default:
+        return -ENOTSUP;
+    }
 }
 
 bool CProgSampling::hasThread() const
