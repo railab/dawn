@@ -4,11 +4,23 @@
 //
 
 #include "test_common.hxx"
+#include "dawn/io/ddata.hxx"
+#include "dawn/io/virt.hxx"
 #include "dawn/prog/common.hxx"
 #include "test_iomockcommon.hxx"
 #include "test_progmockcommon.hxx"
 
 using namespace dawn;
+
+// Expose the protected helpers
+
+class CProgCommonHelpers : public CProgMockCommon
+{
+public:
+  using CProgMockCommon::CProgMockCommon;
+  using CProgCommon::contiguousCount;
+  using CProgCommon::prepareWritableTarget;
+};
 
 static constexpr auto ALLOCITEM_ID_1 = (SObjectId::objectId(SObjectId::OBJTYPE_IO, 1, 1, 0, 0));
 static constexpr auto ALLOCITEM_ID_2 = (SObjectId::objectId(SObjectId::OBJTYPE_IO, 1, 1, 0, 2));
@@ -106,6 +118,52 @@ static void test_prog_common_init()
   TEST_ASSERT_EQUAL(io, &io4);
 }
 
+//***************************************************************************
+// Description: contiguousCount() spans batches only when they are packed.
+//***************************************************************************
+
+static void test_prog_common_contiguous_count()
+{
+  io_ddata_t one(2, 3, 1);
+  io_ddata_t packed(2, 3, 4);
+  io_ddata_t stamped(2, 3, 4, 0, true);
+
+  TEST_ASSERT_EQUAL(3, CProgCommonHelpers::contiguousCount(&one, 1, 3));
+  TEST_ASSERT_EQUAL(12, CProgCommonHelpers::contiguousCount(&packed, 4, 3));
+  TEST_ASSERT_EQUAL(0, CProgCommonHelpers::contiguousCount(&packed, 4, 2));
+  TEST_ASSERT_EQUAL(0, CProgCommonHelpers::contiguousCount(&stamped, 4, 3));
+  TEST_ASSERT_EQUAL(3, CProgCommonHelpers::contiguousCount(&stamped, 1, 3));
+}
+
+#ifdef CONFIG_DAWN_IO_VIRT
+static uint32_t g_cfg_virt[] = {
+  CIOVirt::objectId(SObjectId::DTYPE_INT16, false, 160),
+  0,
+};
+
+//***************************************************************************
+// Description: prepareWritableTarget() shapes a deferred virt with the batch
+// and rejects an already shaped one with a different batch.
+//***************************************************************************
+
+static void test_prog_common_prepare_batched_target()
+{
+  CDescObject desc(g_cfg_prog);
+  CProgCommonHelpers prog(desc);
+  CDescObject vdesc(g_cfg_virt);
+  CIOVirt virt(vdesc);
+
+  TEST_ASSERT_EQUAL(OK, virt.init());
+  TEST_ASSERT_EQUAL(OK, prog.prepareWritableTarget(&virt, 1, true, 4));
+  TEST_ASSERT_EQUAL(1, virt.getDataDim());
+#  ifdef CONFIG_DAWN_IO_NOTIFY
+  TEST_ASSERT_EQUAL(4, virt.getNotifyBatch());
+  TEST_ASSERT_EQUAL(-EINVAL, prog.prepareWritableTarget(&virt, 1, true, 2));
+#  endif
+  TEST_ASSERT_EQUAL(OK, prog.prepareWritableTarget(&virt, 1, true, 4));
+}
+#endif
+
 extern "C"
 {
   int test_prog_common()
@@ -113,6 +171,10 @@ extern "C"
     UNITY_BEGIN();
 
     DAWN_RUN_TEST(test_prog_common_init);
+    DAWN_RUN_TEST(test_prog_common_contiguous_count);
+#ifdef CONFIG_DAWN_IO_VIRT
+    DAWN_RUN_TEST(test_prog_common_prepare_batched_target);
+#endif
 
     return UNITY_END();
   }
