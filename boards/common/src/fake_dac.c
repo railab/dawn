@@ -9,6 +9,7 @@
 
 #include <debug.h>
 
+#include <nuttx/kmalloc.h>
 #include <nuttx/analog/dac.h>
 
 /* No board-specific header needed */
