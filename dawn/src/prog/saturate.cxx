@@ -141,10 +141,8 @@ void CProgSaturate::handle(CIOCommon *output,
 #ifdef CONFIG_DAWN_DTYPE_BOOL
       case SObjectId::DTYPE_BOOL:
         {
-          clamp<uint8_t>(data,
-                         outputData,
-                         bound<uint8_t>(lo, hasMin, 0),
-                         bound<uint8_t>(hi, hasMax, 1));
+          clamp<uint8_t>(
+            data, outputData, bound<uint8_t>(lo, hasMin, 0), bound<uint8_t>(hi, hasMax, 1));
           break;
         }
 #endif
@@ -163,10 +161,8 @@ void CProgSaturate::handle(CIOCommon *output,
 #ifdef CONFIG_DAWN_DTYPE_UINT8
       case SObjectId::DTYPE_UINT8:
         {
-          clamp<uint8_t>(data,
-                         outputData,
-                         bound<uint8_t>(lo, hasMin, 0),
-                         bound<uint8_t>(hi, hasMax, UINT8_MAX));
+          clamp<uint8_t>(
+            data, outputData, bound<uint8_t>(lo, hasMin, 0), bound<uint8_t>(hi, hasMax, UINT8_MAX));
           break;
         }
 #endif
