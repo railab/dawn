@@ -580,7 +580,6 @@ static void test_prog_threshold_value_batched_input()
   TEST_ASSERT_EQUAL(OK, prog.stop());
 }
 
-
 extern "C"
 {
   int test_prog_threshold()

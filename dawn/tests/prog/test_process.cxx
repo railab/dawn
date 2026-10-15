@@ -57,6 +57,7 @@ private:
     initsample = false;
   }
 };
+
 //***************************************************************************
 // Description: test implementation opting in to whole notify batches.
 //***************************************************************************
