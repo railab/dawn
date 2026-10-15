@@ -17,9 +17,9 @@ using namespace dawn;
 class CProgCommonHelpers : public CProgMockCommon
 {
 public:
-  using CProgMockCommon::CProgMockCommon;
   using CProgCommon::contiguousCount;
   using CProgCommon::prepareWritableTarget;
+  using CProgMockCommon::CProgMockCommon;
 };
 
 static constexpr auto ALLOCITEM_ID_1 = (SObjectId::objectId(SObjectId::OBJTYPE_IO, 1, 1, 0, 0));
