@@ -9,6 +9,11 @@
 #include <errno.h>
 #include <nuttx/mm/mm.h>
 
+// operator new relies on malloc() meeting the C++ default new alignment
+
+static_assert(MM_ALIGN >= __STDCPP_DEFAULT_NEW_ALIGNMENT__,
+              "CONFIG_MM_DEFAULT_ALIGNMENT is below C++ new alignment");
+
 namespace dawn
 {
 namespace porting
