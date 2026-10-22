@@ -44,9 +44,12 @@ jobs:
 
       - name: Load host kernel modules
         run: |
+          # Newer azure kernels ship CAN in linux-modules, no -extra package
+          extra="linux-modules-extra-$(uname -r)"
           sudo apt-get update
-          sudo apt-get install --no-install-recommends -y \
-            "linux-modules-extra-$(uname -r)"
+          if apt-cache show "${extra}" >/dev/null 2>&1; then
+            sudo apt-get install --no-install-recommends -y "${extra}"
+          fi
           sudo modprobe can
           sudo modprobe vcan
           sudo modprobe can_raw
