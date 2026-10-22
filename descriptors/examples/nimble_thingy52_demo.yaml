@@ -1,0 +1,155 @@
+metadata:
+  title: Thingy:52 Environmental NimBLE Demo
+  version: "1.0"
+  description: >
+    Exposes the Nordic Thingy:52 onboard environmental sensors over the
+    standard Environmental Sensing (ESS) and Dawn IMDS services via NimBLE.
+    Temperature and humidity come from the HTS221, pressure from the
+    LPS22HB and air quality (eCO2 and TVOC) from the CCS811, each published
+    through the NuttX uORB sensor framework.  The
+    battery voltage is read from the raw SAADC channel (/dev/adc0, AIN4),
+    sampled periodically and scaled to a Li-Po percentage in Dawn, then
+    exposed over the standard Battery Service (BAS).  The lightwell RGB
+    LED is writable over a custom characteristic; the rgbled IO uses
+    0x00RRGGBB values converted to the #RRGGBB string format expected by
+    the NuttX /dev/rgbled0 driver.
+  os_required:
+    - /dev/rgbled0
+    - /dev/uorb/sensor_humi0
+    - /dev/uorb/sensor_ambient_temp0
+    - /dev/uorb/sensor_baro0
+    - /dev/uorb/sensor_co20
+    - /dev/uorb/sensor_tvoc0
+    - /dev/adc0
+    - ble
+
+ios:
+  - &rgb_led
+    id: rgbled0
+    type: rgb_led
+    dtype: uint32
+    config:
+      device: 0
+      init_val: 0x000000
+  - &humidity
+    id: humidity1
+    type: sensor
+    dtype: float
+    config:
+      device: 0
+    subtype: hum
+  - &temp
+    id: temp1
+    type: sensor
+    dtype: float
+    config:
+      device: 0
+    subtype: atemp
+  - &barometer
+    id: barometer1
+    type: sensor
+    dtype: float
+    config:
+      device: 0
+    subtype: baro
+  - &co2
+    id: co21
+    type: sensor
+    dtype: float
+    config:
+      device: 0
+    subtype: co2
+  - &tvoc
+    id: tvoc1
+    type: sensor
+    dtype: float
+    config:
+      device: 0
+    subtype: tvoc
+
+  # Battery: raw ADC -> sampling -> adjust -> BAS battery level.  The board
+  # exposes only the raw SAADC channel (/dev/adc0, AIN4).  The divider scaling
+  # and percentage mapping are done in Dawn: sampling polls the ADC, a float
+  # adjust maps raw counts to a Li-Po percentage, and a uint8 adjust narrows
+  # it for the standard Battery Service.
+  - &adc_bat
+    id: adc_bat
+    type: adc_fetch
+    dtype: int32
+    config:
+      device: 0
+  - &adc_bat_raw
+    id: adc_bat_raw
+    type: virt
+    dtype: int32
+  - &bat_pct
+    id: bat_pct
+    type: virt
+    dtype: float
+  - &bat_level
+    id: bat_level
+    type: virt
+    dtype: uint8
+
+programs:
+  # Battery: poll the raw ADC once per second, then scale to a percentage.
+  - id: bat_sampling
+    type: sampling
+    config:
+      sources:
+        - *adc_bat
+      outputs:
+        - *adc_bat_raw
+      interval: 1000000
+  - id: bat_scale
+    type: adjust
+    dtype: float
+    config:
+      inputs:
+        - *adc_bat_raw
+      outputs:
+        - *bat_pct
+      params:
+        scale: 0.1253     # raw counts -> %  (empty ~2267, full ~3065 counts)
+        offset: -284.1
+  - id: bat_to_level
+    type: adjust
+    dtype: uint8
+    config:
+      inputs:
+        - *bat_pct
+      outputs:
+        - *bat_level
+      params:
+        scale: 1
+        offset: 0
+
+protocols:
+  - id: nimble1
+    type: nimble
+    config:
+      gap_name: dawn-thingy52
+      services:
+        dis:
+          enabled: true
+        bas:
+          battery_level: *bat_level
+        ess:
+          characteristics:
+            - type: humidity
+              data: *humidity
+            - type: temperature
+              data: *temp
+            - type: pressure
+              data: *barometer
+        imds:
+          co2: *co2
+          tvoc: *tvoc
+        custom:
+          - uuid: 9f2d2b30-74d3-4f34-9f37-ef7d8f6d3000
+            characteristics:
+              - uuid: 9f2d2b30-74d3-4f34-9f37-ef7d8f6d3001
+                io: *rgb_led
+                flags:
+                  - read
+                  - write
