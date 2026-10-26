@@ -7,6 +7,10 @@ if(CONFIG_DAWN_PROTO_MODBUS)
 
   set(SRCS regs.cxx)
 
+  if(CONFIG_DAWN_PROTO_MODBUS_SEEKABLE)
+    list(APPEND SRCS files.cxx)
+  endif()
+
   if(CONFIG_DAWN_PROTO_MODBUS_RTU)
     list(APPEND SRCS rtu.cxx)
   endif()

@@ -7,6 +7,10 @@
 #include "dawn/io/fileio.hxx"
 #include "test_common.hxx"
 
+#ifdef CONFIG_DAWN_PROTO_MODBUS_RTU
+#  include "dawn/proto/modbus/rtu.hxx"
+#endif
+
 #include <fcntl.h>
 #include <nuttx/fs/fs.h>
 #include <sys/mount.h>
@@ -844,11 +848,161 @@ static void test_io_fileio_chardev_write_once()
   io.deinit();
 }
 
+#ifdef CONFIG_DAWN_PROTO_MODBUS_RTU
+//***************************************************************************
+// Description: FileIO offset and permission behavior through file records
+//***************************************************************************
+
+static void fileio_modbus_records(uint32_t *ioConfig, bool readOnly, bool writeOnce)
+{
+  uint32_t config[] = {
+    CProtoModbusRtu::objectId(0),
+    1,
+
+    CProtoModbusRtu::cfgIdIOBind(5),
+    CProtoModbusRegs::MODBUS_TYPE_SEEKABLE,
+    1,
+    0,
+    1,
+    ioConfig[0],
+  };
+  CDescObject ioDesc(ioConfig);
+  CIOFile io(ioDesc);
+  CDescObject desc(config);
+  CProtoModbusRtu modbus(desc);
+  uint8_t data[240];
+  size_t offset;
+  size_t bytes;
+  size_t i;
+
+  setup_tmp();
+  fileio_seed("abc", writeOnce ? 0 : 3);
+  fileio_open_io(io);
+
+  TEST_ASSERT_EQUAL(OK, modbus.configure());
+  modbus.setObjectMapItem(ioConfig[0], &io);
+  TEST_ASSERT_EQUAL(OK, modbus.init());
+
+  if (!writeOnce)
+    {
+      TEST_ASSERT_EQUAL(OK, modbus.fileCb(data, 1, 0, 3, NXMB_REG_READ));
+      TEST_ASSERT_EQUAL_MEMORY("abc\0\0\0", data, 6);
+    }
+  else
+    {
+      TEST_ASSERT_EQUAL(-ENOENT, modbus.fileCb(data, 1, 0, 1, NXMB_REG_READ));
+    }
+
+  TEST_ASSERT_EQUAL(-ENOENT, modbus.fileCb(data, 3, 0, 1, NXMB_REG_READ));
+  TEST_ASSERT_EQUAL(-ENOENT, modbus.fileCb(data, 1, 9999, 2, NXMB_REG_READ));
+  TEST_ASSERT_EQUAL(-ENOENT, modbus.fileCb(data, 1, 0, 0, NXMB_REG_READ));
+
+  if (readOnly)
+    {
+      TEST_ASSERT_EQUAL(-ENOENT, modbus.fileCb(data, 1, 0, 1, NXMB_REG_WRITE));
+    }
+  else if (writeOnce)
+    {
+      data[0] = 0x12;
+      data[1] = 0x34;
+      TEST_ASSERT_EQUAL(OK, modbus.fileCb(data, 1, 0, 1, NXMB_REG_WRITE));
+      TEST_ASSERT_EQUAL(-EPERM, modbus.fileCb(data, 1, 1, 1, NXMB_REG_WRITE));
+      TEST_ASSERT_EQUAL(2, io.getDataSize());
+    }
+  else
+    {
+      for (offset = 0; offset < 20002;)
+        {
+          bytes = std::min(sizeof(data), static_cast<size_t>(20000 - offset % 20000));
+          bytes = std::min(bytes, static_cast<size_t>(20002 - offset));
+
+          for (i = 0; i < bytes; i++)
+            {
+              data[i] = (offset + i) % 251;
+            }
+
+          TEST_ASSERT_EQUAL(
+            OK,
+            modbus.fileCb(data, 1 + offset / 20000, offset % 20000 / 2, bytes / 2, NXMB_REG_WRITE));
+
+          offset += bytes;
+        }
+
+      TEST_ASSERT_EQUAL(20002, io.getDataSize());
+
+      for (offset = 0; offset < 20002;)
+        {
+          bytes = std::min(sizeof(data), static_cast<size_t>(20000 - offset % 20000));
+          bytes = std::min(bytes, static_cast<size_t>(20002 - offset));
+
+          TEST_ASSERT_EQUAL(
+            OK,
+            modbus.fileCb(data, 1 + offset / 20000, offset % 20000 / 2, bytes / 2, NXMB_REG_READ));
+
+          for (i = 0; i < bytes; i++)
+            {
+              TEST_ASSERT_EQUAL((offset + i) % 251, data[i]);
+            }
+
+          offset += bytes;
+        }
+
+      // A write at offset zero starts a replacement.
+
+      data[0] = 0x12;
+      data[1] = 0x34;
+      TEST_ASSERT_EQUAL(OK, modbus.fileCb(data, 1, 0, 1, NXMB_REG_WRITE));
+      TEST_ASSERT_EQUAL(2, io.getDataSize());
+      TEST_ASSERT_EQUAL(OK, modbus.fileCb(data, 1, 0, 2, NXMB_REG_READ));
+      TEST_ASSERT_EQUAL_MEMORY("\x12\x34\0\0", data, 4);
+      TEST_ASSERT_EQUAL(OK, modbus.fileCb(data, 2, 0, 1, NXMB_REG_READ));
+      TEST_ASSERT_EQUAL(0, data[0]);
+      TEST_ASSERT_EQUAL(0, data[1]);
+    }
+
+  TEST_ASSERT_EQUAL(OK, modbus.deinit());
+  io.deinit();
+  unlink(TEST_FILE_PATH);
+}
+
+//***************************************************************************
+// Description: file records span files and retain offset-zero replacement
+//***************************************************************************
+
+static void test_io_fileio_modbus_file_records()
+{
+  fileio_modbus_records(g_cfg_fileio_rw, false, false);
+}
+
+//***************************************************************************
+// Description: read-only FileIO rejects file-record writes
+//***************************************************************************
+
+static void test_io_fileio_modbus_read_only_records()
+{
+  fileio_modbus_records(g_cfg_fileio_read, true, false);
+}
+
+//***************************************************************************
+// Description: write-once FileIO rejects subsequent file-record writes
+//***************************************************************************
+
+static void test_io_fileio_modbus_write_once_records()
+{
+  fileio_modbus_records(g_cfg_fileio_write_once, false, true);
+}
+#endif
+
 extern "C"
 {
   int test_io_fileio()
   {
     UNITY_BEGIN();
+#ifdef CONFIG_DAWN_PROTO_MODBUS_RTU
+    DAWN_RUN_TEST(test_io_fileio_modbus_file_records);
+    DAWN_RUN_TEST(test_io_fileio_modbus_read_only_records);
+    DAWN_RUN_TEST(test_io_fileio_modbus_write_once_records);
+#endif
 
     DAWN_RUN_TEST(test_io_fileio_path_outside_whitelist);
     DAWN_RUN_TEST(test_io_fileio_path_traversal);

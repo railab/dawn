@@ -9,10 +9,11 @@ import time
 from contextlib import contextmanager
 
 import pytest
-from _descriptor_common import modbus_wire_starts
-from _modbus_common import ModbusAdapter, regs_from_response
+from _descriptor_common import modbus_seekable_groups, modbus_wire_starts
+from _modbus_common import ModbusAdapter, check_seekable_ios, regs_from_response
 from _ntfc_common import start_dawn
 from dawnpy_modbus.client import ModbusClient
+from dawnpy_modbus.files import SeekableFile
 
 DESC_PATH = "descriptors/ntfc/ntfc_modbus_many_io.yaml"
 MODBUS_UNIT = 0x01
@@ -101,3 +102,14 @@ class TestModbusManyIo:
         regs = regs_from_response(resp)
         assert len(regs) >= 8
         assert all(isinstance(value, int) for value in regs[:8])
+
+    def test_descriptor_and_capability_files(self, modbus_many_io_case):
+        adapter, _ = modbus_many_io_case
+        groups = modbus_seekable_groups(DESC_PATH)
+        check_seekable_ios(adapter, groups, ("descriptor0", "capabilities0"))
+        group = groups["descriptor1"]
+        file = SeekableFile(adapter, 1, group["start"] + 1, group["window_regs"] + 1)
+        for payload in (bytes(range(256)), b"short!"):
+            file.write(0, payload)
+            assert file.read(0, len(payload)) == payload
+            assert file.read(len(payload), 2) == bytes(2)

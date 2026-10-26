@@ -111,6 +111,7 @@ def _modbus_target():
         )
 
     if device == "qemu":
+        mb = pytest.products[0].conf.config.get("modbus", {})
         return ModbusTarget(
             device=device,
             desc_path=TCP_DESC_PATH,
@@ -119,8 +120,13 @@ def _modbus_target():
             settle_s=1.0,
             connect_attempts=30,
             retry_s=0.5,
-            tcp_host="192.168.8.104",
-            tcp_port=int(protocol_config_value(TCP_DESC_PATH, "modbus_tcp", "port")),
+            tcp_host=mb.get("tcp_host", "192.168.8.104"),
+            tcp_port=int(
+                mb.get(
+                    "tcp_port",
+                    protocol_config_value(TCP_DESC_PATH, "modbus_tcp", "port"),
+                )
+            ),
         )
 
     pytest.fail(f"Unsupported Modbus NTFC device type: {device}")
@@ -202,7 +208,7 @@ def modbus_case():
 
 
 class TestModbus:
-    """Validate Modbus coil, holding, input, and seekable register access."""
+    """Validate Modbus coil, holding, input, and file-record access."""
 
     pytestmark = [
         pytest.mark.cmd_check("dawn_main"),

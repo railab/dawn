@@ -18,7 +18,7 @@ Requires the core ``dawnpy`` package to be installed first::
     pip install -e tools/dawnpy-modbus
 
 Dependencies (installed automatically): ``dawnpy``, ``click >= 8.1``,
-``pymodbus >= 3.1, < 4``.
+``pymodbus >= 3.13, < 4``.
 
 Command
 =======
@@ -51,9 +51,37 @@ The interactive console shares the command set documented in
 
 Dawn Modbus register addresses are used exactly as declared in the
 descriptor register map; the console does not apply 1-based Modbus offset
-conversion. Seekable Dawn IOs are exposed through holding registers and the
-client reads those windows in multiple chunks when the declared window is
-larger than the single-request pymodbus limit.
+conversion. Seekable IOs use NxModbus's standard FC20/FC21 file records,
+following :ref:`modbus-seekable-files`.
+
+``r [node] <objid>`` retains seekable window reads and register-list output.
+The client advances a local byte cursor after each successful read. ``w``
+retains scalar writes at the current cursor, without advancing it. The
+console preserves the existing little-endian interpretation of byte pairs
+in seekable register lists. On the wire, file records carry the IO bytes
+unchanged.
+
+``dawnpy_modbus.files.SeekableFile`` provides explicit byte-offset access.
+Its arguments are a client implementing ``read_file_records`` and
+``write_file_records``, the unit ID, the first file number (binding address
+plus one), and the reserved file count (window width plus one). It splits
+requests at PDU and file boundaries::
+
+    from dawnpy_modbus.files import SeekableFile
+
+    file = SeekableFile(client, unit=1, number=3601, count=257)
+    file.write(0, b"configuration bytes!")
+    assert file.read(0, 20) == b"configuration bytes!"
+
+Reads accept byte offsets and lengths, including odd values, and return
+zero padding beyond the current IO end. Writes require even offsets and
+lengths because FC21 carries complete two-byte records. They retain the
+backing IO's offset-write behavior, including replacement at offset zero
+for FileIO and descriptor slots. File size and upload completion are not
+part of these standard operations.
+
+Keep existing ``type: seekable`` descriptors, addresses, and window widths.
+Update Modbus firmware and clients together to use FC20/FC21 on the wire.
 
 The CLI mirrors the Modbus wire contract documented by Dawn's Modbus
 protocols: it does not define the data layout itself, it only decodes and

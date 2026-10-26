@@ -8,6 +8,6 @@ bleak
 dawnpy-ble
 pytest
 PyYAML
-pymodbus
+pymodbus>=3.13,<4
 nxslib
 ntfc

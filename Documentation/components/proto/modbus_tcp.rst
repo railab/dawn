@@ -44,6 +44,13 @@ Implementation
 
 - Register shadow buffer is also used for write-only Modbus outputs.
 
+Seekable IO and file records
+----------------------------
+
+``type: seekable`` uses NxModbus's standard FC20/FC21 handlers and the same
+``file_cb`` mapping as RTU. See :ref:`modbus-seekable-files` for file numbers,
+byte offsets, record sizes, permissions, and client compatibility.
+
 Register Management
 -------------------
 
@@ -74,25 +81,25 @@ YAML
          port: 502
          registers:
            - type: coil
-             notify: 0
+             config: 0
              start: 0
              bindings:
                - coil1
                - coil2
            - type: discrete_packed
-             notify: 1
+             config: 0
              start: 100
              bindings:
                - di1
                - di2
                - di3
            - type: holding
-             notify: 0
+             config: 0
              start: 1000
              bindings:
                - holding1
            - type: input
-             notify: 0
+             config: 0
              start: 2000
              bindings:
                - input1
@@ -115,8 +122,8 @@ Supported ``registers[*].type`` values:
 Supported ``registers[*]`` fields:
 
 - ``type``: register group type.
-- ``notify``: enable change notification shadowing for the group.
-- ``start``: first register or bit address.
+- ``config``: private group configuration; window width for ``seekable``.
+- ``start``: first register/bit address, or zero-based seekable allocation address.
 - ``bindings``: IOs mapped into the group.
 
 External Control

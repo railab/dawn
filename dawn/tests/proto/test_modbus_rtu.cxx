@@ -10,9 +10,13 @@
 #include "dawn/io/notifier.hxx"
 #include "dawn/io/sdata.hxx"
 #include "dawn/proto/modbus/rtu.hxx"
-#include "mocks/fake_ioseekmock.hxx"
 #include "mocks/fake_iowriteonlymock.hxx"
 #include "test_common.hxx"
+
+#ifdef CONFIG_DAWN_PROTO_MODBUS_SEEKABLE
+#  include "mocks/fake_ioseekmock.hxx"
+#  include "test_modbus_common.hxx"
+#endif
 
 extern "C"
 {
@@ -30,7 +34,6 @@ static constexpr auto MB_INPUT_GET = 0x4;
 static constexpr auto MB_COIL_SET = 0x5;
 static constexpr auto MB_HOLDING_SET = 0x6;
 static constexpr auto MB_HOLDING_MUL_SET = 0x10;
-static constexpr auto MODBUS_SEEKABLE_WINDOW_REGS = 8;
 
 // IOs
 
@@ -439,10 +442,10 @@ uint32_t g_bin_modbus_holding_writeonly_u32[] = {
 };
 
 //***************************************************************************
-// Description: single holding register with seekable IO
+// Description: file records bound to a seekable IO
 //***************************************************************************
 
-uint32_t g_bin_modbus_holding_seekable[] = {
+uint32_t g_bin_modbus_files[] = {
   // Object ID
 
   CProtoModbusRtu::objectId(0),
@@ -459,8 +462,8 @@ uint32_t g_bin_modbus_holding_seekable[] = {
 
   CProtoModbusRtu::cfgIdIOBind(5),
   CProtoModbusRegs::MODBUS_TYPE_SEEKABLE,
-  MODBUS_SEEKABLE_WINDOW_REGS,
-  REGS_HOLDING1,
+  1,
+  0,
   1,
   MODBUS_DUMMYIO4,
 };
@@ -1269,13 +1272,14 @@ static void test_proto_modbus_holding_writeonly_shadow_readback_u32()
 }
 
 //***************************************************************************
-// Description: seekable IO over holding register window
+// Description: seekable IO over file records
 //***************************************************************************
 
 // Configure + init the seekable mock with a 0..31 byte seed pattern,
 // configure + bind + init + start the modbus proto.  Caller stops the
 // modbus.
 
+#ifdef CONFIG_DAWN_PROTO_MODBUS_SEEKABLE
 static void modbus_setup_seekable(CIOSeekableMock &seek, CProtoModbusRtu &modbus)
 {
   io_sdata_t<uint8_t, 32> seed;
@@ -1298,134 +1302,48 @@ static void modbus_setup_seekable(CIOSeekableMock &seek, CProtoModbusRtu &modbus
 }
 
 //***************************************************************************
-// Description: reading a full window from offset 0 returns the seed bytes
-// and the modbus reply matches the configured window size.
+// Description: exchange a file-record PDU over RTU and verify its CRC
 //***************************************************************************
 
-static void test_proto_modbus_holding_seekable_read_full_window()
+static int modbus_file_exchange(int fd, const uint8_t *pdu, size_t len, uint8_t *response)
 {
-  CDescObject descv4(g_cfg_dummy4);
-  CIOSeekableMock seek(descv4);
-  CDescObject desc(g_bin_modbus_holding_seekable);
-  CProtoModbusRtu modbus(desc);
-  uint8_t buffer[1024];
+  uint8_t frame[260];
+  uint16_t crc;
+  int count;
 
-  modbus_setup_seekable(seek, modbus);
+  frame[0] = CONFIG_DAWN_PROTO_MODBUS_RTU_ADDR;
+  std::memcpy(frame + 1, pdu, len);
+  crc = nxmb_crc16(frame, len + 1);
+  frame[len + 1] = crc & 0xff;
+  frame[len + 2] = crc >> 8;
+  TEST_ASSERT_EQUAL(len + 3, write(fd, frame, len + 3));
+  usleep(20000);
 
-  modbus_send_and_read(MB_HOLDING_GET,
-                       REGS_HOLDING1,
-                       MODBUS_SEEKABLE_WINDOW_REGS,
-                       buffer,
-                       sizeof(buffer),
-                       5 + (MODBUS_SEEKABLE_WINDOW_REGS * 2));
-  TEST_ASSERT_EQUAL(MB_HOLDING_GET, buffer[1]);
-  TEST_ASSERT_EQUAL(MODBUS_SEEKABLE_WINDOW_REGS * 2, buffer[2]);
+  count = read(fd, frame, sizeof(frame));
+  TEST_ASSERT_TRUE(count >= 5);
+  TEST_ASSERT_EQUAL(0, nxmb_crc16(frame, count));
+  std::memcpy(response, frame + 1, count - 3);
 
-  TEST_ASSERT_EQUAL(OK, modbus.stop());
+  return count - 3;
 }
 
 //***************************************************************************
-// Description: after a complete window read the offset register reflects
-// the byte count consumed by that read.
+// Description: seekable IO reads and writes through FC20/FC21
 //***************************************************************************
 
-static void test_proto_modbus_holding_seekable_offset_auto_increments()
+static void test_proto_modbus_file_records()
 {
-  CDescObject descv4(g_cfg_dummy4);
-  CIOSeekableMock seek(descv4);
-  CDescObject desc(g_bin_modbus_holding_seekable);
+  CDescObject ioDesc(g_cfg_dummy4);
+  CIOSeekableMock io(ioDesc);
+  CDescObject desc(g_bin_modbus_files);
   CProtoModbusRtu modbus(desc);
-  uint8_t buffer[1024];
-  uint16_t ctrlRegAddr = (uint16_t)((REGS_HOLDING1) + MODBUS_SEEKABLE_WINDOW_REGS);
 
-  modbus_setup_seekable(seek, modbus);
-
-  modbus_send_and_read(MB_HOLDING_GET,
-                       REGS_HOLDING1,
-                       MODBUS_SEEKABLE_WINDOW_REGS,
-                       buffer,
-                       sizeof(buffer),
-                       5 + (MODBUS_SEEKABLE_WINDOW_REGS * 2));
-
-  modbus_send_and_read(MB_HOLDING_GET, ctrlRegAddr, 1, buffer, sizeof(buffer), 7);
-  TEST_ASSERT_EQUAL(MODBUS_SEEKABLE_WINDOW_REGS * 2, (buffer[3] << 8) + buffer[4]);
-
+  modbus_setup_seekable(io, modbus);
+  modbus_file_cases(g_pty_fd, modbus_file_exchange);
   TEST_ASSERT_EQUAL(OK, modbus.stop());
 }
 
-//***************************************************************************
-// Description: writing the offset register sets the read window position;
-// the bus echoes the request and the offset is reflected on next read.
-//***************************************************************************
-
-static void test_proto_modbus_holding_seekable_set_offset()
-{
-  CDescObject descv4(g_cfg_dummy4);
-  CIOSeekableMock seek(descv4);
-  CDescObject desc(g_bin_modbus_holding_seekable);
-  CProtoModbusRtu modbus(desc);
-  uint8_t buffer[1024];
-  uint16_t ctrlRegAddr = (uint16_t)((REGS_HOLDING1) + MODBUS_SEEKABLE_WINDOW_REGS);
-
-  modbus_setup_seekable(seek, modbus);
-
-  modbus_send_and_read(MB_HOLDING_SET, ctrlRegAddr, 4, buffer, sizeof(buffer), 8);
-  TEST_ASSERT_EQUAL(MB_HOLDING_SET, buffer[1]);
-  TEST_ASSERT_EQUAL(0x00, buffer[4]);
-  TEST_ASSERT_EQUAL(0x04, buffer[5]);
-
-  modbus_send_and_read(MB_HOLDING_GET, ctrlRegAddr, 1, buffer, sizeof(buffer), 7);
-  TEST_ASSERT_EQUAL(4, (buffer[3] << 8) + buffer[4]);
-
-  TEST_ASSERT_EQUAL(OK, modbus.stop());
-}
-
-//***************************************************************************
-// Description: a partial read (smaller than the full window) does not
-// auto-increment the offset register.
-//***************************************************************************
-
-static void test_proto_modbus_holding_seekable_partial_read_no_increment()
-{
-  CDescObject descv4(g_cfg_dummy4);
-  CIOSeekableMock seek(descv4);
-  CDescObject desc(g_bin_modbus_holding_seekable);
-  CProtoModbusRtu modbus(desc);
-  uint8_t buffer[1024];
-  uint16_t ctrlRegAddr = (uint16_t)((REGS_HOLDING1) + MODBUS_SEEKABLE_WINDOW_REGS);
-  int ret;
-
-  modbus_setup_seekable(seek, modbus);
-
-  // Position the offset.
-
-  modbus_send_and_read(MB_HOLDING_SET, ctrlRegAddr, 4, buffer, sizeof(buffer), 8);
-
-  // Partial read (1 register only).
-
-  usleep(1000);
-  ret = modbus_frame_send(MB_HOLDING_GET, REGS_HOLDING1, 1);
-  TEST_ASSERT_EQUAL(8, ret);
-  usleep(1000);
-  ret = (int)read(g_pty_fd, buffer, sizeof(buffer));
-  TEST_ASSERT(ret == 7 || ret == 5);
-  if (ret == 7)
-    {
-      TEST_ASSERT_EQUAL(MB_HOLDING_GET, buffer[1]);
-      TEST_ASSERT_EQUAL(0x02, buffer[2]);
-    }
-
-  // Offset must still be 4.
-
-  modbus_send_and_read(MB_HOLDING_GET, ctrlRegAddr, 1, buffer, sizeof(buffer), 7);
-  TEST_ASSERT_EQUAL(4, (buffer[3] << 8) + buffer[4]);
-
-  TEST_ASSERT_EQUAL(OK, modbus.stop());
-}
-
-//***************************************************************************
-// Description: many coils blocking IO
-//***************************************************************************
+#endif
 
 static void test_proto_modbus_coil_many_blocking()
 {
@@ -2319,6 +2237,9 @@ extern "C"
 
     // Single register access
 
+#ifdef CONFIG_DAWN_PROTO_MODBUS_SEEKABLE
+    RUN_WITH_PTY(test_proto_modbus_file_records);
+#endif
     RUN_WITH_PTY(test_proto_modbus_coil_lifecycle);
     RUN_WITH_PTY(test_proto_modbus_coil_read_wrong_function);
     RUN_WITH_PTY(test_proto_modbus_coil_read_out_of_range);
@@ -2386,13 +2307,6 @@ extern "C"
 
     RUN_WITH_PTY(test_proto_modbus_simple_notify);
     RUN_WITH_PTY(test_proto_modbus_many_notify);
-
-    // Keep seekable test last. If it fails, it must not block legacy cases
-    // due to single-instance Modbus RTU limitation.
-    RUN_WITH_PTY(test_proto_modbus_holding_seekable_read_full_window);
-    RUN_WITH_PTY(test_proto_modbus_holding_seekable_offset_auto_increments);
-    RUN_WITH_PTY(test_proto_modbus_holding_seekable_set_offset);
-    RUN_WITH_PTY(test_proto_modbus_holding_seekable_partial_read_no_increment);
 
 #undef RUN_WITH_PTY
 
