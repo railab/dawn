@@ -113,8 +113,9 @@ Test Suites
    * - ``modbus``
      - sim
      - Coil read/write, holding register read/write (uint16 +
-       uint64 span), input register read, seekable descriptor and
-       capabilities windows, seekable FileIO read/write.
+       uint64 span), input register read, FC20 descriptor and
+       capabilities windows, explicit byte offsets, and FC21/FileIO
+       round trips across file boundaries and replacement at offset zero.
    * - ``modbus_hardware``
      - nucleo-c071rb
      - Same Modbus RTU dummy register map as the sim suite, exercised

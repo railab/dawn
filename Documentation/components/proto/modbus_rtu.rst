@@ -10,7 +10,7 @@ Overview
 ========
 
 ``CProtoModbusRtu`` is a Modbus RTU slave protocol object that maps
-FreeModbus callbacks to Dawn IO.
+NxModbus callbacks to Dawn IO.
 
 Implementation
 ==============
@@ -18,7 +18,7 @@ Implementation
 - Supported register group types:
   ``MODBUS_TYPE_COIL``, ``MODBUS_TYPE_COIL_PACKED``,
   ``MODBUS_TYPE_DISCRETE``, ``MODBUS_TYPE_DISCRETE_PACKED``,
-  ``MODBUS_TYPE_INPUT``, ``MODBUS_TYPE_HOLDING``.
+  ``MODBUS_TYPE_INPUT``, ``MODBUS_TYPE_HOLDING``, ``MODBUS_TYPE_SEEKABLE``.
 
 - Overlap in the same register class is rejected at configuration
   (assert + error return).
@@ -42,6 +42,69 @@ Implementation
   the target IO itself has no read path.
 
 - Register shadow buffer is also used for write-only Modbus outputs.
+
+.. _modbus-seekable-files:
+
+Seekable IO and file records
+----------------------------
+
+``type: seekable`` and ``MODBUS_TYPE_SEEKABLE = 7`` remain the public
+mapping for seekable IO. NxModbus supplies Read File Record (FC20,
+``0x14``) and Write File Record (FC21, ``0x15``), including PDU parsing,
+validation, responses, and exceptions. Dawn registers ``file_cb`` and maps
+its file and record arguments to the IO's existing offset read/write API.
+Reference type is 6. Both RTU and TCP use this implementation.
+
+Existing descriptor fields and binding addresses are retained::
+
+   registers:
+     - type: seekable
+       start: 4096
+       config: 256
+       bindings: [descriptor0, descriptor1, capabilities0]
+
+``config`` is the window width in words (8 when zero or omitted). Each IO
+reserves ``config + 1`` positions, so these binding addresses remain 4096,
+4353, and 4610. Seekable allocations occupy file-number space independently
+of coils and registers. Overlapping seekable allocations are rejected.
+
+For a binding at zero-based address ``A``, file ``A + 1`` starts with IO
+byte zero. Each reserved file carries 10,000 two-byte records. Subsequent
+files extend the same IO's byte range, preserving access to IOs larger than
+20,000 bytes. The offset for a request is::
+
+   byte_offset = (file_number - A - 1) * 20000 + record_number * 2
+
+Each request must stay within one file; clients split requests at file
+boundaries. All allocated file numbers must fit 1--65535. The backing IO
+must fit the allocation. This is Dawn's mapping of IOs into the file-number
+space served by the standard functions.
+
+File-record payloads contain IO bytes in their original order. For example,
+IO bytes ``12 34`` are carried in the record ``0x1234``. Reads zero-fill
+unused bytes and records past the IO's current end, within its allocation,
+preserving the previous seekable window behavior. Each request specifies
+its offset; reads do not advance a shared server cursor.
+
+Writes carry complete two-byte records and call the IO's existing offset
+write method. FileIO and writable descriptor slots start a replacement on
+a write at offset zero. FileIO write-once permissions still lock after the
+first write. Errors from the backing IO are returned through NxModbus.
+FC20/FC21 do not convey an exact byte length, truncate an empty file, or
+provide begin/finish/abort operations. Applications transferring an odd
+number of bytes must account for the final record's padding in their data
+format; both bytes of a write record are passed to the IO.
+
+NxModbus supports at most 121 records per single-group FC20 request and
+122 per FC21 request. The host helper uses 120-record writes because the
+current NxModbus RTU receiver drops an exactly full 256-byte frame.
+
+``CONFIG_DAWN_PROTO_MODBUS_SEEKABLE`` automatically enables the NxModbus
+FC20/FC21 handlers when Modbus and seekable IO are enabled. Update firmware
+and clients together: seekable wire access now uses file records instead
+of holding-register windows and seek-control writes. The Python console
+keeps its window-sized results and tracks its cursor locally; see
+:doc:`../../tools/dawnpy-modbus`.
 
 Register Management
 -------------------
@@ -75,25 +138,25 @@ YAML
          path: "/dev/ttyS1"
          registers:
            - type: coil
-             notify: 0
+             config: 0
              start: 0
              bindings:
                - coil1
                - coil2
            - type: discrete_packed
-             notify: 1
+             config: 0
              start: 100
              bindings:
                - di1
                - di2
                - di3
            - type: holding
-             notify: 0
+             config: 0
              start: 1000
              bindings:
                - holding1
            - type: input
-             notify: 0
+             config: 0
              start: 2000
              bindings:
                - input1
@@ -111,12 +174,13 @@ Supported ``registers[*].type`` values:
 - ``discrete_packed``
 - ``input``
 - ``holding``
+- ``seekable``
 
 Supported ``registers[*]`` fields:
 
 - ``type``: register group type.
-- ``notify``: enable change notification shadowing for the group.
-- ``start``: first register or bit address.
+- ``config``: private group configuration; window width for ``seekable``.
+- ``start``: first register/bit address, or zero-based seekable allocation address.
 - ``bindings``: IOs mapped into the group.
 
 External Control
@@ -129,15 +193,6 @@ When stopped, Modbus polling/service loop is inactive. When started again,
 register servicing resumes.
 
 TriggerIO: not supported.
-
-Brainstorming & Future Ideas
-============================
-
-- Only one Modbus instance can be active at a time
-  (global FreeModbus callback limitation).
-
-- Write NuttX Modbus support from scratch with multiple instances support and
-  ready for Modbus TCP
 
 Doxygen
 =======

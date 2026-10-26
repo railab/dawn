@@ -18,6 +18,11 @@
 #include "mocks/fake_iowriteonlymock.hxx"
 #include "test_common.hxx"
 
+#ifdef CONFIG_DAWN_PROTO_MODBUS_SEEKABLE
+#  include "mocks/fake_ioseekmock.hxx"
+#  include "test_modbus_common.hxx"
+#endif
+
 using namespace dawn;
 
 static constexpr auto MB_COIL_GET = 0x1;
@@ -107,6 +112,23 @@ static uint32_t g_bin_modbus_tcp_exception[] = {
   1,
   MODBUS_DUMMYIO1,
 };
+
+#ifdef CONFIG_DAWN_PROTO_MODBUS_SEEKABLE
+static uint32_t g_bin_modbus_tcp_files[] = {
+  CProtoModbusTcp::objectId(0),
+  2,
+
+  CProtoModbusTcp::cfgIdPort(),
+  15024,
+
+  CProtoModbusTcp::cfgIdIOBind(5),
+  CProtoModbusRegs::MODBUS_TYPE_SEEKABLE,
+  1,
+  0,
+  1,
+  MODBUS_DUMMYIO4,
+};
+#endif
 
 static int mbtcp_connect(uint16_t port)
 {
@@ -505,11 +527,58 @@ static void test_proto_modbus_tcp_exception_no_register()
   TEST_ASSERT_EQUAL(OK, modbus.stop());
 }
 
+#ifdef CONFIG_DAWN_PROTO_MODBUS_SEEKABLE
+static int mbtcp_file_exchange(int fd, const uint8_t *pdu, size_t len, uint8_t *response)
+{
+  uint8_t frame[260] = {0, 1, 0, 0, 0, 0, CONFIG_DAWN_PROTO_MODBUS_TCP_ADDR};
+  int count;
+
+  frame[4] = (len + 1) >> 8;
+  frame[5] = (len + 1) & 0xff;
+  std::memcpy(frame + 7, pdu, len);
+  TEST_ASSERT_EQUAL(len + 7, send(fd, frame, len + 7, 0));
+
+  count = mbtcp_recv_adu(fd, frame, sizeof(frame));
+  TEST_ASSERT_TRUE(count >= 9);
+  std::memcpy(response, frame + 7, count - 7);
+
+  return count - 7;
+}
+
+static void test_proto_modbus_tcp_file_records()
+{
+  CDescObject ioDesc(g_cfg_dummy4);
+  CIOSeekableMock io(ioDesc);
+  CDescObject desc(g_bin_modbus_tcp_files);
+  CProtoModbusTcp modbus(desc);
+  io_sdata_t<uint8_t, 32> seed;
+  size_t i;
+  int fd;
+
+  fd = mbtcp_setup_io(io, MODBUS_DUMMYIO4, modbus, 15024);
+
+  for (i = 0; i < 32; i++)
+    {
+      seed(i) = i;
+    }
+
+  TEST_ASSERT_EQUAL(OK, io.setData(seed, 0));
+  modbus_file_cases(fd, mbtcp_file_exchange);
+  close(fd);
+  TEST_ASSERT_EQUAL(OK, modbus.stop());
+}
+
+#endif
+
 extern "C"
 {
   int test_proto_modbus_tcp()
   {
     UNITY_BEGIN();
+
+#ifdef CONFIG_DAWN_PROTO_MODBUS_SEEKABLE
+    DAWN_RUN_TEST(test_proto_modbus_tcp_file_records);
+#endif
 
     DAWN_RUN_TEST(test_proto_modbus_tcp_not_listening_before_start);
     DAWN_RUN_TEST(test_proto_modbus_tcp_coil_read_initial);

@@ -134,6 +134,15 @@ int CProtoModbusTcp::modbusInitialize()
                             FAR void *priv) -> int
     { return static_cast<CProtoModbusRegs *>(priv)->holdingCb(buf, addr, nregs, mode, priv); };
 #endif
+#ifdef CONFIG_DAWN_PROTO_MODBUS_SEEKABLE
+  callbacks.file_cb = [](uint8_t *buf,
+                         uint16_t file,
+                         uint16_t record,
+                         uint16_t nregs,
+                         enum nxmb_regmode_e mode,
+                         void *priv) -> int
+    { return static_cast<CProtoModbusRegs *>(priv)->fileCb(buf, file, record, nregs, mode); };
+#endif
   callbacks.priv = static_cast<CProtoModbusRegs *>(this);
 
   ret = nxmb_set_callbacks(mbhandle, &callbacks);

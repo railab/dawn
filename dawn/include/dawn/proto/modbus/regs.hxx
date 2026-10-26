@@ -37,7 +37,7 @@ public:
     MODBUS_TYPE_DISCRETE_PACKED = 4, ///< Read-only bits packed in bytes.
     MODBUS_TYPE_INPUT = 5,           ///< Read-only 16-bit words.
     MODBUS_TYPE_HOLDING = 6,         ///< Read-write 16-bit words.
-    MODBUS_TYPE_SEEKABLE = 7,        ///< Seekable window over holding regs.
+    MODBUS_TYPE_SEEKABLE = 7,        ///< Seekable IO via FC20/FC21 file records.
   };
 
   /** @brief I/O binding configuration loaded from descriptor. */
@@ -46,7 +46,7 @@ public:
   {
     uint32_t type;    ///< Register type (MODBUS_TYPE_*).
     uint32_t config;  ///< Register-type private configuration word.
-    uint32_t start;   ///< Start register address (0x0000-0xFFFF).
+    uint32_t start;   ///< Zero-based register, bit, or file allocation address.
     uint32_t size;    ///< Number of I/O objects in this group.
     uint32_t objid[]; ///< Array of I/O object IDs.
   } typedef SProtoModbusIOBind;
@@ -91,15 +91,31 @@ public:
   int holdingCb(uint8_t *buf, uint16_t addr, uint16_t nregs, enum nxmb_regmode_e mode, void *priv);
 #endif
 
+#ifdef CONFIG_DAWN_PROTO_MODBUS_SEEKABLE
+  /** @brief Read or write seekable IO through an NxModbus file record. */
+
+  int fileCb(uint8_t *buf,
+             uint16_t number,
+             uint16_t record,
+             uint16_t nregs,
+             enum nxmb_regmode_e mode);
+#endif
+
 private:
 #ifdef CONFIG_DAWN_PROTO_MODBUS_SEEKABLE
+  /** @brief Runtime file allocation for one seekable IO. */
+
   struct
   {
-    SProtoModbusRegs *reg;                 ///< Owning register group.
-    size_t windowRegs;                     ///< Seekable data window width.
-    std::vector<size_t> seekOffsets;       ///< Current seek offsets per I/O.
-    std::vector<size_t> readProgressWords; ///< Read progress per I/O window.
-  } typedef SSeekableState;
+    CIOCommon *io;                       ///< Bound seekable IO.
+    uint16_t start;                      ///< First one-based Modbus file number.
+    uint16_t fileCount;                  ///< Number of consecutive files allocated to the IO.
+    std::mutex mutex;                    ///< Thread-safe access guard.
+  } typedef SProtoModbusFile;
+
+  std::vector<SProtoModbusFile *> files; ///< Seekable IO file allocations.
+
+  int createFiles(const SProtoModbusIOBind *cfg);
 #endif
 
   std::vector<SProtoModbusIOBind *> valloc;  ///< I/O bindings (from descriptor).
@@ -114,9 +130,6 @@ private:
 #endif
 #ifdef CONFIG_DAWN_PROTO_MODBUS_HOLDING
   std::vector<SProtoModbusRegs *> vholding;  ///< Holding register groups.
-#endif
-#ifdef CONFIG_DAWN_PROTO_MODBUS_SEEKABLE
-  std::vector<SSeekableState *> vseekable;   ///< Runtime states for MODBUS_TYPE_SEEKABLE groups.
 #endif
   bool initialized;                          ///< Initialization completion flag.
 
@@ -146,25 +159,9 @@ private:
   int regReadWriteHolding(uint8_t *buff, uint16_t n, int index, bool read, SProtoModbusRegs *reg);
 
   int standardRegRW(uint8_t *buff, uint16_t n, int index, bool read, SProtoModbusRegs *reg);
-
-#  ifdef CONFIG_DAWN_PROTO_MODBUS_SEEKABLE
-  int seekableRegRW(uint8_t *buff,
-                    uint16_t n,
-                    int index,
-                    bool read,
-                    SProtoModbusRegs *reg,
-                    SSeekableState *seekState);
-#  endif
 #endif
 
-#ifdef CONFIG_DAWN_PROTO_MODBUS_SEEKABLE
-  SSeekableState *findSeekableState(SProtoModbusRegs *reg);
-#endif
-
-  int finalizeRegGroup(SProtoModbusRegs *tmp,
-                       const SProtoModbusIOBind *v,
-                       size_t seekWindowRegs,
-                       bool addSeekableState);
+  int finalizeRegGroup(SProtoModbusRegs *tmp, const SProtoModbusIOBind *v);
 };
 
 } // Namespace dawn

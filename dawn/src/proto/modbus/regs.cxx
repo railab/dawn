@@ -34,27 +34,6 @@ static inline uint8_t modbus_get_bit(const uint8_t *buf, uint16_t bit)
   return (uint8_t)((buf[bit / 8] >> (bit % 8)) & 0x1u);
 }
 
-static inline size_t modbus_seekable_window_regs(const CProtoModbusRegs::SProtoModbusRegs *reg)
-{
-  static constexpr size_t default_window = 8;
-  return reg->cfg->config > 0 ? reg->cfg->config : default_window;
-}
-
-#ifdef CONFIG_DAWN_PROTO_MODBUS_SEEKABLE
-CProtoModbusRegs::SSeekableState *CProtoModbusRegs::findSeekableState(SProtoModbusRegs *reg)
-{
-  for (auto *state : vseekable)
-    {
-      if (state->reg == reg)
-        {
-          return state;
-        }
-    }
-
-  return nullptr;
-}
-#endif
-
 CProtoModbusRegs::SProtoModbusRegs *
 CProtoModbusRegs::findGroup(uint16_t addr, uint16_t n, const std::vector<SProtoModbusRegs *> &regs)
 {
@@ -130,11 +109,6 @@ void CProtoModbusRegs::cleanupGroups(std::vector<SProtoModbusRegs *> &groups)
 
 static size_t getIoRegBytes(const CProtoModbusRegs::SProtoModbusRegs *reg, size_t index)
 {
-  if (reg->cfg->type == CProtoModbusRegs::MODBUS_TYPE_SEEKABLE)
-    {
-      return (modbus_seekable_window_regs(reg) + 1) * sizeof(uint16_t);
-    }
-
   return reg->iodata[index]->getDataSize();
 }
 
@@ -335,158 +309,6 @@ int CProtoModbusRegs::regReadWriteCoilPacked(uint8_t *buff,
 }
 #endif
 
-#ifdef CONFIG_DAWN_PROTO_MODBUS_SEEKABLE
-int CProtoModbusRegs::seekableRegRW(uint8_t *buff,
-                                    uint16_t n,
-                                    int index,
-                                    bool read,
-                                    SProtoModbusRegs *reg,
-                                    SSeekableState *seekState)
-{
-  io_ddata_t *iodata = nullptr;
-  CIOCommon *io = nullptr;
-  uint8_t *ptr = nullptr;
-  uint16_t value = 0;
-  int err = 0;
-  int ret;
-  size_t i;
-
-  size_t windowRegs = seekState->windowRegs;
-  size_t regsPerIo = windowRegs + 1;
-
-  while (n > 0)
-    {
-      if (index < 0)
-        {
-          err = -EINVAL;
-          break;
-        }
-
-      size_t ioIndex = static_cast<size_t>(index) / regsPerIo;
-      size_t inIo = static_cast<size_t>(index) % regsPerIo;
-      if (ioIndex >= static_cast<size_t>(reg->ios))
-        {
-          err = -EIO;
-          break;
-        }
-
-      // Seek register access
-
-      if (inIo == windowRegs)
-        {
-          if (read)
-            {
-              seekState->readProgressWords[ioIndex] = 0;
-              value = static_cast<uint16_t>(seekState->seekOffsets[ioIndex]);
-              *buff++ = static_cast<uint8_t>((value >> 8) & 0xff);
-              *buff++ = static_cast<uint8_t>(value & 0xff);
-            }
-          else
-            {
-              seekState->seekOffsets[ioIndex] =
-                static_cast<size_t>(((uint16_t)buff[0] << 8) | (uint16_t)buff[1]);
-              seekState->readProgressWords[ioIndex] = 0;
-              buff += sizeof(uint16_t);
-            }
-
-          index += 1;
-          n -= 1;
-          continue;
-        }
-
-      // Data window access
-
-      io = getIO_(reg->cfg->objid[ioIndex]);
-      if (!read && !io->isWrite())
-        {
-          err = -EINVAL;
-          break;
-        }
-
-      size_t accessWords = windowRegs - inIo;
-      if (accessWords > n)
-        {
-          accessWords = n;
-        }
-
-      iodata = reg->iodata[ioIndex];
-      ptr = reinterpret_cast<uint8_t *>(iodata->getDataPtr());
-      size_t accessBytes = accessWords * sizeof(uint16_t);
-      io_data_view_t windowData(ptr, accessBytes, accessBytes);
-      std::memset(ptr, 0, accessBytes);
-
-      size_t byteOffset = seekState->seekOffsets[ioIndex] + (inIo * sizeof(uint16_t));
-
-      if (read)
-        {
-          size_t totalBytes = io->getDataSize();
-          if (byteOffset < totalBytes)
-            {
-              ret = io->getData(windowData, 1, byteOffset);
-              if (ret != OK)
-                {
-                  err = -EIO;
-                  break;
-                }
-            }
-
-          for (i = 0; i < accessWords; i++)
-            {
-              value =
-                static_cast<uint16_t>(ptr[i * 2]) | (static_cast<uint16_t>(ptr[i * 2 + 1]) << 8);
-              *buff++ = static_cast<uint8_t>((value >> 8) & 0xff);
-              *buff++ = static_cast<uint8_t>(value & 0xff);
-            }
-
-          size_t progressedWords = seekState->readProgressWords[ioIndex];
-          if (inIo == 0)
-            {
-              progressedWords = accessWords;
-            }
-          else if (progressedWords == inIo)
-            {
-              progressedWords += accessWords;
-            }
-          else
-            {
-              progressedWords = 0;
-            }
-
-          if (progressedWords >= windowRegs)
-            {
-              seekState->seekOffsets[ioIndex] += windowRegs * sizeof(uint16_t);
-              progressedWords = 0;
-            }
-
-          seekState->readProgressWords[ioIndex] = progressedWords;
-        }
-      else
-        {
-          for (i = 0; i < accessWords; i++)
-            {
-              ptr[i * 2] = buff[1];
-              ptr[i * 2 + 1] = buff[0];
-              buff += sizeof(uint16_t);
-            }
-
-          ret = io->setData(windowData, byteOffset);
-          if (ret != OK)
-            {
-              err = -EIO;
-              break;
-            }
-
-          seekState->readProgressWords[ioIndex] = 0;
-        }
-
-      index += static_cast<int>(accessWords);
-      n -= static_cast<uint16_t>(accessWords);
-    }
-
-  return err;
-}
-#endif
-
 #if defined(CONFIG_DAWN_PROTO_MODBUS_INPUT) || defined(CONFIG_DAWN_PROTO_MODBUS_HOLDING)
 static int findIoIndexByRegOffset(const CProtoModbusRegs::SProtoModbusRegs *reg, int index)
 {
@@ -581,19 +403,7 @@ int CProtoModbusRegs::regReadWriteHolding(uint8_t *buff,
                                           SProtoModbusRegs *reg)
 {
   reg->mutex.lock();
-  int err;
-
-#  ifdef CONFIG_DAWN_PROTO_MODBUS_SEEKABLE
-  if (reg->cfg->type == MODBUS_TYPE_SEEKABLE)
-    {
-      SSeekableState *seekState = findSeekableState(reg);
-      err = (seekState != nullptr) ? seekableRegRW(buff, n, index, read, reg, seekState) : -EIO;
-    }
-  else
-#  endif
-    {
-      err = standardRegRW(buff, n, index, read, reg);
-    }
+  int err = standardRegRW(buff, n, index, read, reg);
 
   reg->mutex.unlock();
   return err;
@@ -609,35 +419,7 @@ void CProtoModbusRegs::valloc_push_back(SProtoModbusIOBind *alloc)
   valloc.push_back(alloc);
 }
 
-#ifdef CONFIG_DAWN_PROTO_MODBUS_SEEKABLE
-static int setupSeekableRegs(CProtoModbusRegs::SProtoModbusRegs *tmp,
-                             size_t *seekWindowRegs,
-                             bool *addSeekableState)
-{
-  *seekWindowRegs = modbus_seekable_window_regs(tmp);
-  if (*seekWindowRegs == 0)
-    {
-      DAWNERR("invalid seekable window size\n");
-      return -EINVAL;
-    }
-
-  *addSeekableState = true;
-  return OK;
-}
-#else
-static int setupSeekableRegs(CProtoModbusRegs::SProtoModbusRegs *tmp,
-                             size_t *seekWindowRegs,
-                             bool *addSeekableState)
-{
-  (void)tmp;
-  *seekWindowRegs = 0;
-  *addSeekableState = false;
-  DAWNERR("seekable register type disabled at compile time\n");
-  return -ENOTSUP;
-}
-#endif
-
-static int validateRegisterIo(CIOCommon *io, uint32_t type, size_t seekWindowRegs)
+static int validateRegisterIo(CIOCommon *io, uint32_t type)
 {
   switch (type)
     {
@@ -769,7 +551,7 @@ static int validateRegisterIo(CIOCommon *io, uint32_t type, size_t seekWindowReg
         {
           if (io->isSeekable())
             {
-              DAWNERR("seekable IO requires seekable reg type\n");
+              DAWNERR("seekable IO requires file records\n");
               return -ENOTSUP;
             }
 
@@ -791,25 +573,6 @@ static int validateRegisterIo(CIOCommon *io, uint32_t type, size_t seekWindowReg
         }
 #endif
 
-#ifdef CONFIG_DAWN_PROTO_MODBUS_SEEKABLE
-      case CProtoModbusRegs::MODBUS_TYPE_SEEKABLE:
-        {
-          if (!io->isSeekable())
-            {
-              DAWNERR("seekable reg requires seekable IO\n");
-              return -EINVAL;
-            }
-
-          if (!io->isRead())
-            {
-              DAWNERR("seekable reg doesn't support read\n");
-              return -EINVAL;
-            }
-
-          return static_cast<int>((seekWindowRegs + 1) * sizeof(uint16_t));
-        }
-#endif
-
       default:
         {
           DAWNERR("Unsupported Modbus reg type %" PRIu32 "\n", type);
@@ -818,10 +581,7 @@ static int validateRegisterIo(CIOCommon *io, uint32_t type, size_t seekWindowReg
     }
 }
 
-int CProtoModbusRegs::finalizeRegGroup(SProtoModbusRegs *tmp,
-                                       const SProtoModbusIOBind *v,
-                                       size_t seekWindowRegs,
-                                       bool addSeekableState)
+int CProtoModbusRegs::finalizeRegGroup(SProtoModbusRegs *tmp, const SProtoModbusIOBind *v)
 {
   switch (v->type)
     {
@@ -892,7 +652,6 @@ int CProtoModbusRegs::finalizeRegGroup(SProtoModbusRegs *tmp,
 
 #ifdef CONFIG_DAWN_PROTO_MODBUS_HOLDING
       case MODBUS_TYPE_HOLDING:
-      case MODBUS_TYPE_SEEKABLE:
         {
           tmp->regs = tmp->size / sizeof(uint16_t);
           auto *overlap = hasOverlap(vholding, v->start, tmp->regs);
@@ -909,24 +668,6 @@ int CProtoModbusRegs::finalizeRegGroup(SProtoModbusRegs *tmp,
             }
 
           vholding.push_back(tmp);
-
-          if (addSeekableState)
-            {
-#  ifdef CONFIG_DAWN_PROTO_MODBUS_SEEKABLE
-              SSeekableState *state = new (std::nothrow) SSeekableState();
-              if (state == nullptr)
-                {
-                  DAWNERR("failed to allocate seekable state\n");
-                  return -ENOMEM;
-                }
-
-              state->reg = tmp;
-              state->windowRegs = seekWindowRegs;
-              state->seekOffsets.assign(v->size, 0);
-              state->readProgressWords.assign(v->size, 0);
-              vseekable.push_back(state);
-#  endif
-            }
 
           break;
         }
@@ -952,8 +693,19 @@ int CProtoModbusRegs::createRegs()
   for (auto const *v : valloc)
     {
       SProtoModbusRegs *tmp;
-      size_t seekWindowRegs = 0;
-      bool addSeekableState = false;
+#ifdef CONFIG_DAWN_PROTO_MODBUS_SEEKABLE
+      if (v->type == MODBUS_TYPE_SEEKABLE)
+        {
+          int ret = createFiles(v);
+
+          if (ret != OK)
+            {
+              return ret;
+            }
+
+          continue;
+        }
+#endif
 
       tmp = new (std::nothrow) SProtoModbusRegs();
       if (!tmp)
@@ -969,15 +721,6 @@ int CProtoModbusRegs::createRegs()
       tmp->ios = 0;
       tmp->iodata.reserve(v->size);
 
-      if (v->type == MODBUS_TYPE_SEEKABLE)
-        {
-          int ret = setupSeekableRegs(tmp, &seekWindowRegs, &addSeekableState);
-          if (ret != OK)
-            {
-              return ret;
-            }
-        }
-
       for (size_t i = 0; i < v->size; i++)
         {
           CIOCommon *io;
@@ -990,7 +733,7 @@ int CProtoModbusRegs::createRegs()
               return -EIO;
             }
 
-          int sizeInc = validateRegisterIo(io, v->type, seekWindowRegs);
+          int sizeInc = validateRegisterIo(io, v->type);
           if (sizeInc < 0)
             {
               return sizeInc;
@@ -999,14 +742,7 @@ int CProtoModbusRegs::createRegs()
           tmp->size += static_cast<size_t>(sizeInc);
           tmp->ios += 1;
 
-          if (v->type == MODBUS_TYPE_SEEKABLE)
-            {
-              iobuffer = io->ddata_alloc(1, seekWindowRegs * sizeof(uint16_t));
-            }
-          else
-            {
-              iobuffer = io->ddata_alloc(1);
-            }
+          iobuffer = io->ddata_alloc(1);
 
           if (!iobuffer)
             {
@@ -1017,7 +753,7 @@ int CProtoModbusRegs::createRegs()
           tmp->iodata.push_back(iobuffer);
         }
 
-      int ret = finalizeRegGroup(tmp, v, seekWindowRegs, addSeekableState);
+      int ret = finalizeRegGroup(tmp, v);
       if (ret != OK)
         {
           return ret;
@@ -1030,11 +766,6 @@ int CProtoModbusRegs::createRegs()
 
 int CProtoModbusRegs::destroyRegs()
 {
-  if (!initialized)
-    {
-      return OK;
-    }
-
 #ifdef CONFIG_DAWN_PROTO_MODBUS_COIL
   cleanupGroups(vcoils);
 #endif
@@ -1049,12 +780,12 @@ int CProtoModbusRegs::destroyRegs()
 #endif
 
 #ifdef CONFIG_DAWN_PROTO_MODBUS_SEEKABLE
-  for (auto *state : vseekable)
+  for (auto *file : files)
     {
-      delete state;
+      delete file;
     }
 
-  vseekable.clear();
+  files.clear();
 #endif
 
   valloc.clear();

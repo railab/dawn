@@ -14,6 +14,8 @@ transport-agnostic.
 """
 
 import pytest
+from dawnpy_modbus.files import SeekableFile
+from pymodbus.pdu.file_message import FileRecord
 
 MAX_HOLDING_READ_REGS = 125
 
@@ -82,6 +84,32 @@ class ModbusAdapter:
             return bool(self._client.write_registers(self._unit, addr, values))
         resp = self._client.write_registers(addr, values, device_id=self._unit)
         return resp is not None and not resp.isError()
+
+    def read_file_records(self, unit, number, record, count):
+        """Read one record group using the FileClient error contract."""
+        if self._flavor == "rtu":
+            return self._client.read_file_records(unit, number, record, count)
+        req = FileRecord(
+            file_number=number, record_number=record, record_length=count * 2
+        )
+        response = self._client.read_file_record([req], device_id=unit)
+        if response is None or response.isError():
+            raise OSError("failed FC20 response")
+        records = response.records
+        if len(records) != 1 or len(records[0].record_data) != count * 2:
+            raise OSError("invalid FC20 response")
+        return bytes(records[0].record_data)
+
+    def write_file_records(self, unit, number, record, data):
+        """Write one record group and validate the echoed request."""
+        if self._flavor == "rtu":
+            return self._client.write_file_records(unit, number, record, data)
+        req = FileRecord(file_number=number, record_number=record, record_data=data)
+        response = self._client.write_file_record([req], device_id=unit)
+        if response is None or response.isError():
+            raise OSError("failed FC21 response")
+        if response.records != [req]:
+            raise OSError("invalid FC21 response")
 
 
 def read_holding_regs_chunked(adapter, start, count):
@@ -158,88 +186,37 @@ def check_input_read(adapter, input_start):
     assert all(isinstance(v, int) for v in regs[:6])
 
 
-def check_seekable_window(adapter, descriptor_group):
-    """Validate seekable holding window offset control semantics."""
-    seekable_start = descriptor_group["start"]
-    window_regs = descriptor_group["window_regs"]
-    ctrl_reg = descriptor_group["ctrl"]
-
-    assert adapter.write_registers(ctrl_reg, [0])
-
-    regs_at_0 = read_holding_regs_chunked(adapter, seekable_start, window_regs)
-    assert len(regs_at_0) == window_regs
-
-    resp = adapter.read_holding(ctrl_reg, 1)
-    assert resp is not None
-    regs = regs_from_response(resp)
-    assert regs[0] == window_regs * 2
-
-    assert adapter.write_registers(ctrl_reg, [4])
-    resp = adapter.read_holding(ctrl_reg, 1)
-    assert resp is not None
-    regs = regs_from_response(resp)
-    assert regs[0] == 4
-
-    sample_regs = min(16, window_regs - 2)
-    assert sample_regs > 0
-    regs_at_4 = read_holding_regs_chunked(adapter, seekable_start, sample_regs)
-    assert len(regs_at_4) == sample_regs
-    # Offset=4 bytes means two 16-bit registers shift.
-    assert regs_at_4 == regs_at_0[2 : 2 + sample_regs]
-
-    # Partial read must not auto-increment offset.
-    resp = adapter.read_holding(seekable_start, 1)
-    assert resp is not None
-
-    resp = adapter.read_holding(ctrl_reg, 1)
-    assert resp is not None
-    regs = regs_from_response(resp)
-    assert regs[0] == 4
-
-    # Restore default offset for following tests.
-    adapter.write_registers(ctrl_reg, [0])
+def check_seekable_window(adapter, group):
+    """Repeated FC20 reads have no implicit cursor or byte swapping."""
+    number = group["start"] + 1
+    first = adapter.read_file_records(1, number, 0, 4)
+    assert adapter.read_file_records(1, number, 0, 4) == first
+    assert adapter.read_file_records(1, number, 1, 2) == first[2:6]
 
 
-def check_seekable_ios(
-    adapter, seekable_groups, io_ids=("descriptor1", "capabilities1")
-):
-    """Validate seekable windows for descriptor/capabilities IOs."""
+def check_seekable_ios(adapter, groups, io_ids=("descriptor1", "capabilities1")):
+    """Read the existing windows with explicit, repeatable byte offsets."""
     for io_id in io_ids:
-        group = seekable_groups[io_id]
-        start = group["start"]
-        ctrl = group["ctrl"]
-        window_regs = group["window_regs"]
-
-        assert adapter.write_registers(ctrl, [0])
-
-        regs_at_0 = read_holding_regs_chunked(adapter, start, window_regs)
-        assert len(regs_at_0) == window_regs
-
-        resp = adapter.read_holding(ctrl, 1)
-        assert resp is not None
-        regs = regs_from_response(resp)
-        assert regs[0] == window_regs * 2
-
-        assert adapter.write_registers(ctrl, [4])
-        resp = adapter.read_holding(ctrl, 1)
-        assert resp is not None
-        regs = regs_from_response(resp)
-        assert regs[0] == 4
+        group = groups[io_id]
+        file = SeekableFile(adapter, 1, group["start"] + 1, group["window_regs"] + 1)
+        width = group["window_regs"] * 2
+        data = file.read(0, width)
+        assert len(data) == width and any(data)
+        assert file.read(0, width) == data
+        assert file.read(1, width - 1) == data[1:]
+        if io_id.startswith("capabilities"):
+            assert file.read(512, 2) == bytes(2)
+        with pytest.raises(OSError):
+            file.write(0, b"xx")
 
 
-def check_seekable_fileio(adapter, fileio_group):
-    """Write via seekable FileIO and read back."""
-    start = fileio_group["start"]
-    ctrl = fileio_group["ctrl"]
-
-    assert adapter.write_registers(ctrl, [0])
-
-    write_regs = [0x1234, 0xABCD, 0x00FF, 0x5501]
-    assert adapter.write_registers(start, write_regs)
-
-    # Re-seek to start and read back exact payload.
-    adapter.write_registers(ctrl, [0])
-    resp = adapter.read_holding(start, len(write_regs))
-    assert resp is not None
-    regs = regs_from_response(resp)
-    assert regs[: len(write_regs)] == write_regs
+def check_seekable_fileio(adapter, group):
+    """Write records across file boundaries and verify replacement at zero."""
+    file = SeekableFile(adapter, 1, group["start"] + 1, group["window_regs"] + 1)
+    for data in (bytes(range(256)) * 79 + b"end!", b"short!"):
+        file.write(0, data)
+        assert file.read(0, len(data)) == data
+        assert file.read(0, len(data)) == data
+        assert file.read(len(data), 4) == bytes(4)
+    file.write(2, b"AB")
+    assert file.read(0, 6) == b"shABt!"

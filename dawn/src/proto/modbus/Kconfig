@@ -6,13 +6,22 @@
 config DAWN_PROTO_MODBUS
 	bool "Dawn MODBUS proto support"
 	default n
-	select NXMODBUS
+	select INDUSTRY_NXMODBUS
 	select NXMODBUS_SERVER
 	---help---
 		Enable Modbus protocol support in Dawn.
 		This requires NxModbus library.
 
 if DAWN_PROTO_MODBUS
+
+config DAWN_PROTO_MODBUS_SEEKABLE
+	bool
+	default y if DAWN_IO_SEEKABLE
+	select NXMODBUS_FUNC_READ_FILE
+	select NXMODBUS_FUNC_WRITE_FILE
+	---help---
+		Seekable IO uses the standard NxModbus file-record handlers.
+		Selected automatically when seekable IO support is available.
 
 config DAWN_PROTO_MODBUS_RTU
 	bool "Dawn MODBUS RTU proto support"
@@ -77,14 +86,6 @@ config DAWN_PROTO_MODBUS_HOLDING
 	default y
 	---help---
 		Enable support for holding registers (read-write 16-bit words).
-
-config DAWN_PROTO_MODBUS_SEEKABLE
-	bool "Dawn MODBUS seekable register support"
-	default y
-	depends on DAWN_PROTO_MODBUS_HOLDING
-	---help---
-		Enable support for seekable register windows over holding registers.
-		Requires holding register support (DAWN_PROTO_MODBUS_HOLDING).
 
 config DAWN_PROTO_MODBUS_TCP
 	bool "Dawn MODBUS TCP proto support"
