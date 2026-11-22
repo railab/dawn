@@ -22,6 +22,37 @@ Host-side control is available via :file:`tools/examples/blinky/modbus_blinky_cl
 The helper supports start/stop, toggle, status, dwell-period updates, and
 interactive usage.
 
+led16a1
+-------
+
+RGB LED example for the X-NUCLEO-LED16A1 expansion board (LED1642GW 16-channel
+LED driver) with the RGB LED daughterboard. Uses ``led16a1_serial_demo.yaml``
+and exposes the five RGB LEDs as ``rgb_led`` IOs over the Dawn serial protocol
+on the ST-LINK Virtual COM Port.
+
+The LED1642GW is a PWM lower-half driver with one channel per output. The
+board logic registers each RGB LED as a ``/dev/rgbledN`` device on three of
+its outputs.
+
+=========== =========== =====================
+Signal      Arduino pin MCU pin
+=========== =========== =====================
+CLK         D13         PA5 (shared with LD1)
+SDI         D11         PA7
+LE          D2          PA10
+PWCLK       D6          PC8 (TIM3_CH3, 1 MHz)
+=========== =========== =====================
+
+Host-side control is available via
+:file:`tools/examples/led16a1/serial_led16a1_cli.py`:
+
+.. code-block:: bash
+
+   python3 tools/examples/led16a1/serial_led16a1_cli.py set 0 ff0000
+   python3 tools/examples/led16a1/serial_led16a1_cli.py all blue
+   python3 tools/examples/led16a1/serial_led16a1_cli.py demo
+   python3 tools/examples/led16a1/serial_led16a1_cli.py off
+
 modbus
 ------
 
