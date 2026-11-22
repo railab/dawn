@@ -1,0 +1,64 @@
+metadata:
+  title: LED16A1 Serial Demo
+  version: "1.0"
+  description: >
+    Exposes the five RGB LEDs of the X-NUCLEO-LED16A1 expansion board
+    (LED1642GW LED driver) over the Dawn serial protocol. Each rgb_led IO
+    uses 0x00RRGGBB values.
+  os_required:
+    - /dev/rgbled0
+    - /dev/rgbled1
+    - /dev/rgbled2
+    - /dev/rgbled3
+    - /dev/rgbled4
+    - /dev/ttyS0
+
+ios:
+  - &rgbled0
+    id: rgbled0
+    type: rgb_led
+    dtype: uint32
+    config:
+      device: 0
+      init_val: 0x000000
+  - &rgbled1
+    id: rgbled1
+    type: rgb_led
+    dtype: uint32
+    config:
+      device: 1
+      init_val: 0x000000
+  - &rgbled2
+    id: rgbled2
+    type: rgb_led
+    dtype: uint32
+    config:
+      device: 2
+      init_val: 0x000000
+  - &rgbled3
+    id: rgbled3
+    type: rgb_led
+    dtype: uint32
+    config:
+      device: 3
+      init_val: 0x000000
+  - &rgbled4
+    id: rgbled4
+    type: rgb_led
+    dtype: uint32
+    config:
+      device: 4
+      init_val: 0x000000
+
+protocols:
+  - id: serial1
+    type: serial
+    bindings:
+      - *rgbled0
+      - *rgbled1
+      - *rgbled2
+      - *rgbled3
+      - *rgbled4
+    config:
+      path: /dev/ttyS0
+      baudrate: 115200
