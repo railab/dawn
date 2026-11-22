@@ -72,6 +72,33 @@
 #define GPIO_TIM1_CH1OUT  (GPIO_TIM1_CH1OUT_3 | GPIO_SPEED_LOW)   /* PA8 */
 #define GPIO_TIM1_CH2OUT  (GPIO_TIM1_CH2OUT_3 | GPIO_SPEED_LOW)   /* PB3 */
 #define GPIO_TIM14_CH1OUT (GPIO_TIM14_CH1OUT_2 | GPIO_SPEED_HIGH) /* PA7 */
+#define GPIO_TIM3_CH3OUT  (GPIO_TIM3_CH3OUT_5 | GPIO_SPEED_HIGH)  /* PC8 */
+
+/* X-NUCLEO-LED16A1 (LED1642GW) *********************************************/
+
+/*   CLK   - PA5 (arduino D13, shared with LD1)
+ *   SDI   - PA7 (arduino D11)
+ *   LE    - PA10 (arduino D2)
+ *   PWCLK - PC8 (arduino D6, TIM3_CH3), 1 MHz gives 244 Hz PWM in 12-bit mode
+ */
+
+#define GPIO_LED1642GW_CLK                                                    \
+  (GPIO_OUTPUT | GPIO_PUSHPULL | GPIO_SPEED_HIGH | GPIO_OUTPUT_CLEAR |        \
+   GPIO_PORTA | GPIO_PIN5)
+#define GPIO_LED1642GW_SDI                                                    \
+  (GPIO_OUTPUT | GPIO_PUSHPULL | GPIO_SPEED_HIGH | GPIO_OUTPUT_CLEAR |        \
+   GPIO_PORTA | GPIO_PIN7)
+#define GPIO_LED1642GW_LE                                                     \
+  (GPIO_OUTPUT | GPIO_PUSHPULL | GPIO_SPEED_HIGH | GPIO_OUTPUT_CLEAR |        \
+   GPIO_PORTA | GPIO_PIN10)
+
+#define BOARD_LED1642GW_PWCLK_TIM     3
+#define BOARD_LED1642GW_PWCLK_CHANNEL 3
+#define BOARD_LED1642GW_PWCLK_FREQ    1000000
+
+/* RGB LEDs on the X-NUCLEO-LED16A1 daughterboard */
+
+#define LED1642GW_NRGBLEDS 5
 
 /* LED definitions **********************************************************/
 

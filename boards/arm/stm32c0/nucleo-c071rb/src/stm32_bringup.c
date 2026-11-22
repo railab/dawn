@@ -23,6 +23,10 @@
 #  include <stm32_wdg.h>
 #endif
 
+#ifdef CONFIG_LEDS_LED1642GW
+#  include "stm32_led1642gw.h"
+#endif
+
 #include <arch/board/board.h>
 
 #include "nucleo-c071rb.h"
@@ -91,6 +95,17 @@ int stm32_bringup(void)
   if (ret < 0)
     {
       syslog(LOG_ERR, "ERROR: stm32_pwm_setup failed: %d\n", ret);
+    }
+#endif
+
+#if defined(CONFIG_LEDS_LED1642GW) && defined(CONFIG_RGBLED)
+  /* Initialize the X-NUCLEO-LED16A1 and register its RGB LEDs. */
+
+  ret = board_led1642gw_initialize(0, LED1642GW_NRGBLEDS, GPIO_LED1642GW_CLK,
+                                   GPIO_LED1642GW_SDI, GPIO_LED1642GW_LE);
+  if (ret < 0)
+    {
+      syslog(LOG_ERR, "ERROR: board_led1642gw_initialize failed: %d\n", ret);
     }
 #endif
 
