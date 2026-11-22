@@ -362,6 +362,20 @@ Examples
 
   Required resources: ``/tmp``
 
+.. _descriptor-led16a1-serial-demo:
+
+``descriptors/examples/led16a1_serial_demo.yaml``
+  **LED16A1 Serial Demo**
+
+  Exposes the five RGB LEDs of the X-NUCLEO-LED16A1 expansion board
+  (LED1642GW LED driver) as ``rgb_led`` IOs over the Dawn serial protocol.
+  Each IO uses ``0x00RRGGBB`` values.
+
+  Required resources: ``/dev/rgbled0``, ``/dev/rgbled1``, ``/dev/rgbled2``,
+  ``/dev/rgbled3``, ``/dev/rgbled4``, ``/dev/ttyS0``
+
+  Host helper: :file:`tools/examples/led16a1/serial_led16a1_cli.py`
+
 .. _descriptor-nimble-aios-demo:
 
 ``descriptors/examples/nimble_aios_demo.yaml``
