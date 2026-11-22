@@ -30,8 +30,10 @@
 
 int stm32_pwm_setup(void)
 {
+#if defined(CONFIG_STM32_TIM14_PWM) || defined(CONFIG_STM32_TIM1_PWM)
   struct pwm_lowerhalf_s *pwm;
   int ret;
+#endif
 
 #if defined(CONFIG_STM32_TIM14_PWM)
   pwm = stm32_pwminitialize(14);
