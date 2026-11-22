@@ -38,4 +38,12 @@ endif()
 
 target_sources(board PRIVATE ${SRCS})
 
+# Pull stm32 board common from upstream NuttX (boards/arm/common/stm32)
+
+if(CONFIG_ARCH_BOARD_COMMON)
+  set(SRCS "")
+  add_subdirectory(${NUTTX_DIR}/boards/arm/common/stm32
+                   ${CMAKE_BINARY_DIR}/boards/arm/common/stm32)
+endif()
+
 set_property(GLOBAL PROPERTY LD_SCRIPT "${NUTTX_BOARD_DIR}/scripts/flash.ld")
