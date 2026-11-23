@@ -14,6 +14,11 @@
 #define UNITY_EXCLUDE_MATH_H
 #include <testing/unity.h>
 
+// Unity fallback macros break libcxx <cmath>
+
+#undef isinf
+#undef isnan
+
 #define DAWN_TEST_SEPARATOR()                                               \
   do                                                                        \
     {                                                                       \
