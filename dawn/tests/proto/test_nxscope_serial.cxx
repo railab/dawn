@@ -828,6 +828,7 @@ static void test_proto_nxscope_serial_start_notifier_fail()
 
   close(fd);
   TEST_ASSERT_EQUAL(OK, nxscope.stop());
+  TEST_ASSERT_EQUAL(OK, nxscope.deinit());
   close(ttypfd);
   dummy1.deinit();
   fileio.deinit();
